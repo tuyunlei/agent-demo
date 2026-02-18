@@ -15,22 +15,25 @@
 
 ## 当前执行中
 
-- **D01 架构原则文档更新**（sub-agent: d01-principles-update）
+- **S01 async trait spike**（sub-agent: s01-async-trait-spike）
   - 状态：running
-  - 内容：补充模块化树形结构、Walking Skeleton 原则、async trait 策略
-  - brief：`docs/design/briefs/d01-principles-update.md`
+  - 内容：验证 dyn Trait vs 泛型参数两种方案，给出架构选型推荐
+  - brief：`docs/design/briefs/s01-async-trait.md`
+  - 输出：`spikes/s01-async-trait/`
+
+## 已完成
+
+- ✅ **D01 架构原则文档更新**（2026-02-19）
+  - 补充了 2.7 模块化结构、2.8 Walking Skeleton、4.4 async trait 策略、4.5 所有权即设计
+  - review 通过
 
 ## 下一步（按优先级）
 
-1. 🔲 **更新架构原则文档**（`docs/design/principles.md`）
-   - 补充今天讨论的内容：模块化要求树形拆分而非平铺、Rust 特有约束等
-2. 🔲 **Crate 划分设计**（新任务）
-   - 物理模块边界：workspace crate 结构，每个 crate 的职责和依赖方向
-3. 🔲 **Agent Runtime 内部树形拆分**（新任务）
+1. 🔲 **D02 Crate 划分设计**（依赖 S01 结论）
+   - workspace crate 结构，每个 crate 的职责和依赖方向
+2. 🔲 **D03 Agent Runtime 内部树形拆分**
    - 拆到 3-4 层，覆盖 ContextAssembler、ExecutionLoop、StreamCoordinator、PostProcessor 等子模块
-4. 🔲 **Spike：async trait dyn vs 泛型**（spike 任务）
-   - 验证 7-8 个 Port 注入时，dyn Trait + async 和泛型参数两种方案的代码形态和编译结果
-5. 🔲 **Spike：stream 类型链路**
+3. 🔲 **S02 Spike：gRPC stream 类型链路**
    - 验证 LLM SSE → internal ChatEvent stream → gRPC server streaming 的 Rust 类型链路
 
 ## 关键决策（已定）
@@ -50,4 +53,4 @@
 
 ---
 
-*最后更新：2026-02-17*
+*最后更新：2026-02-19 01:15*
