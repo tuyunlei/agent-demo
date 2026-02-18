@@ -15,7 +15,10 @@
 
 ## 当前执行中
 
-（暂无，刚迁移完，准备开始）
+- **D01 架构原则文档更新**（sub-agent: d01-principles-update）
+  - 状态：running
+  - 内容：补充模块化树形结构、Walking Skeleton 原则、async trait 策略
+  - brief：`docs/design/briefs/d01-principles-update.md`
 
 ## 下一步（按优先级）
 
