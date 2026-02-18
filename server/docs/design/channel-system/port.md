@@ -15,13 +15,11 @@
 ## 2. ChannelAdapter trait（Rust 伪代码）
 
 ```rust
+pub type DynEventStream =
+    Pin<Box<dyn Stream<Item = Result<AgentEventEnvelope, ChannelError>> + Send + 'static>>;
+
 #[async_trait]
 pub trait ChannelAdapter: Send + Sync {
-    type EventStream: Stream<Item = Result<AgentEventEnvelope, ChannelError>>
-        + Send
-        + Unpin
-        + 'static;
-
     /// 适配器标识（如 "grpc", "websocket", "telegram"）
     fn adapter_id(&self) -> &'static str;
 
@@ -41,7 +39,7 @@ pub trait ChannelAdapter: Send + Sync {
     async fn subscribe(
         &self,
         req: SubscriptionRequest,
-    ) -> Result<Self::EventStream, ChannelError>;
+    ) -> Result<DynEventStream, ChannelError>;
 
     /// 向 session 的在线连接分发事件（支持单 session 多连接 fanout）
     async fn publish(
@@ -60,10 +58,10 @@ pub trait ChannelAdapter: Send + Sync {
 
 ### 2.1 持有方式
 
-根据 S01 结论：
+根据 S02 验证结论，去掉关联类型以恢复对象安全，便于应用层用 dyn 在 gRPC/WebSocket 适配器间动态切换：
 
 ```rust
-Arc<dyn ChannelAdapter<EventStream = ...> + Send + Sync>
+Arc<dyn ChannelAdapter + Send + Sync>
 ```
 
 ---

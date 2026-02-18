@@ -15,33 +15,26 @@
 
 ## 当前执行中
 
-- **S02 spike**（sub-agent: s02-channel-adapter-dyn）
-  - 状态：running
-  - 目标：验证 ChannelAdapter 关联类型 vs Box<dyn Stream>，确认 D03 trait 是否需要修改
-  - 输出：`spikes/s02-channel-adapter-dyn/`
-- **S03 spike**（sub-agent: s03-tokio-actor）
-  - 状态：running
-  - 目标：验证 session 单写者 actor pattern（Tokio mpsc + oneshot）
-  - 输出：`spikes/s03-tokio-actor/`
+- **D03-Rev**（sub-agent: d03-revision）
+  - 目标：修订 port.md，去关联类型，改为 DynEventStream
+  - 输出：`docs/design/channel-system/port.md`（修改）
+- **D04**（sub-agent: d04-agent-runtime-detail）
+  - 目标：Agent Runtime 内部树形拆分（基于 S03 actor 结论）
+  - 输出：`docs/design/core/agent-runtime-detail.md`
 
 ## 已完成
 
-- ✅ **D01 架构原则文档更新**（2026-02-19）
-  - review 通过
-- ✅ **S01 async trait spike**（2026-02-19）
-  - 结论：dyn Trait + async-trait，Arc<dyn Port + Send + Sync>
-- ✅ **D02 Crate 划分设计**（2026-02-19）
-  - 8 个 crate，DAG 无环，产出：`docs/design/crate-structure.md`
-  - review 通过
-- ✅ **D03 Channel Port trait 设计**（2026-02-19）
-  - ChannelAdapter 7 个方法，AgentEvent 4 个变体，fanout + 重连语义设计完整
-  - review 通过（关联类型问题待 S02 验证后可能微调）
+- ✅ D01 架构原则文档更新
+- ✅ S01 async trait spike → dyn Trait + async-trait，Arc<dyn Port + Send + Sync>
+- ✅ D02 Crate 划分（8 个 crate，DAG 无环）
+- ✅ D03 Channel Port trait 设计（7 方法，4 AgentEvent 变体，fanout + 重连）
+- ✅ S02 spike → 推荐 Box<dyn Stream>，D03 需去关联类型（→ D03-Rev 处理）
+- ✅ S03 spike → Tokio actor 可行，bounded mailbox(8)，idle timeout，代际 ID
 
-## 下一步（S02/S03 完成后）
+## 下一步（D03-Rev/D04 完成后）
 
-1. 🔲 **D04 Agent Runtime 内部树形拆分**（依赖 S03 结论）
-2. 🔲 **D05 核心 Port trait 精确定义**（LlmProvider、MessageStore 等方法签名）
-3. 🔲 **D06 错误类型体系设计**
+1. 🔲 **D05 核心 Port trait 精确定义**（LlmProvider、MessageStore 等方法签名）
+2. 🔲 **D06 错误类型体系设计**
 
 ## 关键决策（已定）
 
@@ -60,4 +53,4 @@
 
 ---
 
-*最后更新：2026-02-19 03:15*
+*最后更新：2026-02-19 04:15*
