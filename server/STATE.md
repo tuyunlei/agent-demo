@@ -15,26 +15,23 @@
 
 ## 当前执行中
 
-- **D05**（sub-agent: d05-port-traits）
-  - 目标：5 个核心 Port 精确方法签名（LlmProvider/MessageStore/SessionStore/MemoryStore/PersonaStore）
-  - 输出：`docs/design/ports/core-ports.md`
-- **D06**（sub-agent: d06-error-types）
-  - 目标：错误类型体系（三层错误、thiserror vs anyhow、转换规则）
-  - 输出：`docs/design/error-types.md`
+（无，等待涂涂进行 Phase 0 整体 review）
+
+## ⏸ 阻塞点
+
+**等待涂涂 review Phase 0 全部产出，决定是否进入 Phase 1（Walking Skeleton 实现）。**
 
 ## 已完成
 
-- ✅ D01 架构原则文档更新
-- ✅ S01 async trait spike → dyn Trait + async-trait，Arc<dyn Port + Send + Sync>
+- ✅ D01 架构原则文档更新（分层模块化、Walking Skeleton、Rust 约束）
+- ✅ S01 async trait spike → **dyn Trait + async-trait，Arc<dyn Port + Send + Sync>**
 - ✅ D02 Crate 划分（8 个 crate，DAG 无环）
-- ✅ D03 Channel Port trait 设计 → 修订（DynEventStream，对象安全）
-- ✅ S02 spike → Box<dyn Stream> 方案，D03 关联类型问题已修复
-- ✅ S03 spike → Tokio actor 可行，bounded mailbox(8)，idle timeout，代际 ID
-- ✅ D04 Agent Runtime 树形拆分（3 层 9 子模块，EventPublisher → ChannelAdapter）
-
-## 下一步（D05/D06 完成后）
-
-1. 🔲 **整体 review**：拿涂涂来审阅 Phase 0 的全部产出，决定是否进入 Phase 1
+- ✅ D03 Channel Port trait 设计 + D03-Rev（DynEventStream，对象安全）
+- ✅ S02 spike → **Box<dyn Stream> 方案**，关联类型不可用于 dyn
+- ✅ S03 spike → **Tokio actor 可行**，bounded mailbox(8)，idle timeout，代际 ID
+- ✅ D04 Agent Runtime 树形拆分（3 层 9 子模块）
+- ✅ D05 核心 Port 精确定义（5 个 Port，19 个方法）
+- ✅ D06 错误类型体系（DomainError 8 变体，三层转换，thiserror 为主）
 
 ## 关键决策（已定）
 
@@ -53,4 +50,4 @@
 
 ---
 
-*最后更新：2026-02-19 05:15*
+*最后更新：2026-02-19 06:15*
