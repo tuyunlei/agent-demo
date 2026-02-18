@@ -15,26 +15,26 @@
 
 ## 当前执行中
 
-- **D03-Rev**（sub-agent: d03-revision）
-  - 目标：修订 port.md，去关联类型，改为 DynEventStream
-  - 输出：`docs/design/channel-system/port.md`（修改）
-- **D04**（sub-agent: d04-agent-runtime-detail）
-  - 目标：Agent Runtime 内部树形拆分（基于 S03 actor 结论）
-  - 输出：`docs/design/core/agent-runtime-detail.md`
+- **D05**（sub-agent: d05-port-traits）
+  - 目标：5 个核心 Port 精确方法签名（LlmProvider/MessageStore/SessionStore/MemoryStore/PersonaStore）
+  - 输出：`docs/design/ports/core-ports.md`
+- **D06**（sub-agent: d06-error-types）
+  - 目标：错误类型体系（三层错误、thiserror vs anyhow、转换规则）
+  - 输出：`docs/design/error-types.md`
 
 ## 已完成
 
 - ✅ D01 架构原则文档更新
 - ✅ S01 async trait spike → dyn Trait + async-trait，Arc<dyn Port + Send + Sync>
 - ✅ D02 Crate 划分（8 个 crate，DAG 无环）
-- ✅ D03 Channel Port trait 设计（7 方法，4 AgentEvent 变体，fanout + 重连）
-- ✅ S02 spike → 推荐 Box<dyn Stream>，D03 需去关联类型（→ D03-Rev 处理）
+- ✅ D03 Channel Port trait 设计 → 修订（DynEventStream，对象安全）
+- ✅ S02 spike → Box<dyn Stream> 方案，D03 关联类型问题已修复
 - ✅ S03 spike → Tokio actor 可行，bounded mailbox(8)，idle timeout，代际 ID
+- ✅ D04 Agent Runtime 树形拆分（3 层 9 子模块，EventPublisher → ChannelAdapter）
 
-## 下一步（D03-Rev/D04 完成后）
+## 下一步（D05/D06 完成后）
 
-1. 🔲 **D05 核心 Port trait 精确定义**（LlmProvider、MessageStore 等方法签名）
-2. 🔲 **D06 错误类型体系设计**
+1. 🔲 **整体 review**：拿涂涂来审阅 Phase 0 的全部产出，决定是否进入 Phase 1
 
 ## 关键决策（已定）
 
@@ -53,4 +53,4 @@
 
 ---
 
-*最后更新：2026-02-19 04:15*
+*最后更新：2026-02-19 05:15*
