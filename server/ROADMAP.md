@@ -5,6 +5,14 @@
 
 ---
 
+## 架构认知基线
+
+**Channel 是核心抽象，gRPC 只是一个 Channel Adapter 实现。**
+服务端通过 `ChannelAdapter` Port 收发消息，不关心具体协议。
+iOS 客户端（gRPC）、未来 Web 客户端（WebSocket）、Push 等都是这个 Port 的不同实现。
+
+---
+
 ## 当前阶段：Phase 0 — 架构深化 + 可行性验证
 
 ### 轨道 A：可行性验证（Spikes）
@@ -13,10 +21,11 @@
 
 | # | 任务 | 状态 | 位置 | 验证目标 |
 |---|------|------|------|----------|
-| S01 | async trait：dyn vs 泛型 | 🔲 | `spikes/s01-async-trait/` | 7-8 个 Port 注入时，两种方案的代码形态、编译结果、权衡 |
-| S02 | gRPC stream 类型链路 | 🔲 | `spikes/s02-grpc-stream/` | LLM SSE → ChatEvent → gRPC server streaming 类型链路能否编译 |
+| S01 | async trait：dyn vs 泛型 | ✅ | `spikes/s01-async-trait/` | **结论：dyn Trait + async-trait，Arc<dyn Port + Send + Sync>** |
+| S02 | gRPC stream 类型链路 | 🔲 | `spikes/s02-grpc-stream/` | gRPC Channel Adapter 里 LLM ChatEvent → gRPC server streaming 能否编译 |
 | S03 | Tokio actor/mailbox（session 单写者） | 🔲 | `spikes/s03-tokio-actor/` | session 单写者模型的 actor pattern 在 Rust 里怎么实现 |
-| S04 | Arc vs 生命周期注入 | 🔲 | `spikes/s04-di-pattern/` | Port 依赖注入用 Arc<dyn Trait> 还是 &dyn Trait，所有权影响 |
+
+> S04（Arc vs 生命周期注入）已被 S01 覆盖，不再单独做。
 
 ### 轨道 B：深化设计（Design Docs）
 
@@ -24,26 +33,28 @@
 
 | # | 任务 | 状态 | 位置 | 内容 |
 |---|------|------|------|------|
-| D01 | 架构原则文档更新 | 🔲 | `docs/design/principles.md` | 补充树形模块化要求、Rust 特有约束 |
-| D02 | Crate 划分设计 | 🔲 | `docs/design/crate-structure.md` | workspace crate 结构，每个 crate 职责和依赖方向 |
-| D03 | Agent Runtime 树形拆分 | 🔲 | `docs/design/core/agent-runtime-detail.md` | 内部拆到 3-4 层：RequestDispatcher、ContextAssembler、ExecutionLoop、StreamCoordinator、PostProcessor |
-| D04 | Port trait 接口定义 | 🔲 | `docs/design/ports/` | 所有 Port 的精确方法签名、入参类型、错误类型 |
-| D05 | 错误类型体系设计 | 🔲 | `docs/design/error-types.md` | 跨模块错误传播策略，thiserror vs anyhow 选型 |
+| D01 | 架构原则文档更新 | ✅ | `docs/design/principles.md` | 模块化结构、Walking Skeleton、Rust 约束 |
+| D02 | Crate 划分设计 | 🔲 | `docs/design/crate-structure.md` | workspace crate 结构，每个 crate 职责和依赖方向（基于 S01 dyn 结论） |
+| D03 | Channel Port trait 设计 | 🔲 | `docs/design/channel-system/port.md` | ChannelAdapter trait 精确定义：收消息、推 AgentEvent；协议无关；支持多 Channel 并发 |
+| D04 | Agent Runtime 树形拆分 | 🔲 | `docs/design/core/agent-runtime-detail.md` | 内部拆到 3-4 层：RequestDispatcher、ContextAssembler、ExecutionLoop、StreamCoordinator、PostProcessor |
+| D05 | 核心 Port trait 精确定义 | 🔲 | `docs/design/ports/` | LlmProvider、MessageStore、SessionStore、MemoryStore、ToolExecutor 的方法签名 + 错误类型 |
+| D06 | 错误类型体系设计 | 🔲 | `docs/design/error-types.md` | 跨模块错误传播策略，thiserror 用法 |
 
 ### 依赖关系
 
 ```
-S01 → D02（crate 划分依赖 trait 方案选型）
-S02 → D04（Port 签名依赖 stream 类型确认）
-S03 → D03（Runtime 拆分依赖 actor 方案）
-D01 → D02 → D03 → D04（设计文档有顺序依赖）
+S01 ✅ → D02（crate 划分依赖 dyn 方案确认，现在可以开始）
+S02    → D03（gRPC Channel Adapter 实现细节依赖 stream 类型验证）
+S03    → D04（Agent Runtime 拆分依赖 actor 方案）
+D02    → D05（Port 精确签名依赖 crate 边界确认）
+D03    → D05（Channel Port 需要引用 AgentEvent 类型）
 ```
 
 ---
 
 ## Phase 1：Walking Skeleton（待 Phase 0 完成后开始）
 
-最小可运行版本：SendMessage → 简化 Agent Runtime → LLM 调用 → 流式返回 → 存 PG
+最小可运行版本：SendMessage → 简化 Agent Runtime → LLM 调用 → 返回
 
 具体任务待 Phase 0 完成后拆分。
 
@@ -59,4 +70,4 @@ D01 → D02 → D03 → D04（设计文档有顺序依赖）
 
 ---
 
-*最后更新：2026-02-17*
+*最后更新：2026-02-19*
