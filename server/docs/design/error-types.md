@@ -234,5 +234,5 @@ sqlx::Error / reqwest::Error / tonic::Status
 1. 在 `agent-domain` 定义 `DomainError`
 2. 在 `agent-app` 定义 `AppError + ErrorContext + InfraErrorKind`
 3. 各 infra crate 定义本地 typed error 并实现映射
-4. 在 `agent-grpc` 集中维护 `AppError -> tonic::Status` 映射
+4. 在 `agent-server` 集中维护 `AppError -> tonic::Status` 映射
 5. 增加集成测试：验证关键错误路径不会泄漏框架错误类型

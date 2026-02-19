@@ -23,7 +23,7 @@
 | `agent-storage` | Infrastructure | PostgreSQL/sqlx 适配器，实现 `agent-domain` 定义的存储相关 Port |
 | `agent-llm` | Infrastructure | 各 LLM provider 适配器，实现 `LlmProvider` Port |
 | `agent-channel` | Infrastructure | Channel Adapter（gRPC/WebSocket 等）统一封装，请求/事件与应用层对接 |
-| `agent-grpc` | Infrastructure（Composition Root + gRPC Host） | tonic 服务入口、依赖装配（composition root）、进程启动 |
+| `agent-server` | Infrastructure（Binary Entry + Composition Root） | binary 入口、依赖装配（composition root）、进程启动；协议无关 |
 
 ---
 
@@ -62,12 +62,13 @@
   - 依赖：`agent-app`, `agent-domain`, `agent-types`
   - 说明：作为外部渠道与应用层之间的适配层
 
-- `agent-grpc`
+- `agent-server`
   - 依赖：`agent-proto`, `agent-app`, `agent-channel`, `agent-storage`, `agent-llm`, `agent-domain`, `agent-types`
   - 说明：
-    - 暴露 gRPC 服务（tonic）
+    - 作为 binary 入口
     - 作为 Composition Root 装配 `Arc<dyn PortTrait>`
     - 启动进程与运行时
+    - 不关心底层协议；gRPC 只是 `agent-channel` 内的一个 ChannelAdapter 实现
 
 ---
 
@@ -75,8 +76,8 @@
 
 ```text
                          +----------------------+
-                         |      agent-grpc      |
-                         | (host + composition) |
+                         |     agent-server     |
+                         | (entry + composition)|
                          +----------+-----------+
                                     |
           +-------------------------+--------------------------+
@@ -111,7 +112,7 @@
 - **Domain**：`agent-types`, `agent-domain`
 - **Application**：`agent-app`
 - **Protocol**：`agent-proto`
-- **Infrastructure**：`agent-storage`, `agent-llm`, `agent-channel`, `agent-grpc`
+- **Infrastructure**：`agent-storage`, `agent-llm`, `agent-channel`, `agent-server`
 
 ---
 
@@ -121,9 +122,9 @@
 
 `agent-types` 作为“纯数据共享包”，允许 domain/app/infra/protocol 同时依赖，避免在 `agent-domain` 与 `agent-proto` 之间互相引用造成循环。
 
-### 6.2 为什么把 Composition Root 放在 `agent-grpc`
+### 6.2 为什么 Composition Root 应放在 `agent-server`
 
-MVP 只有一个主要服务入口（gRPC），将装配逻辑放在 `agent-grpc` 可以减少 crate 数量；未来若出现多入口（如 HTTP + worker），可再抽出 `agent-server`。
+`agent-server` 承担 binary 入口 + Composition Root：在 `main()` 中装配所有 Port 实现并启动服务。这里不应以具体协议命名；底层协议（gRPC/WebSocket/Push）属于 `agent-channel` 的 ChannelAdapter 实现，替换协议不应影响组合逻辑。
 
 ### 6.3 Port 注入策略（与 S01 对齐）
 
@@ -145,7 +146,7 @@ MVP 只有一个主要服务入口（gRPC），将装配逻辑放在 `agent-grpc
 典型改动：
 
 1. 在 `agent-llm` 新增 `XxxProvider`，实现 `agent-domain::LlmProvider` trait。
-2. 在 `agent-grpc` 的装配处（composition root）增加 provider 选择/注册配置。
+2. 在 `agent-server` 的装配处（composition root）增加 provider 选择/注册配置。
 
 `agent-domain` 与 `agent-app` 无需改动（除非新增了跨 provider 的全新抽象能力）。
 
