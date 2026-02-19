@@ -12,7 +12,11 @@
 
 ## 当前执行中
 
-- 🔄 **M01 架构原则 + 分层规范**：sub-agent (gpt-5.3-codex) 执行中，label: m01-mobile-principles
+（无）
+
+## 已完成
+
+- ✅ M01 架构原则 + 分层规范（`docs/design/principles.md`）
 
 ## 已定的架构决策
 
