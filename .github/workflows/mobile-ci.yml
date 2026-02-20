@@ -1,0 +1,52 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app || sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: List available simulators
+        run: xcrun simctl list devices available | head -30
+
+      - name: Build
+        working-directory: mobile/AgentDemo
+        run: |
+          xcodebuild build \
+            -project AgentDemo.xcodeproj \
+            -scheme AgentDemo \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            | tail -20
+
+      - name: Test
+        working-directory: mobile/AgentDemo
+        run: |
+          xcodebuild test \
+            -project AgentDemo.xcodeproj \
+            -scheme AgentDemo \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            | tail -30
