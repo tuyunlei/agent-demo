@@ -1,4 +1,4 @@
 pub mod channel;
 pub mod grpc;
 
-pub use grpc::ChatServiceHandler;
+pub use grpc::{AuthServiceHandler, ChatServiceHandler};
