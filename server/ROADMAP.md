@@ -27,7 +27,7 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | T1.1 | Proto 编译 | ✅ | tonic-build 配置，.proto → Rust 代码生成，放入 agent-proto crate |
-| T1.2 | 最小 gRPC 服务 | 🔲 | ChatService.SendMessage 仅 echo 回传用户消息文本，agent-server 启动监听 |
+| T1.2 | 最小 gRPC 服务 | ✅ | ChatService.SendMessage echo 回传，agent-server 监听 [::1]:50051 |
 | T1.3 | grpcurl 端到端验证 | 🔲 | 发消息 → 收到 echo 回复，记录验证命令 |
 
 ### Step 2：真实认证
