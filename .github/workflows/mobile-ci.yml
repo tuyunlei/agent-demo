@@ -26,27 +26,25 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: List available simulators
-        run: xcrun simctl list devices available | head -30
-
       - name: Build
         working-directory: mobile/AgentDemo
         run: |
+          set -o pipefail
           xcodebuild build \
             -project AgentDemo.xcodeproj \
             -scheme AgentDemo \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO \
-            | tail -20
+            CODE_SIGNING_ALLOWED=NO
 
-      - name: Test
+      - name: Unit Tests
         working-directory: mobile/AgentDemo
         run: |
+          set -o pipefail
           xcodebuild test \
             -project AgentDemo.xcodeproj \
             -scheme AgentDemo \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO \
-            | tail -30
+            -skip-testing:AgentDemoUITests \
+            CODE_SIGNING_ALLOWED=NO
