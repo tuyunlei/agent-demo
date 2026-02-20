@@ -6,6 +6,6 @@
 REDACTED_HOST:8443 {
 	reverse_proxy h2c://localhost:50051
 	tls {
-		dns cloudflare REDACTED_TOKEN
+		dns cloudflare {env.CF_DNS_API_TOKEN}
 	}
 }
