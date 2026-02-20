@@ -1,7 +1,14 @@
 # agent-demo/mobile — ROADMAP
 
-> Phase 0 架构设计已完成。等待 Server Step 0-2 完成后，从 Step 3 加入 Walking Skeleton。
+> Phase 0 架构设计已完成。进入 Phase 1 Walking Skeleton 实现。
 > 详细设计文档见 `docs/design/`
+
+---
+
+## 技术选型
+
+- **gRPC 库**：grpc-swift v2（grpc-swift-protobuf + grpc-swift-nio-transport）— Swift Concurrency 原生
+- **Server 地址**：`REDACTED_HOST:443`（gRPC over TLS，Caddy 反代）
 
 ---
 
@@ -24,15 +31,16 @@
 
 ---
 
-## Phase 1：Walking Skeleton（从 Step 3 加入）
+## Phase 1：Walking Skeleton
 
 ### Step 3：iOS 项目起步
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| TM3.1 | SPM 项目脚手架 | 🔲 | Xcode 项目结构，四层目录，Package.swift 依赖配置 |
-| TM3.2 | GitHub Actions iOS CI | 🔲 | macOS runner，xcodebuild，push/PR 触发 |
-| TM3.3 | Login 页面 | 🔲 | 登录 UI + AuthService.Login 调用 + token 存储 |
+| TM3.1a | Xcode 项目初始化 | ✅ | 涂涂创建，SwiftUI，iOS 26.2 |
+| TM3.1b | grpc-swift v2 配置 | 🔲 | SPM 依赖 + protoc 编译 .proto → Swift + TLS channel 配置 |
+| TM3.2 | GitHub Actions iOS CI | ✅ | macOS runner，Xcode 26.2，xcbeautify + raw log artifact |
+| TM3.3 | Login 页面 | 🔲 | 登录 UI + AuthService.Login 调用 + token 存储（Keychain） |
 | TM3.4 | Chat 页面 | 🔲 | 聊天 UI + SendMessage 调用 + 显示 AI 回复（整块返回） |
 
 ### Step 4：持久化
@@ -56,4 +64,4 @@
 
 ---
 
-*最后更新：2026-02-20*
+*最后更新：2026-02-21*
