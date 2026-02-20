@@ -1,14 +1,25 @@
 use std::pin::Pin;
+use std::sync::Arc;
 
 use super::UserId;
+use agent_app::AgentRuntime;
+use agent_domain::{AgentError, LlmError};
 use agent_proto::chat_service_server::ChatService;
 use agent_proto::{
     ChatEvent, SendMessageRequest, SendMessageResponse, SubmitToolResultRequest,
-    SubmitToolResultResponse, SubscribeRequest,
+    SubmitToolResultResponse, SubscribeRequest, content_block,
 };
 use tonic::{Request, Response, Status};
 
-pub struct ChatServiceHandler;
+pub struct ChatServiceHandler {
+    runtime: Arc<AgentRuntime>,
+}
+
+impl ChatServiceHandler {
+    pub fn new(runtime: Arc<AgentRuntime>) -> Self {
+        Self { runtime }
+    }
+}
 
 #[tonic::async_trait]
 impl ChatService for ChatServiceHandler {
@@ -27,10 +38,17 @@ impl ChatService for ChatServiceHandler {
             req.request_id, user_id
         );
 
+        let user_text = extract_text(&req)?;
+        let _ai_reply = self
+            .runtime
+            .handle_message(&user_text)
+            .await
+            .map_err(map_agent_error)?;
+
         Ok(Response::new(SendMessageResponse {
             request_id: req.request_id,
             session_id: if req.session_id.is_empty() {
-                "echo-session-001".to_string()
+                "session-001".to_string()
             } else {
                 req.session_id
             },
@@ -56,13 +74,128 @@ impl ChatService for ChatServiceHandler {
     }
 }
 
+fn extract_text(req: &SendMessageRequest) -> Result<String, Status> {
+    let text_parts = req
+        .content
+        .iter()
+        .filter_map(|block| match &block.kind {
+            Some(content_block::Kind::Text(text_block)) => Some(text_block.text.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    let text = text_parts.join("\n");
+    if text.trim().is_empty() {
+        return Err(Status::invalid_argument(
+            "SendMessage.content must include at least one non-empty text block",
+        ));
+    }
+
+    Ok(text)
+}
+
+fn map_agent_error(err: AgentError) -> Status {
+    match err {
+        AgentError::InvalidInput(msg) => Status::invalid_argument(msg),
+        AgentError::Llm(llm_err) => map_llm_error(llm_err),
+    }
+}
+
+fn map_llm_error(err: LlmError) -> Status {
+    match err {
+        LlmError::RateLimited => Status::resource_exhausted("llm request rate limited"),
+        LlmError::InvalidRequest(msg) => Status::invalid_argument(msg),
+        LlmError::Timeout => Status::deadline_exceeded("llm request timeout"),
+        LlmError::ProviderError(msg) => Status::internal(msg),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use agent_domain::{ChatMessage, LlmProvider, LlmRequest, LlmResponse, LlmUsage};
+    use agent_proto::{ContentBlock, TextBlock};
+
     use super::*;
 
+    struct MockLlmProvider {
+        captured: Arc<Mutex<Vec<LlmRequest>>>,
+    }
+
+    #[async_trait::async_trait]
+    impl LlmProvider for MockLlmProvider {
+        async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
+            self.captured.lock().expect("lock captured").push(request);
+            Ok(LlmResponse {
+                content: "mocked-reply".to_string(),
+                model: "mock-model".to_string(),
+                usage: Some(LlmUsage {
+                    input_tokens: 10,
+                    output_tokens: 10,
+                    total_tokens: 20,
+                }),
+            })
+        }
+    }
+
+    fn text_block(text: &str) -> ContentBlock {
+        ContentBlock {
+            kind: Some(content_block::Kind::Text(TextBlock {
+                text: text.to_string(),
+            })),
+        }
+    }
+
     #[tokio::test]
-    async fn test_send_message_echo() {
-        let handler = ChatServiceHandler;
+    async fn test_send_message_calls_runtime_chain() {
+        let captured = Arc::new(Mutex::new(Vec::new()));
+        let provider = Arc::new(MockLlmProvider {
+            captured: captured.clone(),
+        });
+        let runtime = Arc::new(AgentRuntime::new(provider));
+        let handler = ChatServiceHandler::new(runtime);
+
+        let request = tonic::Request::new(SendMessageRequest {
+            request_id: "test-123".to_string(),
+            session_id: "".to_string(),
+            agent_id: "".to_string(),
+            content: vec![text_block("hello runtime")],
+            metadata: Default::default(),
+        });
+
+        let response = handler.send_message(request).await.unwrap();
+        let resp = response.into_inner();
+
+        assert_eq!(resp.request_id, "test-123");
+        assert_eq!(resp.session_id, "session-001");
+
+        let requests = captured.lock().expect("lock captured");
+        assert_eq!(requests.len(), 1);
+        assert_eq!(
+            requests[0].messages,
+            vec![
+                ChatMessage {
+                    role: "system".to_string(),
+                    content: "You are a helpful assistant.".to_string(),
+                },
+                ChatMessage {
+                    role: "user".to_string(),
+                    content: "hello runtime".to_string(),
+                }
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn test_send_message_requires_text_content() {
+        let captured = Arc::new(Mutex::new(Vec::new()));
+        let provider = Arc::new(MockLlmProvider {
+            captured: captured.clone(),
+        });
+        let runtime = Arc::new(AgentRuntime::new(provider));
+        let handler = ChatServiceHandler::new(runtime);
+
         let request = tonic::Request::new(SendMessageRequest {
             request_id: "test-123".to_string(),
             session_id: "".to_string(),
@@ -71,10 +204,7 @@ mod tests {
             metadata: Default::default(),
         });
 
-        let response = handler.send_message(request).await.unwrap();
-        let resp = response.into_inner();
-
-        assert_eq!(resp.request_id, "test-123");
-        assert_eq!(resp.session_id, "echo-session-001");
+        let err = handler.send_message(request).await.unwrap_err();
+        assert_eq!(err.code(), tonic::Code::InvalidArgument);
     }
 }

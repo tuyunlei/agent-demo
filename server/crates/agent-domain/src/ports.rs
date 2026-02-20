@@ -55,3 +55,15 @@ pub enum LlmError {
     InvalidRequest(String),
     Timeout,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AgentError {
+    InvalidInput(String),
+    Llm(LlmError),
+}
+
+impl From<LlmError> for AgentError {
+    fn from(value: LlmError) -> Self {
+        Self::Llm(value)
+    }
+}

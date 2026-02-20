@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use agent_app::AuthService;
+use agent_app::{AgentRuntime, AuthService};
 use agent_channel::{AuthServiceHandler, ChatServiceHandler, auth_interceptor};
 use agent_domain::{AuthError, AuthPort, AuthResult};
+use agent_llm::OpenAiProvider;
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
 use tonic::transport::Server;
@@ -36,20 +37,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("agent-server listening on {}", addr);
 
     let jwt_secret = required_env("JWT_SECRET");
-    let admin_email = std::env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@agent-demo.dev".to_string());
+    let admin_email =
+        std::env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@agent-demo.dev".to_string());
     let admin_password = required_env("ADMIN_PASSWORD");
+
+    let llm_base_url = required_env("LLM_BASE_URL");
+    let llm_api_key = required_env("LLM_API_KEY");
+    let llm_model = required_env("LLM_MODEL");
 
     let auth_provider = Arc::new(EnvAuthProvider {
         email: admin_email,
         password: admin_password,
     });
-    let auth_service = Arc::new(AuthService::new(
-        auth_provider,
-        jwt_secret,
+    let auth_service = Arc::new(AuthService::new(auth_provider, jwt_secret));
+
+    let llm_provider = Arc::new(OpenAiProvider::with_config(
+        llm_api_key,
+        llm_base_url,
+        llm_model,
     ));
+    let runtime = Arc::new(AgentRuntime::new(llm_provider));
 
     let chat_service = ChatServiceServer::with_interceptor(
-        ChatServiceHandler,
+        ChatServiceHandler::new(runtime),
         auth_interceptor(auth_service.clone()),
     );
     let auth_service = AuthServiceServer::new(AuthServiceHandler::new(auth_service));
