@@ -19,15 +19,11 @@ let package = Package(
             dependencies: [
                 .product(name: "GRPCCore", package: "grpc-swift"),
                 .product(name: "GRPCNIOTransportHTTP2", package: "grpc-swift-nio-transport"),
+                .product(name: "GRPCNIOTransportHTTP2TransportServices", package: "grpc-swift-nio-transport"),
                 .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ],
-            path: "Sources/GRPCClient",
-            exclude: [
-                "Generated/auth.grpc.swift",
-                "Generated/chat.grpc.swift",
-                "Generated/session.grpc.swift",
-            ]
+            path: "Sources/GRPCClient"
         ),
     ]
 )

@@ -1,19 +1,26 @@
+import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2
-import GRPCProtobuf
 
 public struct APIClient {
-    public static let serverHost = "REDACTED_HOST"
-    public static let serverPort = 8443
+    public let host: String
+    public let port: Int
 
-    public init() {}
+    public init(host: String = "REDACTED_HOST", port: Int = 8443) {
+        self.host = host
+        self.port = port
+    }
 
-    /// Walking skeleton placeholder for gRPC over TLS channel setup.
-    ///
-    /// grpc-swift v2 + NIO transport is wired as dependencies; concrete
-    /// connection lifecycle management (bootstrap, pooling, shutdown) can be
-    /// layered on top in follow-up tasks.
-    public static func makeTLSChannelDescription() -> String {
-        "grpc://\(serverHost):\(serverPort) with TLS (implementation TBD)"
+    public func withClient<T>(
+        _ operation: @escaping (any GRPCClient) async throws -> T
+    ) async throws -> T {
+        try await withGRPCClient(
+            transport: .http2NIOTransportServices(
+                target: .dns(host: self.host, port: self.port),
+                transportSecurity: .tls
+            )
+        ) { client in
+            try await operation(client)
+        }
     }
 }
