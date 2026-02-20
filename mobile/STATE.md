@@ -12,7 +12,8 @@
 
 ## 当前执行中
 
-- 🔄 **M05 业务模块划分**：sub-agent (gpt-5.3-codex) 执行中，label: m05-business-modules
+- 🔄 **M06 应用集成层设计**：sub-agent 执行中，label: m06-app-integration
+- 🔄 **M07 Proto 定义**：sub-agent 执行中，label: m07-proto
 
 ## 已完成
 
@@ -20,6 +21,7 @@
 - ✅ M02 技术选型 + 约束（`docs/design/tech-stack.md`）
 - ✅ M03 基础层设计（`docs/design/foundation.md`）
 - ✅ M04 服务层设计（`docs/design/services.md`）
+- ✅ M05 业务模块划分（`docs/design/business-modules.md`）
 
 ## 已定的架构决策
 
