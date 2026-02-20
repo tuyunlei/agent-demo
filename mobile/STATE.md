@@ -12,12 +12,13 @@
 
 ## 当前执行中
 
-- 🔄 **M03 基础层设计**：sub-agent (gpt-5.3-codex) 执行中，label: m03-foundation
+- 🔄 **M04 服务层设计**：sub-agent (gpt-5.3-codex) 执行中，label: m04-services
 
 ## 已完成
 
 - ✅ M01 架构原则 + 分层规范（`docs/design/principles.md`）
 - ✅ M02 技术选型 + 约束（`docs/design/tech-stack.md`）
+- ✅ M03 基础层设计（`docs/design/foundation.md`）
 
 ## 已定的架构决策
 
