@@ -20,7 +20,7 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | T0.1 | Cargo workspace 初始化 | ✅ | 创建 8 个 crate（空壳），`Cargo.toml` workspace 配置，`cargo check --workspace` 通过 |
-| T0.2 | GitHub Actions CI | ⏸ blocked | Linux runner，`cargo check + cargo test`，push/PR 触发（需要先建 GitHub repo） |
+| T0.2 | GitHub Actions CI | 🔲 | Linux runner，`cargo check + cargo test`，push/PR 触发（repo 已建） |
 
 ### Step 1：Echo 闭环
 
@@ -35,8 +35,8 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | T2.1 | JWT 认证 | ✅ | AuthService.Login（硬编码用户），JWT TokenPair，六边形四层贯通 |
-| T2.2 | Auth 拦截器 | 🔲 | tonic interceptor 验证 JWT，ChatService 受保护 |
-| T2.3 | grpcurl 验证 | 🔲 | login → 拿 token → 带 token 发消息，记录验证命令 |
+| T2.2 | Auth 拦截器 | ✅ | tonic interceptor 验证 JWT，ChatService 受保护，AuthService 不受保护 |
+| T2.3 | grpcurl 验证 | ✅ | login→token→带token发消息成功，无token被拒，错误密码被拒 |
 
 ### Step 3：真实 AI 回复
 

@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: review-pending
+## Phase: idle
 
 ---
 
@@ -14,9 +14,7 @@
 
 ## 当前执行中
 
-- **T2.2 Auth 拦截器** — gpt-5.3-codex sub-agent 执行中
-  - 分支：`feature/t2.2-auth-interceptor`
-  - 验收：ChatService 受保护，AuthService 不受保护
+（无）
 
 ## 阻塞点
 
@@ -28,7 +26,9 @@
 - ✅ T1.1 Proto 编译（tonic-build）
 - ✅ T1.2 最小 gRPC 服务（Echo）
 - ✅ T1.3 grpcurl 端到端验证（Step 1 完成）
-- ✅ T2.1 JWT 认证（AuthPort → AuthService → AuthHandler → HardcodedProvider，4 测试）
+- ✅ T2.1 JWT 认证（六边形四层贯通，4 测试）
+- ✅ T2.2 Auth 拦截器（ChatService 受保护，3 测试）
+- ✅ T2.3 grpcurl 完整认证验证（Step 2 完成）
 
 ## 关键决策
 
@@ -37,4 +37,4 @@
 
 ---
 
-*最后更新：2026-02-20*
+*最后更新：2026-02-21*
