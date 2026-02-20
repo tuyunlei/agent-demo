@@ -34,7 +34,7 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T2.1 | JWT 认证 | 🔲 | AuthService.Login（硬编码用户，不接 DB），返回 JWT TokenPair |
+| T2.1 | JWT 认证 | ✅ | AuthService.Login（硬编码用户），JWT TokenPair，六边形四层贯通 |
 | T2.2 | Auth 拦截器 | 🔲 | tonic interceptor 验证 JWT，ChatService 受保护 |
 | T2.3 | grpcurl 验证 | 🔲 | login → 拿 token → 带 token 发消息，记录验证命令 |
 
