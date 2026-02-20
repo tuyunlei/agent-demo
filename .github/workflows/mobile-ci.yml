@@ -26,6 +26,9 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
       - name: Build
         working-directory: mobile/AgentDemo
         run: |
@@ -35,7 +38,8 @@ jobs:
             -scheme AgentDemo \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee ../../build-raw.log | xcbeautify
 
       - name: Unit Tests
         working-directory: mobile/AgentDemo
@@ -47,4 +51,15 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             -configuration Debug \
             -skip-testing:AgentDemoUITests \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee ../../test-raw.log | xcbeautify
+
+      - name: Upload raw logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-raw-logs
+          path: |
+            build-raw.log
+            test-raw.log
+          retention-days: 7
