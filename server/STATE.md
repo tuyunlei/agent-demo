@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: review-pending
 
 ---
 
@@ -17,7 +17,9 @@ Phase 0 架构设计已完成（D01-D06 + S01-S03），进入实现阶段。
 
 ## 当前执行中
 
-（无）
+- **T1.2 最小 gRPC 服务（Echo）** — gpt-5.3-codex sub-agent 执行中
+  - 分支：`feature/t1.2-grpc-echo`
+  - 验收：`cargo check/test --workspace` + ChatServiceHandler 实现 + 单元测试
 
 ## 阻塞点
 
