@@ -1,0 +1,13 @@
+[package]
+name = "agent-server"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+agent-proto = { path = "../agent-proto" }
+agent-app = { path = "../agent-app" }
+agent-channel = { path = "../agent-channel" }
+agent-storage = { path = "../agent-storage" }
+agent-llm = { path = "../agent-llm" }
+agent-domain = { path = "../agent-domain" }
+agent-types = { path = "../agent-types" }

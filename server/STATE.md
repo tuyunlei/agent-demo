@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: review-pending
 
 ---
 
@@ -17,7 +17,9 @@ Phase 0 架构设计已完成（D01-D06 + S01-S03），进入实现阶段。
 
 ## 当前执行中
 
-（无）
+- **T0.1 Cargo workspace 初始化** — gpt-5.3-codex sub-agent 执行中
+  - 分支：`feature/t0.1-cargo-workspace`
+  - 验收：`cargo check --workspace` + `cargo test --workspace` + `cargo run -p agent-server`
 
 ## 阻塞点
 

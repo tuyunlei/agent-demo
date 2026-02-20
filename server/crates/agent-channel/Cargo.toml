@@ -1,0 +1,9 @@
+[package]
+name = "agent-channel"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+agent-app = { path = "../agent-app" }
+agent-domain = { path = "../agent-domain" }
+agent-types = { path = "../agent-types" }
