@@ -10,6 +10,8 @@ agent-types = { path = "../agent-types" }
 agent-proto = { path = "../agent-proto" }
 tonic = "0.12"
 tokio-stream = "0.1"
+prost-types = "0.13"
+async-trait = "0.1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

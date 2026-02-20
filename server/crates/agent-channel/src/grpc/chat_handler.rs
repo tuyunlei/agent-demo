@@ -29,7 +29,8 @@ impl ChatService for ChatServiceHandler {
         }))
     }
 
-    type SubscribeStream = Pin<Box<dyn tokio_stream::Stream<Item = Result<ChatEvent, Status>> + Send>>;
+    type SubscribeStream =
+        Pin<Box<dyn tokio_stream::Stream<Item = Result<ChatEvent, Status>> + Send>>;
 
     async fn subscribe(
         &self,

@@ -6,3 +6,9 @@ edition.workspace = true
 [dependencies]
 agent-domain = { path = "../agent-domain" }
 agent-types = { path = "../agent-types" }
+async-trait = "0.1"
+jsonwebtoken = "9"
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

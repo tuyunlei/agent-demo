@@ -5,3 +5,4 @@ edition.workspace = true
 
 [dependencies]
 agent-types = { path = "../agent-types" }
+async-trait = "0.1"
