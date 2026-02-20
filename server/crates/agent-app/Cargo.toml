@@ -1,0 +1,8 @@
+[package]
+name = "agent-app"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+agent-domain = { path = "../agent-domain" }
+agent-types = { path = "../agent-types" }
