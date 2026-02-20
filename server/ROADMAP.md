@@ -19,7 +19,7 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T0.1 | Cargo workspace 初始化 | 🔲 | 创建 8 个 crate（空壳），`Cargo.toml` workspace 配置，`cargo check --workspace` 通过 |
+| T0.1 | Cargo workspace 初始化 | ✅ | 创建 8 个 crate（空壳），`Cargo.toml` workspace 配置，`cargo check --workspace` 通过 |
 | T0.2 | GitHub Actions CI | 🔲 | Linux runner，`cargo check + cargo test`，push/PR 触发 |
 
 ### Step 1：Echo 闭环
