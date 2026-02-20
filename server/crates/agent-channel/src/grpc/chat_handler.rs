@@ -39,11 +39,15 @@ impl ChatService for ChatServiceHandler {
         );
 
         let user_text = extract_text(&req)?;
-        let _ai_reply = self
+        let ai_reply = self
             .runtime
             .handle_message(&user_text)
             .await
             .map_err(map_agent_error)?;
+
+        use agent_proto::ContentBlock;
+        use agent_proto::content_block::Kind;
+        use agent_proto::TextBlock;
 
         Ok(Response::new(SendMessageResponse {
             request_id: req.request_id,
@@ -53,6 +57,11 @@ impl ChatService for ChatServiceHandler {
                 req.session_id
             },
             user_message_id: "msg-001".to_string(),
+            assistant_content: vec![ContentBlock {
+                kind: Some(Kind::Text(TextBlock {
+                    text: ai_reply,
+                })),
+            }],
         }))
     }
 

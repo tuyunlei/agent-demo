@@ -25,6 +25,8 @@ message SendMessageResponse {
   string request_id = 1;
   string session_id = 2;
   string user_message_id = 3;
+  // MVP: AI reply returned inline (unary, no streaming)
+  repeated ContentBlock assistant_content = 4;
 }
 
 message SubscribeRequest {
