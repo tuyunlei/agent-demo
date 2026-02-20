@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: dev-pending
 
 ---
 
@@ -14,7 +14,9 @@
 
 ## 当前执行中
 
-（无）
+- **T2.2 Auth 拦截器** — gpt-5.3-codex sub-agent 执行中
+  - 分支：`feature/t2.2-auth-interceptor`
+  - 验收：ChatService 受保护，AuthService 不受保护
 
 ## 阻塞点
 
