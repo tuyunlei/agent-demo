@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package ai.agent.platform.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "ai/agent/platform/v1;platformv1";
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+message RegisterRequest {
+  string invite_code = 1;
+  string email = 2;
+  string password = 3;
+  string display_name = 4;
+}
+
+message RegisterResponse {
+  string user_id = 1;
+  TokenPair token_pair = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string device_name = 3;
+  string platform = 4;
+}
+
+message LoginResponse {
+  string user_id = 1;
+  TokenPair token_pair = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  TokenPair token_pair = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+  bool logout_all_devices = 2;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message TokenPair {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp access_token_expires_at = 3;
+  google.protobuf.Timestamp refresh_token_expires_at = 4;
+}

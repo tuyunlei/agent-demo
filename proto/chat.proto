@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package ai.agent.platform.v1;
+
+import "common.proto";
+
+option go_package = "ai/agent/platform/v1;platformv1";
+
+// MVP 三接口：SendMessage（unary）+ Subscribe（server stream）+ SubmitToolResult（unary）。
+service ChatService {
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  rpc Subscribe(SubscribeRequest) returns (stream ChatEvent);
+  rpc SubmitToolResult(SubmitToolResultRequest) returns (SubmitToolResultResponse);
+}
+
+message SendMessageRequest {
+  string request_id = 1;
+  string session_id = 2;
+  string agent_id = 3;
+  repeated ContentBlock content = 4;
+  map<string, string> metadata = 5;
+}
+
+message SendMessageResponse {
+  string request_id = 1;
+  string session_id = 2;
+  string user_message_id = 3;
+}
+
+message SubscribeRequest {
+  string session_id = 1;
+  string last_event_id = 2;
+}
+
+message ChatEvent {
+  string event_id = 1;
+  oneof event {
+    TextChunk text_chunk = 2;
+    ToolRequest tool_request = 3;
+    RoundComplete round_complete = 4;
+    ChatError error = 5;
+  }
+}
+
+message TextChunk {
+  string message_id = 1;
+  string text = 2;
+  bool is_final = 3;
+}
+
+message ToolRequest {
+  string tool_call_id = 1;
+  string tool_name = 2;
+  string arguments_json = 3;
+  int32 timeout_ms = 4;
+}
+
+message RoundComplete {
+  string request_id = 1;
+  string last_message_id = 2;
+  Usage usage = 3;
+}
+
+message ChatError {
+  ErrorCode code = 1;
+  string message = 2;
+  bool retryable = 3;
+  string request_id = 4;
+}
+
+message SubmitToolResultRequest {
+  string session_id = 1;
+  string tool_call_id = 2;
+  string result_json = 3;
+  bool is_error = 4;
+  string error_message = 5;
+}
+
+message SubmitToolResultResponse {
+  bool accepted = 1;
+}

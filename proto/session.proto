@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package ai.agent.platform.v1;
+
+import "common.proto";
+
+option go_package = "ai/agent/platform/v1;platformv1";
+
+service SessionService {
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  rpc ListSessionMessages(ListSessionMessagesRequest) returns (ListSessionMessagesResponse);
+}
+
+message GetSessionRequest {
+  string session_id = 1;
+}
+
+message GetSessionResponse {
+  Session session = 1;
+}
+
+message ListSessionsRequest {
+  PaginationRequest pagination = 1;
+  string agent_id = 2;
+  bool include_archived = 3;
+  SortOrder updated_at_order = 4;
+}
+
+message ListSessionsResponse {
+  repeated Session sessions = 1;
+  PaginationResponse pagination = 2;
+}
+
+message ListSessionMessagesRequest {
+  string session_id = 1;
+  PaginationRequest pagination = 2;
+  SortOrder created_at_order = 3;
+}
+
+message ListSessionMessagesResponse {
+  repeated ChatMessage messages = 1;
+  PaginationResponse pagination = 2;
+}

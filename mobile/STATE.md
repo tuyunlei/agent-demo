@@ -12,8 +12,7 @@
 
 ## 当前执行中
 
-- 🔄 **M06 应用集成层设计**：sub-agent 执行中，label: m06-app-integration
-- 🔄 **M07 Proto 定义**：sub-agent 执行中，label: m07-proto
+（无）
 
 ## 已完成
 
@@ -22,6 +21,8 @@
 - ✅ M03 基础层设计（`docs/design/foundation.md`）
 - ✅ M04 服务层设计（`docs/design/services.md`）
 - ✅ M05 业务模块划分（`docs/design/business-modules.md`）
+- ✅ M06 应用集成层设计（`docs/design/app-integration.md`）
+- ✅ M07 Proto 定义（`proto/` 目录 4 个 .proto 文件）
 
 ## 已定的架构决策
 
