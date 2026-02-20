@@ -1,0 +1,11 @@
+{
+	https_port 8443
+	http_port 8080
+}
+
+REDACTED_HOST:8443 {
+	reverse_proxy h2c://localhost:50051
+	tls {
+		dns cloudflare REDACTED_TOKEN
+	}
+}

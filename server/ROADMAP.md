@@ -19,32 +19,33 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T0.1 | Cargo workspace 初始化 | ✅ | 创建 8 个 crate（空壳），`Cargo.toml` workspace 配置，`cargo check --workspace` 通过 |
-| T0.2 | GitHub Actions CI | 🔲 | Linux runner，`cargo check + cargo test`，push/PR 触发（repo 已建） |
+| T0.1 | Cargo workspace 初始化 | ✅ | 创建 8 个 crate，DAG 依赖，cargo check/test 通过 |
+| T0.2 | GitHub Actions CI | ✅ | Linux runner，cargo check + test，path filter，push/PR 触发 |
 
 ### Step 1：Echo 闭环
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T1.1 | Proto 编译 | ✅ | tonic-build 配置，.proto → Rust 代码生成，放入 agent-proto crate |
-| T1.2 | 最小 gRPC 服务 | ✅ | ChatService.SendMessage echo 回传，agent-server 监听 [::1]:50051 |
-| T1.3 | grpcurl 端到端验证 | ✅ | SendMessage echo 通过，Subscribe 返回 Unimplemented |
+| T1.1 | Proto 编译 | ✅ | tonic-build，4 proto → Rust 代码生成 |
+| T1.2 | 最小 gRPC 服务 | ✅ | ChatService.SendMessage echo，[::1]:50051 |
+| T1.3 | grpcurl 端到端验证 | ✅ | Echo 通过，Step 1 完成 |
 
 ### Step 2：真实认证
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T2.1 | JWT 认证 | ✅ | AuthService.Login（硬编码用户），JWT TokenPair，六边形四层贯通 |
-| T2.2 | Auth 拦截器 | ✅ | tonic interceptor 验证 JWT，ChatService 受保护，AuthService 不受保护 |
-| T2.3 | grpcurl 验证 | ✅ | login→token→带token发消息成功，无token被拒，错误密码被拒 |
+| T2.1 | JWT 认证 | ✅ | AuthPort → AuthService → AuthHandler，六边形四层贯通 |
+| T2.2 | Auth 拦截器 | ✅ | tonic interceptor，ChatService 受保护 |
+| T2.3 | grpcurl 验证 | ✅ | 完整认证链路验证，Step 2 完成 |
 
-### Step 3：真实 AI 回复
+### Step 3：真实 AI 回复 + 部署
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T3.1 | LlmProvider Port + 适配器 | 🔲 | agent-domain 定义 LlmProvider trait，agent-llm 实现一个 provider（OpenAI 兼容 API） |
-| T3.2 | Agent Runtime 最小路径 | 🔲 | SendMessage → 构建上下文 → 调 LLM → 整块返回 AI 回复（unary，不做流式） |
-| T3.3 | grpcurl 验证 | 🔲 | 发消息 → 收到 AI 生成的回复 |
+| T3.1 | LlmProvider Port + 适配器 | 🔄 review | agent-domain LlmProvider trait + agent-llm OpenAI 兼容适配器 |
+| T3.2 | Agent Runtime 最小路径 | 🔲 | SendMessage → LLM(Kimi K2.5) → 整块返回 AI 回复 + 监听地址可配置 |
+| T3.3 | Caddy + TLS 部署 | 🔲 | REDACTED_HOST，Caddy 反代 gRPC，Let's Encrypt |
+| T3.4 | 公网 e2e 验证 | 🔲 | grpcurl 通过域名验证：登录 + 带 token 发消息 + 收到 AI 回复 |
 
 ### Step 4：持久化
 
@@ -98,4 +99,4 @@
 
 ---
 
-*最后更新：2026-02-20*
+*最后更新：2026-02-21*

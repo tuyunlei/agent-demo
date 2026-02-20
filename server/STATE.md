@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: dev-pending
 
 ---
 
@@ -14,7 +14,9 @@
 
 ## 当前执行中
 
-（无）
+- **T3.1 LlmProvider Port + 适配器** — gpt-5.3-codex sub-agent 执行中
+  - 分支：`feature/t3.1-llm-provider`
+  - 验收：LlmProvider trait in domain + OpenAiProvider in agent-llm + 解析测试
 
 ## 阻塞点
 
