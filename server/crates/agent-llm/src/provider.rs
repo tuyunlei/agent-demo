@@ -33,10 +33,7 @@ impl OpenAiProvider {
     }
 
     fn endpoint(&self) -> String {
-        format!(
-            "{}/chat/completions",
-            self.base_url.trim_end_matches('/')
-        )
+        format!("{}/chat/completions", self.base_url.trim_end_matches('/'))
     }
 
     fn build_request_body(&self, request: LlmRequest) -> OpenAiChatCompletionRequest {
@@ -192,7 +189,10 @@ mod tests {
         let value = serde_json::to_value(payload).expect("serialize payload");
 
         assert_eq!(value["model"], json!("gpt-test"));
-        assert_eq!(value["messages"], json!([{"role": "user", "content": "hello"}]));
+        assert_eq!(
+            value["messages"],
+            json!([{"role": "user", "content": "hello"}])
+        );
         assert_eq!(value["max_tokens"], json!(128));
 
         let temperature = value["temperature"]

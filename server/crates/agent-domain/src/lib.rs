@@ -1,6 +1,6 @@
 pub mod ports;
 
 pub use ports::{
-    AuthError, AuthPort, AuthResult, ChatMessage, LlmError, LlmProvider, LlmRequest, LlmResponse,
-    LlmUsage,
+    AgentError, AuthError, AuthPort, AuthResult, ChatMessage, LlmError, LlmProvider, LlmRequest,
+    LlmResponse, LlmUsage,
 };
