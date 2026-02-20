@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: review-pending
+## Phase: idle
 
 ---
 
@@ -17,9 +17,7 @@ Phase 0 架构设计已完成（D01-D06 + S01-S03），进入实现阶段。
 
 ## 当前执行中
 
-- **T1.1 Proto 编译** — gpt-5.3-codex sub-agent 执行中
-  - 分支：`feature/t1.1-proto-compile`
-  - 验收：`cargo check --workspace` + `cargo build -p agent-proto`
+（无）
 
 ## 阻塞点
 
@@ -28,6 +26,7 @@ Phase 0 架构设计已完成（D01-D06 + S01-S03），进入实现阶段。
 ## 已完成（Phase 1 Walking Skeleton）
 
 - ✅ T0.1 Cargo workspace 初始化（8 crate，DAG 依赖，cargo check/test 通过）
+- ✅ T1.1 Proto 编译（tonic-build，4 proto → Rust，AuthService/ChatService/SessionService 生成）
 
 ## 已完成（Phase 0 架构设计）
 
