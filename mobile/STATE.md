@@ -12,7 +12,7 @@
 
 ## 当前执行中
 
-（无）
+- 🔄 **M02 技术选型 + 约束**：sub-agent (gpt-5.3-codex) 执行中，label: m02-tech-stack
 
 ## 已完成
 
