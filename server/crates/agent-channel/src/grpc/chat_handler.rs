@@ -1,5 +1,6 @@
 use std::pin::Pin;
 
+use super::UserId;
 use agent_proto::chat_service_server::ChatService;
 use agent_proto::{
     ChatEvent, SendMessageRequest, SendMessageResponse, SubmitToolResultRequest,
@@ -15,8 +16,16 @@ impl ChatService for ChatServiceHandler {
         &self,
         request: Request<SendMessageRequest>,
     ) -> Result<Response<SendMessageResponse>, Status> {
+        let user_id = request
+            .extensions()
+            .get::<UserId>()
+            .map(|id| id.0.clone())
+            .unwrap_or_else(|| "unknown".to_string());
         let req = request.into_inner();
-        println!("Received SendMessage: request_id={}", req.request_id);
+        println!(
+            "Received SendMessage: request_id={}, user_id={}",
+            req.request_id, user_id
+        );
 
         Ok(Response::new(SendMessageResponse {
             request_id: req.request_id,

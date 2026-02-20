@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use agent_app::AuthService;
-use agent_channel::{AuthServiceHandler, ChatServiceHandler};
+use agent_channel::{AuthServiceHandler, ChatServiceHandler, auth_interceptor};
 use agent_domain::{AuthError, AuthPort, AuthResult};
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
@@ -34,11 +34,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "dev-secret-do-not-use-in-prod".to_string(),
     ));
 
+    let chat_service = ChatServiceServer::with_interceptor(
+        ChatServiceHandler,
+        auth_interceptor(auth_service.clone()),
+    );
+    let auth_service = AuthServiceServer::new(AuthServiceHandler::new(auth_service));
+
     Server::builder()
-        .add_service(ChatServiceServer::new(ChatServiceHandler))
-        .add_service(AuthServiceServer::new(AuthServiceHandler::new(
-            auth_service,
-        )))
+        .add_service(chat_service)
+        .add_service(auth_service)
         .serve(addr)
         .await?;
 
