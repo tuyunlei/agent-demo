@@ -28,6 +28,7 @@ Phase 0 架构设计已完成（D01-D06 + S01-S03），进入实现阶段。
 - ✅ T0.1 Cargo workspace 初始化（8 crate，DAG 依赖，cargo check/test 通过）
 - ✅ T1.1 Proto 编译（tonic-build，4 proto → Rust，AuthService/ChatService/SessionService 生成）
 - ✅ T1.2 最小 gRPC 服务（ChatServiceHandler echo，agent-server 监听 [::1]:50051，单元测试通过）
+- ✅ T1.3 grpcurl 端到端验证（SendMessage echo 通过，Step 1 完成）
 
 ## 已完成（Phase 0 架构设计）
 
