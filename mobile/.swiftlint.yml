@@ -1,0 +1,21 @@
+excluded:
+  - AgentDemo/Sources/GRPCClient/Generated
+  - .build
+
+line_length:
+  warning: 120
+  error: 200
+
+file_length:
+  warning: 300
+  error: 500
+
+function_body_length:
+  warning: 50
+  error: 100
+
+trailing_whitespace:
+  ignores_empty_lines: false
+
+trailing_newline: true
+vertical_whitespace: true

@@ -1,0 +1,4 @@
+--exclude AgentDemo/Sources/GRPCClient/Generated,**/.build
+--maxwidth 120
+--indent 4
+--swiftversion 5.0
