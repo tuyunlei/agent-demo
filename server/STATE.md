@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: dev-pending
+## Phase: idle
 
 ---
 
@@ -14,9 +14,7 @@
 
 ## 当前执行中
 
-- **QG1: fmt + clippy** — 开发 sub-agent 已派出（gpt-5.3-codex）
-  - 分支：`feature/qg-quality-gates`（PR #3）
-  - 内容：修复 fmt/clippy 问题 + CI 添加硬门禁
+无。QG1 已完成并 merge，准备推进 QG2。
 
 ## 阻塞点
 
@@ -33,6 +31,7 @@
 - ✅ T3.3 Caddy + TLS 部署（REDACTED_HOST:8443）
 - ✅ T3.4 公网 e2e 验证：Login → SendMessage → AI 回复 ✅
 - ✅ 安全加固（JWT secret + 密码环境变量化）
+- ✅ QG1: fmt + clippy（PR #3 merged to develop）
 
 ## 关键决策
 
