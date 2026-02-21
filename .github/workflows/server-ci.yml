@@ -30,6 +30,8 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -45,6 +47,12 @@ jobs:
             server/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('server/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
+
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --workspace -- -D warnings
 
       - name: cargo check
         run: cargo check --workspace
