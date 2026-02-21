@@ -1,5 +1,7 @@
 disabled_rules:
   - trailing_comma
+  # CI intermittently reports false-positive duplicate_imports with github-actions-logging reporter.
+  - duplicate_imports
 
 excluded:
   - AgentDemo/.build
