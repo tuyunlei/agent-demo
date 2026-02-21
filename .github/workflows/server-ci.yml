@@ -51,6 +51,9 @@ jobs:
       - name: Architecture dependency check
         run: bash scripts/check-arch-deps.sh
 
+      - name: File size and complexity check
+        run: bash scripts/check-file-size.sh
+
       - name: cargo fmt
         run: cargo fmt --all -- --check
 

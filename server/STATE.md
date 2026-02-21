@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: dev-pending
+## Phase: review-pending
 
 ---
 
@@ -14,8 +14,9 @@
 
 ## 当前执行中
 
-- **QG3: 文件大小 & 复杂度** — dev sub-agent 即将派出
-  - 任务：单文件 ≤300 行，单函数 ≤50 行检查脚本 + CI 门禁
+- **QG3: 文件大小 & 复杂度** — review sub-agent 已派出
+  - 分支：`feature/qg3-file-size`（PR #5，CI ✅）
+  - 开发验证：file size check ✅ fmt ✅ clippy ✅ check ✅ test ✅
 
 ## 阻塞点
 
