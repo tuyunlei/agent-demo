@@ -29,6 +29,10 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
+      - name: Resolve Swift Package dependencies
+        working-directory: mobile/AgentDemo
+        run: swift package resolve
+
       - name: Build
         working-directory: mobile/AgentDemo
         run: |

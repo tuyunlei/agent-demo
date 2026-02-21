@@ -9,9 +9,18 @@ import SwiftUI
 
 @main
 struct AgentDemoApp: App {
+    @StateObject private var appState = AppState()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if appState.isLoggedIn {
+                    ChatView()
+                } else {
+                    LoginView()
+                }
+            }
+            .environmentObject(appState)
         }
     }
 }
