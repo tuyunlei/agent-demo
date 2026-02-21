@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# File size & complexity checker for Swift files.
+# Known limitations (acceptable for our codebase):
+#   - Nested block comments (/* /* */ */) not tracked (uses boolean, not depth counter)
+#   - Multi-line string literals (""" ... """) not tracked across lines
+#   - Only standard named functions detected (no backticked/operator funcs)
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
