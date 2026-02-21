@@ -58,7 +58,7 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | QG1 | fmt + clippy | ✅ | 修复现有问题 + CI 加 `cargo fmt --check` + `cargo clippy -D warnings` |
-| QG2 | 架构依赖检查 | 🔲 | 脚本自动验证 crate 依赖方向 + source import 检查 + CI 硬门禁 |
+| QG2 | 架构依赖检查 | ✅ | 脚本自动验证 crate 依赖方向 + CI 硬门禁 |
 | QG3 | 文件大小 & 复杂度 | 🔲 | 单文件 ≤300 行，单函数 ≤50 行；脚本检查 + CI 硬门禁 |
 
 ### 功能质量（测试保障）

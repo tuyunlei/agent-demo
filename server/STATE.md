@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: review-pending
+## Phase: dev-pending
 
 ---
 
@@ -14,9 +14,8 @@
 
 ## 当前执行中
 
-- **QG2: 架构依赖检查** — review sub-agent 已派出（gpt-5.3-codex）
-  - 分支：`feature/qg2-arch-check`（PR #4）
-  - 开发验证：arch check ✅ fmt ✅ clippy ✅ check ✅ test ✅
+- **QG3: 文件大小 & 复杂度** — dev sub-agent 即将派出
+  - 任务：单文件 ≤300 行，单函数 ≤50 行检查脚本 + CI 门禁
 
 ## 阻塞点
 
@@ -33,7 +32,8 @@
 - ✅ T3.3 Caddy + TLS 部署（REDACTED_HOST:8443）
 - ✅ T3.4 公网 e2e 验证：Login → SendMessage → AI 回复 ✅
 - ✅ 安全加固（JWT secret + 密码环境变量化）
-- ✅ QG1: fmt + clippy（PR #3 merged to develop）
+- ✅ QG1: fmt + clippy（PR #3 merged）
+- ✅ QG2: 架构依赖检查（PR #4 merged）
 
 ## 关键决策
 
@@ -45,4 +45,4 @@
 
 ---
 
-*最后更新：2026-02-21*
+*最后更新：2026-02-22*
