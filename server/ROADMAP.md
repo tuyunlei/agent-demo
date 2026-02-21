@@ -43,9 +43,9 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | T3.1 | LlmProvider Port + 适配器 | ✅ | agent-domain LlmProvider trait + agent-llm OpenAI 兼容适配器 |
-| T3.2 | Agent Runtime 最小路径 | 🔲 | SendMessage → LLM(Kimi K2.5) → 整块返回 AI 回复 + 监听地址可配置 |
+| T3.2 | Agent Runtime 最小路径 | ✅ | SendMessage → AgentRuntime → LLM(Kimi K2.5) → 整块返回 AI 回复 |
 | T3.3 | Caddy + TLS 部署 | ✅ | REDACTED_HOST:8443，Caddy 反代 gRPC，Let's Encrypt DNS-01 |
-| T3.4 | 公网 e2e 验证 | 🔲 | grpcurl 通过域名验证：登录 + 带 token 发消息 + 收到 AI 回复 |
+| T3.4 | 公网 e2e 验证 | ✅ | grpcurl 通过公网 TLS：登录 + 发消息 + AI 回复 |
 
 ### Step 4：持久化
 
