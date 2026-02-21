@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: review-pending
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## 当前执行中
 
-无。下一步：MQG-infra（SPM Build Plugin 替换手动 protoc）。
+MQG-infra PR #9：CI watch + review sub-agent 运行中。
 
 ## 阻塞点
 
