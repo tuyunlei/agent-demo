@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "AgentDemoPackages",
-    platforms: [.iOS("26.2")],
+    platforms: [.iOS("18.0")],
     products: [
         .library(name: "GRPCClient", targets: ["GRPCClient"]),
     ],

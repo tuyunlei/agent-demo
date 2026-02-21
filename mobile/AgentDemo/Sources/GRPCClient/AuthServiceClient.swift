@@ -26,8 +26,10 @@ public struct AuthServiceClient {
                     method: "Login"
                 ),
                 serializer: ProtobufSerializer<Ai_Agent_Platform_V1_LoginRequest>(),
-                deserializer: ProtobufDeserializer<Ai_Agent_Platform_V1_LoginResponse>()
-            ).message
+                deserializer: ProtobufDeserializer<Ai_Agent_Platform_V1_LoginResponse>(),
+                options: .defaults,
+                onResponse: { try $0.message }
+            )
         }
     }
 }

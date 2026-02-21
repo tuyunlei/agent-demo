@@ -38,8 +38,10 @@ public struct ChatServiceClient {
                     method: "SendMessage"
                 ),
                 serializer: ProtobufSerializer<Ai_Agent_Platform_V1_SendMessageRequest>(),
-                deserializer: ProtobufDeserializer<Ai_Agent_Platform_V1_SendMessageResponse>()
-            ).message
+                deserializer: ProtobufDeserializer<Ai_Agent_Platform_V1_SendMessageResponse>(),
+                options: .defaults,
+                onResponse: { try $0.message }
+            )
         }
     }
 }
