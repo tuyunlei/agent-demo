@@ -2,6 +2,8 @@
 
 > Phase 0 架构设计已完成。进入 Phase 1 Walking Skeleton 实现。
 > 详细设计文档见 `docs/design/`
+>
+> **MVP 产品范围**：Login + Chat 两个页面，AI 回复整块返回（unary，不做流式）
 
 ---
 
@@ -33,7 +35,7 @@
 
 ## Phase 1：Walking Skeleton
 
-### Step 3：iOS 项目起步
+### Step 3：iOS 项目起步（已完成）
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
@@ -41,7 +43,7 @@
 | TM3.1b | grpc-swift v2 配置 | ✅ | SPM 依赖 + protoc .pb.swift + TLS channel + APIClient |
 | TM3.2 | GitHub Actions iOS CI | ✅ | macOS runner，Xcode 26.2，xcbeautify + raw log artifact |
 | TM3.3 | Login 页面 | ✅ | 登录 UI + AuthService.Login 调用 |
-| TM3.4 | Chat 页面 | ✅ | 聊天 UI + SendMessage 调用 + 显示 AI 回复 |
+| TM3.4 | Chat 页面 | ✅ | 聊天 UI + SendMessage 调用 |
 
 ---
 
@@ -54,13 +56,19 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | MQG1 | SwiftLint + SwiftFormat | ✅ | SwiftLint --strict + SwiftFormat --lint，CI 门禁（PR #7） |
-| MQG2 | 文件大小 & 复杂度 | 🔲 | 单文件 ≤300 行，单函数 ≤50 行；脚本扫 .swift 文件 + CI 门禁 |
+| MQG2 | 文件大小 & 复杂度 | ⏳ | 单文件 ≤300 行，单函数 ≤50 行；脚本 + CI 门禁（PR #8） |
+
+### 基础设施
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| MQG-infra | SPM Build Plugin 替代手动 protoc | 🔲 | 用 grpc-swift v2 官方 SPM plugin 自动从 .proto 生成 Swift 代码，删除 Generated/ 目录，proto 变更零成本同步 |
 
 ### 功能质量（测试保障）
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| MQG3 | 补充单元测试 | 🔲 | GRPCClient Service 层 + ViewModel 测试 |
+| MQG3 | ViewModel 重构 + 单元测试 | 🔲 | 业务逻辑从 View 抽到 ViewModel，ChatServiceClient 协议化可 mock，验证 AI 回复内容正确显示 |
 
 ### 质量铁律
 
@@ -70,9 +78,20 @@
 
 ---
 
+## 修复与补完
+
+> 质量门禁完成后，修复现有功能问题。
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| FIX-1 | Chat 页面显示 AI 回复 | 🔲 | 依赖 MQG-infra（proto 重新生成后才能访问 assistantContent 字段） |
+
+---
+
 ## Phase 1（续）：功能开发
 
-> MQG1-2 完成后恢复功能开发，MQG3 与后续功能交替推进。
+> 质量门禁 + 修复完成后恢复功能开发。
+> **Mobile 做完以下内容后暂停，等涂涂验收，之后与服务端同步推进。**
 
 ### Step 4：持久化
 
@@ -92,6 +111,14 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | TM6.1 | 会话列表页 | 🔲 | （MVP 后续，暂不实现） |
+
+---
+
+## 未来建设（待讨论）
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| OBS-1 | 日志与观测体系 | 🔲 | 客户端日志收集、错误上报、性能监控。待涂涂讨论后细化 |
 
 ---
 

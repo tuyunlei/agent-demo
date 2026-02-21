@@ -10,11 +10,11 @@
 
 ## 当前阶段
 
-**MQG1 完成，继续推进 MQG2（文件大小 & 复杂度检查）。**
+**iOS 质量底线建设中。** 推进顺序：MQG2 → MQG-infra（SPM plugin） → MQG3（ViewModel + 单测） → FIX-1（AI 回复显示）→ 暂停等涂涂验收。
 
 ## 当前执行中
 
-无。
+MQG2 PR #8 已开（dev sub-agent 完成），等 CI + review。
 
 ## 阻塞点
 
@@ -29,6 +29,10 @@
 - ✅ TM3.3 Login 页面
 - ✅ TM3.4 Chat 页面
 - ✅ MQG1 SwiftLint + SwiftFormat CI 门禁（PR #7）
+
+## 已知问题
+
+- Chat 页面显示 `[sent] request_id=...` 而非 AI 回复（FIX-1，依赖 MQG-infra 重新生成 proto）
 
 ---
 
