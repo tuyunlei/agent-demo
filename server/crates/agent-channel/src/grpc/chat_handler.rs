@@ -46,8 +46,8 @@ impl ChatService for ChatServiceHandler {
             .map_err(map_agent_error)?;
 
         use agent_proto::ContentBlock;
-        use agent_proto::content_block::Kind;
         use agent_proto::TextBlock;
+        use agent_proto::content_block::Kind;
 
         Ok(Response::new(SendMessageResponse {
             request_id: req.request_id,
@@ -58,9 +58,7 @@ impl ChatService for ChatServiceHandler {
             },
             user_message_id: "msg-001".to_string(),
             assistant_content: vec![ContentBlock {
-                kind: Some(Kind::Text(TextBlock {
-                    text: ai_reply,
-                })),
+                kind: Some(Kind::Text(TextBlock { text: ai_reply })),
             }],
         }))
     }
@@ -83,6 +81,7 @@ impl ChatService for ChatServiceHandler {
     }
 }
 
+#[allow(clippy::result_large_err)]
 fn extract_text(req: &SendMessageRequest) -> Result<String, Status> {
     let text_parts = req
         .content
