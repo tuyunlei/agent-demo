@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: dev-pending
 
 ---
 
@@ -14,7 +14,9 @@
 
 ## 当前执行中
 
-无。QG1 已完成并 merge，准备推进 QG2。
+- **QG2: 架构依赖检查** — dev sub-agent 已派出（gpt-5.3-codex）
+  - 分支：`feature/qg2-arch-check`
+  - 任务：编写依赖方向检查脚本 + CI 门禁
 
 ## 阻塞点
 
