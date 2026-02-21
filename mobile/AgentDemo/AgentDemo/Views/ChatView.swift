@@ -87,9 +87,9 @@ struct ChatView: View {
                     sessionID = response.sessionID
                 }
 
-                // Current proto returns ack fields only in SendMessageResponse.
-                // Keep a placeholder assistant bubble for walking-skeleton UX.
-                let assistantText = "[sent] request_id=\(response.requestID)"
+                let assistantText = response.assistantContent
+                    .compactMap { block in block.text.text }
+                    .joined()
                 messages.append(ChatMessage(role: .assistant, text: assistantText))
             } catch {
                 errorMessage = error.localizedDescription
