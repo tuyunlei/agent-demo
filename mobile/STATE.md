@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: review-pending
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## 当前执行中
 
-MQG2 PR #8 已开（dev sub-agent 完成），等 CI + review。
+MQG2 PR #8：CI watch 运行中 + review sub-agent 已派出。
 
 ## 阻塞点
 
