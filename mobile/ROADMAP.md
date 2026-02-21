@@ -8,7 +8,7 @@
 ## 技术选型
 
 - **gRPC 库**：grpc-swift v2（grpc-swift-protobuf + grpc-swift-nio-transport）— Swift Concurrency 原生
-- **Server 地址**：`REDACTED_HOST:443`（gRPC over TLS，Caddy 反代）
+- **Server 地址**：`REDACTED_HOST:8443`（gRPC over TLS，Caddy 反代）
 
 ---
 
@@ -37,11 +37,42 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| TM3.1a | Xcode 项目初始化 | ✅ | 涂涂创建，SwiftUI，iOS 26.2 |
-| TM3.1b | grpc-swift v2 配置 | 🔲 | SPM 依赖 + protoc 编译 .proto → Swift + TLS channel 配置 |
+| TM3.1a | Xcode 项目初始化 | ✅ | SwiftUI，iOS 26.2 |
+| TM3.1b | grpc-swift v2 配置 | ✅ | SPM 依赖 + protoc .pb.swift + TLS channel + APIClient |
 | TM3.2 | GitHub Actions iOS CI | ✅ | macOS runner，Xcode 26.2，xcbeautify + raw log artifact |
-| TM3.3 | Login 页面 | 🔲 | 登录 UI + AuthService.Login 调用 + token 存储（Keychain） |
-| TM3.4 | Chat 页面 | 🔲 | 聊天 UI + SendMessage 调用 + 显示 AI 回复（整块返回） |
+| TM3.3 | Login 页面 | ✅ | 登录 UI + AuthService.Login 调用 |
+| TM3.4 | Chat 页面 | ✅ | 聊天 UI + SendMessage 调用 + 显示 AI 回复 |
+
+---
+
+## Quality Gate：质量保障体系
+
+> 所有检查在 CI（macOS runner）中执行。VPS 无 Xcode，仅文件大小检查可本地跑。
+
+### 代码质量（自动门禁）
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| MQG1 | SwiftLint + SwiftFormat | 🔲 | SwiftLint --strict + SwiftFormat --lint，修复现有问题 + CI 门禁 |
+| MQG2 | 文件大小 & 复杂度 | 🔲 | 单文件 ≤300 行，单函数 ≤50 行；脚本扫 .swift 文件 + CI 门禁 |
+
+### 功能质量（测试保障）
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| MQG3 | 补充单元测试 | 🔲 | GRPCClient Service 层 + ViewModel 测试 |
+
+### 质量铁律
+
+- CI 红 = 不能 merge
+- 新功能 PR 必须包含对应测试
+- SwiftLint 警告视为错误（--strict）
+
+---
+
+## Phase 1（续）：功能开发
+
+> MQG1-2 完成后恢复功能开发，MQG3 与后续功能交替推进。
 
 ### Step 4：持久化
 
@@ -64,4 +95,4 @@
 
 ---
 
-*最后更新：2026-02-21*
+*最后更新：2026-02-22*
