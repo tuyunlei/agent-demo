@@ -23,7 +23,10 @@ let package = Package(
                 .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ],
-            path: "Sources/GRPCClient"
+            path: "Sources/GRPCClient",
+            plugins: [
+                .plugin(name: "GRPCProtobufGenerator", package: "grpc-swift-protobuf"),
+            ]
         ),
     ]
 )
