@@ -12,12 +12,12 @@ final class AgentDemoUITestsLaunchTests: XCTestCase {
         true
     }
 
-    override func setUpWithError() {
+    override func setUpWithError() throws {
         continueAfterFailure = false
     }
 
     @MainActor
-    func testLaunch() {
+    func testLaunch() throws {
         let app = XCUIApplication()
         app.launch()
 

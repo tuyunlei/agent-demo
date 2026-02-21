@@ -8,7 +8,7 @@
 import XCTest
 
 final class AgentDemoUITests: XCTestCase {
-    override func setUpWithError() {
+    override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
 
         // In UI tests it is usually best to stop immediately when a failure occurs.
@@ -19,12 +19,12 @@ final class AgentDemoUITests: XCTestCase {
         // The setUp method is a good place to do this.
     }
 
-    override func tearDownWithError() {
+    override func tearDownWithError() throws {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() {
+    func testExample() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
         app.launch()
@@ -33,7 +33,7 @@ final class AgentDemoUITests: XCTestCase {
     }
 
     @MainActor
-    func testLaunchPerformance() {
+    func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()
