@@ -7,3 +7,12 @@ target/
 .vscode/
 *.swp
 deploy/.env
+
+# macOS
+.DS_Store
+
+# Swift/Xcode
+.build/
+.swiftpm/
+*.xcodeproj/project.xcworkspace/xcshareddata/
+*.xcodeproj/xcuserdata/

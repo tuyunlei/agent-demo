@@ -1,6 +1,6 @@
 import Foundation
 import GRPCCore
-import GRPCNIOTransportHTTP2
+import GRPCNIOTransportHTTP2TransportServices
 
 public struct APIClient {
     public let host: String
@@ -11,15 +11,15 @@ public struct APIClient {
         self.port = port
     }
 
-    public func withClient<T>(
-        _ operation: @escaping (any GRPCClient) async throws -> T
+    public func withClient<T: Sendable>(
+        _ operation: @escaping (GRPCClient<HTTP2ClientTransport.TransportServices>) async throws -> T
     ) async throws -> T {
-        try await withGRPCClient(
-            transport: .http2NIOTransportServices(
-                target: .dns(host: self.host, port: self.port),
-                transportSecurity: .tls
-            )
-        ) { client in
+        let transport = try HTTP2ClientTransport.TransportServices(
+            target: .dns(host: self.host, port: self.port),
+            transportSecurity: .tls
+        )
+
+        return try await withGRPCClient(transport: transport) { client in
             try await operation(client)
         }
     }
