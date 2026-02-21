@@ -4,25 +4,23 @@
 
 ---
 
-## Phase: dev-pending
+## Phase: idle
 
 ---
 
 ## 当前阶段
 
-**Quality Gate 建设中**
+**Quality Gate 代码质量 + 功能质量已完成（QG1-4），准备恢复功能开发。**
 
 ## 当前执行中
 
-- **QG4: 补齐测试缺口** — dev sub-agent 已派出
-  - 目标：从 13 个测试增加到 ≥25 个
-  - 重点：agent-domain ports、agent-app service/runtime、agent-channel chat_handler 边界
+无。
 
 ## 阻塞点
 
 暂无。
 
-## 已完成（Phase 1 Walking Skeleton）
+## 已完成
 
 - ✅ T0.1~T0.2 工程脚手架
 - ✅ T1.1~T1.3 Echo 闭环
@@ -32,6 +30,7 @@
 - ✅ QG1: fmt + clippy
 - ✅ QG2: 架构依赖检查
 - ✅ QG3: 文件大小 & 复杂度检查
+- ✅ QG4: 补齐测试缺口（25 个测试）
 
 ---
 
