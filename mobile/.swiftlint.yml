@@ -1,6 +1,6 @@
 excluded:
+  - AgentDemo/.build
   - AgentDemo/Sources/GRPCClient/Generated
-  - .build
 
 line_length:
   warning: 120
@@ -17,5 +17,4 @@ function_body_length:
 trailing_whitespace:
   ignores_empty_lines: false
 
-trailing_newline: true
 vertical_whitespace: true
