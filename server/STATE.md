@@ -4,17 +4,19 @@
 
 ---
 
-## Phase: idle
+## Phase: dev-pending
 
 ---
 
 ## 当前阶段
 
-**Phase 1：Walking Skeleton — Step 3 完成 🎉**
+**Quality Gate 建设中**
 
 ## 当前执行中
 
-无。Server 端 Walking Skeleton e2e 已跑通。
+- **QG1: fmt + clippy** — 开发 sub-agent 已派出（gpt-5.3-codex）
+  - 分支：`feature/qg-quality-gates`（PR #3）
+  - 内容：修复 fmt/clippy 问题 + CI 添加硬门禁
 
 ## 阻塞点
 
