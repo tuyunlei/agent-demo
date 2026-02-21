@@ -1,6 +1,5 @@
-import Foundation
-import SwiftUI
 import Combine
+import SwiftUI
 
 @MainActor
 final class AppState: ObservableObject {

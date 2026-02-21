@@ -1,0 +1,5 @@
+--exclude AgentDemo/Sources/GRPCClient/Generated,AgentDemo/.build
+--maxwidth 120
+--indent 4
+--swiftversion 5.0
+--disable redundantThrows

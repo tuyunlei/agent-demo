@@ -33,6 +33,20 @@ jobs:
         working-directory: mobile/AgentDemo
         run: swift package resolve
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: SwiftLint
+        working-directory: mobile
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+      - name: Install SwiftFormat
+        run: brew install swiftformat
+
+      - name: SwiftFormat Check
+        working-directory: mobile
+        run: swiftformat --lint .
+
       - name: Build
         working-directory: mobile/AgentDemo
         run: |

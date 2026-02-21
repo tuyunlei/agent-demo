@@ -1,4 +1,3 @@
-import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2TransportServices
 
@@ -15,7 +14,7 @@ public struct APIClient {
         _ operation: @escaping (GRPCClient<HTTP2ClientTransport.TransportServices>) async throws -> T
     ) async throws -> T {
         let transport = try HTTP2ClientTransport.TransportServices(
-            target: .dns(host: self.host, port: self.port),
+            target: .dns(host: host, port: port),
             transportSecurity: .tls
         )
 

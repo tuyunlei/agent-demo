@@ -1,5 +1,5 @@
-import SwiftUI
 import GRPCClient
+import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject private var appState: AppState

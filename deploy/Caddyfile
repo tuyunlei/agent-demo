@@ -1,11 +1,18 @@
 {
 	https_port 8443
-	http_port 8080
+	auto_https disable_redirects
 }
 
 REDACTED_HOST:8443 {
 	reverse_proxy h2c://localhost:50051
 	tls {
 		dns cloudflare {env.CF_DNS_API_TOKEN}
+	}
+	log {
+		output file REDACTED_PATH {
+			roll_size 50mb
+			roll_keep 7
+		}
+		format json
 	}
 }

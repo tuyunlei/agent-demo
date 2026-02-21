@@ -1,5 +1,5 @@
-import SwiftUI
 import GRPCClient
+import SwiftUI
 
 struct ChatView: View {
     @EnvironmentObject private var appState: AppState
@@ -46,7 +46,7 @@ struct ChatView: View {
                 HStack(spacing: 8) {
                     TextField("Type a message", text: $inputText, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
-                        .lineLimit(1...4)
+                        .lineLimit(1 ... 4)
 
                     Button("Send", action: sendMessage)
                         .disabled(isSending || inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
