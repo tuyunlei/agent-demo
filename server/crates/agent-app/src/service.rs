@@ -132,6 +132,7 @@ fn current_unix_seconds() -> i64 {
 mod tests {
     use super::*;
     use agent_domain::{AuthError, AuthPort, AuthResult};
+    use jsonwebtoken::{EncodingKey, Header, encode};
 
     struct MockAuthPort {
         should_succeed: bool,
@@ -195,5 +196,87 @@ mod tests {
             .unwrap_err();
 
         assert_eq!(err, AuthServiceError::InvalidCredentials);
+    }
+
+    fn sign_test_token(secret: &str, claims: &Claims) -> String {
+        encode(
+            &Header::default(),
+            claims,
+            &EncodingKey::from_secret(secret.as_bytes()),
+        )
+        .expect("sign test token")
+    }
+
+    #[test]
+    fn validate_token_with_valid_access_token() {
+        let service = AuthService::new(
+            Arc::new(MockAuthPort {
+                should_succeed: true,
+            }),
+            "test-secret".to_string(),
+        );
+        let now = current_unix_seconds() as usize;
+        let token = sign_test_token(
+            "test-secret",
+            &Claims {
+                sub: "user-001".to_string(),
+                exp: now + 3600,
+                iat: now,
+                token_type: "access".to_string(),
+            },
+        );
+
+        let claims = service.validate_token(&token).expect("valid token");
+
+        assert_eq!(claims.sub, "user-001");
+        assert_eq!(claims.token_type, "access");
+    }
+
+    #[test]
+    fn validate_token_with_expired_token_fails() {
+        let service = AuthService::new(
+            Arc::new(MockAuthPort {
+                should_succeed: true,
+            }),
+            "test-secret".to_string(),
+        );
+        let now = current_unix_seconds() as usize;
+        let token = sign_test_token(
+            "test-secret",
+            &Claims {
+                sub: "user-001".to_string(),
+                exp: now.saturating_sub(120),
+                iat: now.saturating_sub(10),
+                token_type: "access".to_string(),
+            },
+        );
+
+        let result = service.validate_token(&token);
+
+        assert!(matches!(result, Err(AuthServiceError::TokenValidation)));
+    }
+
+    #[test]
+    fn validate_token_with_wrong_secret_fails() {
+        let service = AuthService::new(
+            Arc::new(MockAuthPort {
+                should_succeed: true,
+            }),
+            "correct-secret".to_string(),
+        );
+        let now = current_unix_seconds() as usize;
+        let token = sign_test_token(
+            "different-secret",
+            &Claims {
+                sub: "user-001".to_string(),
+                exp: now + 3600,
+                iat: now,
+                token_type: "access".to_string(),
+            },
+        );
+
+        let result = service.validate_token(&token);
+
+        assert!(matches!(result, Err(AuthServiceError::TokenValidation)));
     }
 }
