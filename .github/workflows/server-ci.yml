@@ -49,7 +49,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Architecture dependency check
-        run: bash server/scripts/check-arch-deps.sh
+        run: bash scripts/check-arch-deps.sh
 
       - name: cargo fmt
         run: cargo fmt --all -- --check
