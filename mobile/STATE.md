@@ -4,17 +4,17 @@
 
 ---
 
-## Phase: review-pending
+## Phase: idle
 
 ---
 
 ## 当前阶段
 
-**iOS 质量底线建设中。** 推进顺序：MQG2 → MQG-infra（SPM plugin） → MQG3（ViewModel + 单测） → FIX-1（AI 回复显示）→ 暂停等涂涂验收。
+**iOS 质量底线建设中。** 推进顺序：~~MQG2~~ → MQG-infra（SPM plugin） → MQG3（ViewModel + 单测） → FIX-1（AI 回复显示）→ 暂停等涂涂验收。
 
 ## 当前执行中
 
-MQG2 PR #8：CI watch 运行中 + review sub-agent 已派出。
+无。下一步：MQG-infra（SPM Build Plugin 替换手动 protoc）。
 
 ## 阻塞点
 
@@ -29,6 +29,7 @@ MQG2 PR #8：CI watch 运行中 + review sub-agent 已派出。
 - ✅ TM3.3 Login 页面
 - ✅ TM3.4 Chat 页面
 - ✅ MQG1 SwiftLint + SwiftFormat CI 门禁（PR #7）
+- ✅ MQG2 File size & complexity check（PR #8）
 
 ## 已知问题
 
