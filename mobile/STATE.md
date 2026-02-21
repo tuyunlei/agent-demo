@@ -10,11 +10,11 @@
 
 ## 当前阶段
 
-**Step 3 完成，准备建立 Quality Gate 体系（MQG1-3）。**
+**MQG1 完成，继续推进 MQG2（文件大小 & 复杂度检查）。**
 
 ## 当前执行中
 
-无。PR #1（TM3.1b-3.4）待 CI 后合入 develop。
+无。
 
 ## 阻塞点
 
@@ -28,6 +28,7 @@
 - ✅ TM3.2 GitHub Actions iOS CI
 - ✅ TM3.3 Login 页面
 - ✅ TM3.4 Chat 页面
+- ✅ MQG1 SwiftLint + SwiftFormat CI 门禁（PR #7）
 
 ---
 

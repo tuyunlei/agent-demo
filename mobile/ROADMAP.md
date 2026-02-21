@@ -53,7 +53,7 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| MQG1 | SwiftLint + SwiftFormat | 🔲 | SwiftLint --strict + SwiftFormat --lint，修复现有问题 + CI 门禁 |
+| MQG1 | SwiftLint + SwiftFormat | ✅ | SwiftLint --strict + SwiftFormat --lint，CI 门禁（PR #7） |
 | MQG2 | 文件大小 & 复杂度 | 🔲 | 单文件 ≤300 行，单函数 ≤50 行；脚本扫 .swift 文件 + CI 门禁 |
 
 ### 功能质量（测试保障）
