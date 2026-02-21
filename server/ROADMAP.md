@@ -47,13 +47,54 @@
 | T3.3 | Caddy + TLS 部署 | ✅ | REDACTED_HOST:8443，Caddy 反代 gRPC，Let's Encrypt DNS-01 |
 | T3.4 | 公网 e2e 验证 | ✅ | grpcurl 通过公网 TLS：登录 + 发消息 + AI 回复 |
 
+---
+
+## Quality Gate：质量保障体系
+
+> 独立于功能 Step，按顺序逐步推进。每项完成后即在 CI 中强制执行，不可绕过。
+
+### 代码质量（自动门禁）
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| QG1 | fmt + clippy | ✅ | 修复现有问题 + CI 加 `cargo fmt --check` + `cargo clippy -D warnings` |
+| QG2 | 架构依赖检查 | ✅ | 脚本自动验证 crate 依赖方向 + CI 硬门禁 |
+| QG3 | 文件大小 & 复杂度 | ✅ | 单文件 ≤300 行，单函数 ≤50 行；脚本检查 + CI 硬门禁 |
+
+### 功能质量（测试保障）
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| QG4 | 补齐现有测试缺口 | ✅ | 逐模块盘点 + 补充单测（13→25 个） |
+| QG5 | 覆盖率工具 + CI 阈值 | 🔲 | cargo-tarpaulin/llvm-cov + CI 报告 + 最低阈值（棘轮：只升不降） |
+
+### 长期防劣化
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| QG6 | 集成测试框架 | 🔲 | CI service container (PG) + #[ignore] 测试在 CI 中跑 |
+| QG7 | 验收测试脚本化 | 🔲 | 关键业务流程 grpcurl 脚本，部署后自动验证 |
+
+### 质量铁律（QG 全部就位后强制执行）
+
+- CI 红 = 不能 merge，没有例外
+- 新功能 PR 必须包含对应测试
+- 覆盖率只升不降（棘轮机制）
+- review sub-agent 对照验收标准逐项检查
+
+---
+
+## Phase 1（续）：功能开发
+
+> QG1-3 完成后恢复功能开发，后续功能开发与 QG4-7 交替推进。
+
 ### Step 4：持久化
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T4.1 | PostgreSQL 接入 | 🔲 | agent-storage crate，sqlx，users + sessions + messages 表 |
-| T4.2 | 真实用户注册/登录 | 🔲 | AuthService.Register，密码哈希，DB 存储 |
-| T4.3 | 消息持久化 | 🔲 | 聊天记录入库，历史消息查询 |
+| T4.1 | PostgreSQL 接入 | 🔲 | agent-storage crate，sqlx，users 表 + UserStore 实现 |
+| T4.2 | 真实用户注册/登录 | 🔲 | AuthService.Register，密码哈希（argon2），DB 存储 |
+| T4.3 | 消息持久化 | 🔲 | MessageStore 实现，聊天记录入库 + 历史查询 |
 
 ### Step 5：韧性
 

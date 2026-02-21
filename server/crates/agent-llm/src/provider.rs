@@ -33,10 +33,7 @@ impl OpenAiProvider {
     }
 
     fn endpoint(&self) -> String {
-        format!(
-            "{}/chat/completions",
-            self.base_url.trim_end_matches('/')
-        )
+        format!("{}/chat/completions", self.base_url.trim_end_matches('/'))
     }
 
     fn build_request_body(&self, request: LlmRequest) -> OpenAiChatCompletionRequest {
@@ -192,7 +189,10 @@ mod tests {
         let value = serde_json::to_value(payload).expect("serialize payload");
 
         assert_eq!(value["model"], json!("gpt-test"));
-        assert_eq!(value["messages"], json!([{"role": "user", "content": "hello"}]));
+        assert_eq!(
+            value["messages"],
+            json!([{"role": "user", "content": "hello"}])
+        );
         assert_eq!(value["max_tokens"], json!(128));
 
         let temperature = value["temperature"]
@@ -243,5 +243,41 @@ mod tests {
             OpenAiProvider::map_http_error(StatusCode::INTERNAL_SERVER_ERROR, "oops".into()),
             LlmError::ProviderError("oops".into())
         );
+    }
+
+    #[test]
+    fn empty_messages_serialization() {
+        let provider = OpenAiProvider::with_config("k", "https://example.com/v1", "gpt-test");
+        let request = LlmRequest {
+            messages: vec![],
+            model: None,
+            temperature: None,
+            max_tokens: None,
+        };
+
+        let payload = provider.build_request_body(request);
+        let value = serde_json::to_value(payload).expect("serialize payload");
+
+        assert_eq!(value["messages"], json!([]));
+        assert_eq!(value["model"], json!("gpt-test"));
+    }
+
+    #[test]
+    fn response_missing_choices_returns_error() {
+        let raw = r#"{"model":"gpt-4o-mini","choices":[],"usage":null}"#;
+
+        let err = OpenAiProvider::parse_success_body(raw).expect_err("should fail");
+
+        assert_eq!(
+            err,
+            LlmError::ProviderError("missing choices[0].message.content".into())
+        );
+    }
+
+    #[test]
+    fn rate_limit_429_maps_to_rate_limited() {
+        let err = OpenAiProvider::map_http_error(StatusCode::TOO_MANY_REQUESTS, "retry".into());
+
+        assert_eq!(err, LlmError::RateLimited);
     }
 }

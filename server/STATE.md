@@ -4,39 +4,34 @@
 
 ---
 
-## Phase: dev-pending
+## Phase: idle
 
 ---
 
 ## 当前阶段
 
-**Phase 1：Walking Skeleton**
+**Quality Gate 代码质量 + 功能质量已完成（QG1-4），准备恢复功能开发。**
 
 ## 当前执行中
 
-- **T3.1 LlmProvider Port + 适配器** — gpt-5.3-codex sub-agent 执行中
-  - 分支：`feature/t3.1-llm-provider`
-  - 验收：LlmProvider trait in domain + OpenAiProvider in agent-llm + 解析测试
+无。
 
 ## 阻塞点
 
 暂无。
 
-## 已完成（Phase 1 Walking Skeleton）
+## 已完成
 
-- ✅ T0.1 Cargo workspace 初始化
-- ✅ T1.1 Proto 编译（tonic-build）
-- ✅ T1.2 最小 gRPC 服务（Echo）
-- ✅ T1.3 grpcurl 端到端验证（Step 1 完成）
-- ✅ T2.1 JWT 认证（六边形四层贯通，4 测试）
-- ✅ T2.2 Auth 拦截器（ChatService 受保护，3 测试）
-- ✅ T2.3 grpcurl 完整认证验证（Step 2 完成）
-
-## 关键决策
-
-- MVP 不做流式回复，AI 回复整块返回（unary）
-- 协议：gRPC（tonic）
+- ✅ T0.1~T0.2 工程脚手架
+- ✅ T1.1~T1.3 Echo 闭环
+- ✅ T2.1~T2.3 真实认证
+- ✅ T3.1~T3.4 真实 AI 回复 + 部署
+- ✅ 安全加固
+- ✅ QG1: fmt + clippy
+- ✅ QG2: 架构依赖检查
+- ✅ QG3: 文件大小 & 复杂度检查
+- ✅ QG4: 补齐测试缺口（25 个测试）
 
 ---
 
-*最后更新：2026-02-21*
+*最后更新：2026-02-22*
