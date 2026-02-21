@@ -33,6 +33,10 @@ jobs:
         working-directory: mobile/AgentDemo
         run: swift package resolve
 
+      - name: File Size Check
+        working-directory: mobile
+        run: bash scripts/check-file-size.sh
+
       - name: Install SwiftLint
         run: brew install swiftlint
 
