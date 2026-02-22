@@ -4,17 +4,17 @@
 
 ---
 
-## Phase: idle
+## Phase: dev-pending
 
 ---
 
 ## 当前阶段
 
-**Quality Gate 完成，进入 Step 4 持久化。** 下一步 T4.1 PostgreSQL 接入。
+**Step 4 持久化。** T4.1 PostgreSQL 接入。
 
 ## 当前执行中
 
-无。
+- T4.1 dev sub-agent（gpt-5.3-codex）：PostgreSQL + sqlx + bcrypt，分支 `feature/t4.1-postgresql`
 
 ## 阻塞点
 
