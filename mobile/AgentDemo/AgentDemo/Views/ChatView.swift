@@ -1,21 +1,15 @@
-import GRPCClient
 import SwiftUI
 
 struct ChatView: View {
     @EnvironmentObject private var appState: AppState
 
+    @StateObject private var viewModel = ChatViewModel()
     @State private var inputText = ""
-    @State private var messages: [ChatMessage] = []
-    @State private var isSending = false
-    @State private var errorMessage: String?
-    @State private var sessionID = ""
-
-    private let chatClient = ChatServiceClient()
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                List(messages) { message in
+                List(viewModel.messages) { message in
                     HStack {
                         if message.role == .assistant { Spacer(minLength: 40) }
 
@@ -35,7 +29,7 @@ struct ChatView: View {
                 }
                 .listStyle(.plain)
 
-                if let errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(.red)
                         .font(.footnote)
@@ -49,7 +43,7 @@ struct ChatView: View {
                         .lineLimit(1 ... 4)
 
                     Button("Send", action: sendMessage)
-                        .disabled(isSending || inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(viewModel.isSending || inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 .padding()
             }
@@ -69,56 +63,9 @@ struct ChatView: View {
         guard !text.isEmpty, let token = appState.accessToken else { return }
 
         inputText = ""
-        errorMessage = nil
-        isSending = true
-        messages.append(ChatMessage(role: .user, text: text))
 
         Task {
-            defer { isSending = false }
-            do {
-                let response = try await chatClient.sendMessage(
-                    token: token,
-                    requestID: UUID().uuidString,
-                    text: text,
-                    sessionID: sessionID
-                )
-
-                if !response.sessionID.isEmpty {
-                    sessionID = response.sessionID
-                }
-
-                let assistantTextBlocks = response.assistantContent.compactMap { block -> String? in
-                    switch block.kind {
-                    case let .text(textBlock):
-                        return textBlock.text
-                    default:
-                        return nil
-                    }
-                }
-                let assistantText = assistantTextBlocks.joined(separator: "\n")
-                let displayText = assistantText.isEmpty ? "(no response)" : assistantText
-                messages.append(ChatMessage(role: .assistant, text: displayText))
-            } catch {
-                errorMessage = error.localizedDescription
-            }
+            await viewModel.sendMessage(text: text, token: token)
         }
     }
-}
-
-private struct ChatMessage: Identifiable {
-    enum Role {
-        case user
-        case assistant
-
-        var title: String {
-            switch self {
-            case .user: return "You"
-            case .assistant: return "Assistant"
-            }
-        }
-    }
-
-    let id = UUID()
-    let role: Role
-    let text: String
 }

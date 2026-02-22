@@ -1,0 +1,132 @@
+@testable import AgentDemo
+import GRPCClient
+import Testing
+
+@MainActor
+struct ChatViewModelTests {
+    @Test func sendMessage_appendsUserAndAssistantMessages() async throws {
+        let mockService = MockChatService()
+        await mockService.enqueue(result: .success(makeResponse(texts: ["Hello from AI"])))
+        let viewModel = ChatViewModel(chatService: mockService)
+
+        await viewModel.sendMessage(text: "Hi", token: "token")
+
+        #expect(viewModel.messages.count == 2)
+        #expect(viewModel.messages[0].role == .user)
+        #expect(viewModel.messages[0].text == "Hi")
+        #expect(viewModel.messages[1].role == .assistant)
+        #expect(viewModel.messages[1].text == "Hello from AI")
+    }
+
+    @Test func sendMessage_usesFallbackWhenAssistantContentIsEmpty() async throws {
+        let mockService = MockChatService()
+        await mockService.enqueue(result: .success(makeResponse(texts: [])))
+        let viewModel = ChatViewModel(chatService: mockService)
+
+        await viewModel.sendMessage(text: "Hi", token: "token")
+
+        #expect(viewModel.messages.count == 2)
+        #expect(viewModel.messages[1].text == "(no response)")
+    }
+
+    @Test func sendMessage_setsErrorMessageWhenServiceFails() async throws {
+        let mockService = MockChatService()
+        await mockService.enqueue(result: .failure(MockError.network))
+        let viewModel = ChatViewModel(chatService: mockService)
+
+        await viewModel.sendMessage(text: "Hi", token: "token")
+
+        #expect(viewModel.errorMessage != nil)
+        #expect(viewModel.messages.count == 1)
+        #expect(viewModel.messages[0].role == .user)
+    }
+
+    @Test func sendMessage_updatesSendingStateDuringRequest() async throws {
+        let mockService = MockChatService()
+        await mockService.enqueue(result: .success(makeResponse(texts: ["Done"])), delayNanoseconds: 150_000_000)
+        let viewModel = ChatViewModel(chatService: mockService)
+
+        let task = Task {
+            await viewModel.sendMessage(text: "Hi", token: "token")
+        }
+
+        try await Task.sleep(nanoseconds: 30_000_000)
+        #expect(viewModel.isSending)
+
+        await task.value
+        #expect(!viewModel.isSending)
+    }
+
+    @Test func sendMessage_persistsSessionIDFromResponse() async throws {
+        let mockService = MockChatService()
+        await mockService.enqueue(result: .success(makeResponse(texts: ["OK"], sessionID: "session-123")))
+        let viewModel = ChatViewModel(chatService: mockService)
+
+        await viewModel.sendMessage(text: "Hi", token: "token")
+
+        #expect(viewModel.sessionID == "session-123")
+    }
+
+    private func makeResponse(texts: [String], sessionID: String = "") -> Ai_Agent_Platform_V1_SendMessageResponse {
+        var response = Ai_Agent_Platform_V1_SendMessageResponse()
+        response.sessionID = sessionID
+        response.assistantContent = texts.map { text in
+            var textBlock = Ai_Agent_Platform_V1_TextBlock()
+            textBlock.text = text
+
+            var contentBlock = Ai_Agent_Platform_V1_ContentBlock()
+            contentBlock.text = textBlock
+            return contentBlock
+        }
+        return response
+    }
+}
+
+private actor MockChatService: ChatServiceProtocol {
+    private var queue: [QueuedResult] = []
+
+    func enqueue(
+        result: Result<Ai_Agent_Platform_V1_SendMessageResponse, Error>,
+        delayNanoseconds: UInt64 = 0
+    ) {
+        queue.append(QueuedResult(result: result, delayNanoseconds: delayNanoseconds))
+    }
+
+    func sendMessage(
+        token: String,
+        requestID: String,
+        text: String,
+        sessionID: String,
+        agentID: String
+    ) async throws -> Ai_Agent_Platform_V1_SendMessageResponse {
+        guard !queue.isEmpty else {
+            throw MockError.missingStub
+        }
+
+        let next = queue.removeFirst()
+        if next.delayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: next.delayNanoseconds)
+        }
+
+        return try next.result.get()
+    }
+}
+
+private struct QueuedResult {
+    let result: Result<Ai_Agent_Platform_V1_SendMessageResponse, Error>
+    let delayNanoseconds: UInt64
+}
+
+private enum MockError: LocalizedError {
+    case network
+    case missingStub
+
+    var errorDescription: String? {
+        switch self {
+        case .network:
+            return "Network error"
+        case .missingStub:
+            return "Missing stubbed response"
+        }
+    }
+}
