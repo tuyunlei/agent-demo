@@ -64,10 +64,43 @@ pub enum LlmError {
     Timeout,
 }
 
+#[async_trait::async_trait]
+pub trait MessageStore: Send + Sync {
+    async fn create_session(&self, user_id: &str, agent_id: &str) -> Result<String, StoreError>;
+    async fn save_message(
+        &self,
+        session_id: &str,
+        role: &str,
+        content: &str,
+    ) -> Result<String, StoreError>;
+    async fn get_session_messages(
+        &self,
+        session_id: &str,
+        limit: i64,
+    ) -> Result<Vec<StoredMessage>, StoreError>;
+    async fn get_or_create_default_session(&self, user_id: &str) -> Result<String, StoreError>;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredMessage {
+    pub id: String,
+    pub session_id: String,
+    pub role: String,
+    pub content: String,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StoreError {
+    NotFound(String),
+    Internal(String),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AgentError {
     InvalidInput(String),
     Llm(LlmError),
+    Store(StoreError),
 }
 
 impl From<LlmError> for AgentError {
@@ -76,9 +109,15 @@ impl From<LlmError> for AgentError {
     }
 }
 
+impl From<StoreError> for AgentError {
+    fn from(value: StoreError) -> Self {
+        Self::Store(value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{AgentError, AuthError, LlmError};
+    use super::{AgentError, AuthError, LlmError, StoreError};
 
     #[test]
     fn auth_error_variants() {
@@ -117,5 +156,15 @@ mod tests {
         let err = AgentError::from(LlmError::RateLimited);
 
         assert_eq!(err, AgentError::Llm(LlmError::RateLimited));
+    }
+
+    #[test]
+    fn agent_error_from_store_error() {
+        let err = AgentError::from(StoreError::Internal("db down".to_string()));
+
+        assert_eq!(
+            err,
+            AgentError::Store(StoreError::Internal("db down".to_string()))
+        );
     }
 }
