@@ -1,4 +1,5 @@
 @testable import AgentDemo
+import Foundation
 import GRPCClient
 import Testing
 
