@@ -195,7 +195,7 @@ while IFS= read -r -d '' file; do
   ' "$file"; then
     violations=1
   fi
-done < <(find AgentDemo -type f -name '*.swift' ! -path '*/Sources/GRPCClient/Generated/*' ! -path '*/Generated/*' ! -path '*/.build/*' -print0)
+done < <(find AgentDemo -type f -name '*.swift' ! -path '*/.build/*' -print0)
 
 if [[ "$violations" -ne 0 ]]; then
   exit 1

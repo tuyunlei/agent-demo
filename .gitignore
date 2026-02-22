@@ -16,3 +16,4 @@ deploy/.env
 .swiftpm/
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
+mobile/AgentDemo/Sources/GRPCClient/Generated/
