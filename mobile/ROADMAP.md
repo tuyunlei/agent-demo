@@ -99,6 +99,7 @@
 |---|------|------|------|
 | TM-REG | 用户注册 | ✅ | PR #7，LoginView Sign In/Sign Up 切换 + AuthServiceClient.register |
 | TM-PERSIST | Token + Session 持久化 | ✅ | PR #9，Keychain 存 token + UserDefaults 存 sessionID |
+| TM-HISTORY | 聊天历史加载 | ✅ | PR #11，SessionServiceClient + ChatView 启动加载历史 |
 | TM4.1 | GRDB + SQLite | 🔲 | 本地消息缓存，离线查看历史 |
 
 ### Step 5：韧性

@@ -108,7 +108,7 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T6.1 | SessionService | 🔲 | 会话 CRUD（创建、列表、归档） |
+| T6.1 | ListSessionMessages | ✅ | PR #10，SessionServiceHandler + 分页查询 + 2 单测 |
 | T6.2 | 多会话隔离 | 🔲 | 不同会话独立上下文 |
 
 ---
