@@ -61,6 +61,7 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
+            -skipPackagePluginValidation \
             2>&1 | tee ../../build-raw.log | xcbeautify
 
       - name: Unit Tests
@@ -74,6 +75,7 @@ jobs:
             -configuration Debug \
             -skip-testing:AgentDemoUITests \
             CODE_SIGNING_ALLOWED=NO \
+            -skipPackagePluginValidation \
             2>&1 | tee ../../test-raw.log | xcbeautify
 
       - name: Upload raw logs
