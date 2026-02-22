@@ -65,3 +65,21 @@ jobs:
 
       - name: cargo test
         run: cargo test --workspace
+
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --locked
+
+      - name: Coverage check
+        run: |
+          OUTPUT=$(cargo tarpaulin --workspace \
+            --exclude-files '*/build.rs' '*/src/main.rs' '*_tests.rs' '*.pb.rs' \
+            --skip-clean 2>&1)
+          echo "$OUTPUT" | tail -5
+          COVERAGE=$(echo "$OUTPUT" | grep -oP '[\d.]+% coverage' | grep -oP '[\d.]+')
+          echo "Coverage: ${COVERAGE}%"
+          THRESHOLD=50
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          fi
+          echo "✅ Coverage ${COVERAGE}% meets threshold ${THRESHOLD}%"
