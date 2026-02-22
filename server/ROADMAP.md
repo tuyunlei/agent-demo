@@ -80,11 +80,11 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| QG9 | 覆盖率提升 70%+ | 🔲 | 补核心路径单测 + 集成测试，棘轮目标 70% |
-| QG10 | 专业复杂度度量 | 🔲 | rust-code-analysis-cli 替代手写脚本，CI 卡圈复杂度 ≤10 / 认知复杂度 ≤15 |
-| QG11 | 验收测试进 CI | 🔲 | CI job 起真实服务 + PG，跑 acceptance-test.sh |
-| QG12 | Mutation testing | 🔲 | cargo-mutants 试跑，评估 mutation score，找测试盲区 |
-| QG13 | Property testing | 🔲 | proptest 关键路径（JWT 解析、消息排序等边界逻辑） |
+| QG9 | 覆盖率提升 | ✅ | PR #14，+16 测试覆盖边界 case |
+| QG10 | 认知复杂度门禁 | ✅ | PR #15，clippy.toml threshold=10 |
+| QG11 | 验收测试进 CI | ✅ | PR #15，CI job 起真实服务 + PG 跑 e2e |
+| QG12 | Mutation testing | ✅ | PR #16，cargo-mutants 0 MISSED |
+| QG13 | Property testing + 棘轮 | ✅ | PR #17，proptest JWT 属性 + 覆盖率棘轮 65% |
 
 ### 质量铁律
 

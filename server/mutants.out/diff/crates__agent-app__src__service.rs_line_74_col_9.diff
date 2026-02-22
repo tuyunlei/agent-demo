@@ -1,0 +1,43 @@
+--- crates/agent-app/src/service.rs
++++ replace AuthService::register -> Result<LoginResult, AuthServiceError> with Ok(Default::default())
+@@ -66,39 +66,17 @@
+     }
+ 
+     pub async fn register(
+         &self,
+         email: &str,
+         password: &str,
+         display_name: &str,
+     ) -> Result<LoginResult, AuthServiceError> {
+-        if email.trim().is_empty() {
+-            return Err(AuthServiceError::InvalidInput(
+-                "email is required".to_string(),
+-            ));
+-        }
+-        if password.trim().is_empty() {
+-            return Err(AuthServiceError::InvalidInput(
+-                "password is required".to_string(),
+-            ));
+-        }
+-
+-        let user = self
+-            .auth_port
+-            .create_user(email, password, display_name)
+-            .await
+-            .map_err(map_auth_error)?;
+-
+-        let token_pair = self.create_token_pair(&user.user_id)?;
+-
+-        Ok(LoginResult {
+-            user_id: user.user_id,
+-            token_pair,
+-        })
++        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     pub fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
+         let mut validation = Validation::new(Algorithm::HS256);
+         validation.validate_exp = true;
+ 
+         let token_data = decode::<Claims>(
+             token,

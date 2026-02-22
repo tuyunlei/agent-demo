@@ -1,0 +1,21 @@
+--- crates/agent-app/src/runtime.rs
++++ replace match guard !id.trim().is_empty() with true in AgentRuntime::handle_message
+@@ -34,17 +34,17 @@
+     ) -> Result<HandleMessageResult, AgentError> {
+         if user_message.trim().is_empty() {
+             return Err(AgentError::InvalidInput(
+                 "message content cannot be empty".into(),
+             ));
+         }
+ 
+         let session_id = match session_id {
+-            Some(id) if !id.trim().is_empty() => id.to_string(),
++            Some(id) if true /* ~ changed by cargo-mutants ~ */ => id.to_string(),
+             _ => {
+                 self.message_store
+                     .get_or_create_default_session(user_id)
+                     .await?
+             }
+         };
+ 
+         self.message_store

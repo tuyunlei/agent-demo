@@ -1,0 +1,129 @@
+
+*** crates/agent-app/src/service.rs:100:9: replace AuthService::validate_token -> Result<Claims, AuthServiceError> with Ok(Default::default())
+
+*** mutation diff:
+--- crates/agent-app/src/service.rs
++++ replace AuthService::validate_token -> Result<Claims, AuthServiceError> with Ok(Default::default())
+@@ -92,27 +92,17 @@
+ 
+         Ok(LoginResult {
+             user_id: user.user_id,
+             token_pair,
+         })
+     }
+ 
+     pub fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
+-        let mut validation = Validation::new(Algorithm::HS256);
+-        validation.validate_exp = true;
+-
+-        let token_data = decode::<Claims>(
+-            token,
+-            &DecodingKey::from_secret(self.jwt_secret.as_bytes()),
+-            &validation,
+-        )
+-        .map_err(|_| AuthServiceError::TokenValidation)?;
+-
+-        Ok(token_data.claims)
++        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     fn create_token_pair(&self, user_id: &str) -> Result<TokenPair, AuthServiceError> {
+         let now = current_unix_seconds();
+         let access_exp = now + ACCESS_TOKEN_TTL_SECONDS;
+         let refresh_exp = now + REFRESH_TOKEN_TTL_SECONDS;
+ 
+         let access_token = self
+
+
+*** REDACTED_PATH test --no-run --verbose --package=agent-app@0.1.0
+       Fresh unicode-ident v1.0.24
+       Fresh proc-macro2 v1.0.106
+       Fresh autocfg v1.5.0
+       Fresh find-msvc-tools v0.1.9
+       Fresh shlex v1.3.0
+       Fresh cc v1.2.56
+       Fresh time-core v0.1.8
+       Fresh quote v1.0.44
+       Fresh itoa v1.0.17
+       Fresh powerfmt v0.2.0
+       Fresh num-conv v0.2.0
+       Fresh syn v2.0.117
+       Fresh num-traits v0.2.19
+       Fresh deranged v0.5.6
+       Fresh time-macros v0.2.27
+       Fresh libc v0.2.182
+       Fresh num-integer v0.1.46
+       Fresh thiserror-impl v2.0.18
+       Fresh serde_core v1.0.228
+       Fresh cfg-if v1.0.4
+       Fresh getrandom v0.2.17
+       Fresh zmij v1.0.21
+       Fresh num-bigint v0.4.6
+       Fresh thiserror v2.0.18
+       Fresh time v0.3.47
+       Fresh serde_derive v1.0.228
+       Fresh memchr v2.8.0
+       Fresh base64 v0.22.1
+       Fresh untrusted v0.9.0
+       Fresh async-trait v0.1.89
+       Fresh agent-types v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-types)
+       Fresh ring v0.17.14
+       Fresh simple_asn1 v0.6.4
+       Fresh serde_json v1.0.149
+       Fresh serde v1.0.228
+       Fresh pem v3.0.6
+       Fresh agent-domain v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-domain)
+       Fresh tokio-macros v2.6.0
+       Fresh jsonwebtoken v9.3.1
+       Fresh pin-project-lite v0.2.16
+       Fresh tokio v1.49.0
+       Dirty agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app): couldn't read metadata for file `target/debug/deps/libagent_app-cdbb996f62323cb4.rlib`
+   Compiling agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app)
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=874221566eec50a6 -C extra-filename=-cdbb996f62323cb4 --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rmeta --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rmeta --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rmeta --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rmeta -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cc16ec8dec5a2009 -C extra-filename=-0a88f113e2f6fe2a --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rlib --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rlib --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rlib --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rlib --extern tokio=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libtokio-28fff381377827e4.rlib -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+warning: unused imports: `Algorithm`, `DecodingKey`, `Validation`, and `decode`
+ --> crates/agent-app/src/service.rs:6:20
+  |
+6 | use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+  |                    ^^^^^^^^^  ^^^^^^^^^^^                       ^^^^^^^^^^  ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0277]: the trait bound `Claims: Default` is not satisfied
+   --> crates/agent-app/src/service.rs:100:12
+    |
+100 |         Ok(Default::default()) /* ~ changed by cargo-mutants ~ */
+    |            ^^^^^^^^^^^^^^^^^^ the trait `Default` is not implemented for `Claims`
+    |
+help: consider annotating `Claims` with `#[derive(Default)]`
+    |
+ 13 + #[derive(Default)]
+ 14 | pub struct Claims {
+    |
+
+For more information about this error, try `rustc --explain E0277`.
+warning: `agent-app` (lib) generated 1 warning
+error: could not compile `agent-app` (lib) due to 1 previous error; 1 warning emitted
+
+Caused by:
+  process didn't exit successfully: `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=874221566eec50a6 -C extra-filename=-cdbb996f62323cb4 --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rmeta --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rmeta --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rmeta --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rmeta -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out` (exit status: 1)
+warning: build failed, waiting for other jobs to finish...
+error[E0277]: the trait bound `service::Claims: Default` is not satisfied
+   --> crates/agent-app/src/service.rs:100:12
+    |
+100 |         Ok(Default::default()) /* ~ changed by cargo-mutants ~ */
+    |            ^^^^^^^^^^^^^^^^^^ the trait `Default` is not implemented for `service::Claims`
+    |
+help: consider annotating `service::Claims` with `#[derive(Default)]`
+    |
+ 13 + #[derive(Default)]
+ 14 | pub struct Claims {
+    |
+
+warning: `agent-app` (lib test) generated 1 warning (1 duplicate)
+error: could not compile `agent-app` (lib test) due to 1 previous error; 1 warning emitted
+
+Caused by:
+  process didn't exit successfully: `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cc16ec8dec5a2009 -C extra-filename=-0a88f113e2f6fe2a --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rlib --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rlib --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rlib --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rlib --extern tokio=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libtokio-28fff381377827e4.rlib -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out` (exit status: 1)
+
+*** result: Failure(101)

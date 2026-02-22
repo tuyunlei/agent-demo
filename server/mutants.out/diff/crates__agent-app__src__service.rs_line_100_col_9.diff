@@ -1,0 +1,31 @@
+--- crates/agent-app/src/service.rs
++++ replace AuthService::validate_token -> Result<Claims, AuthServiceError> with Ok(Default::default())
+@@ -92,27 +92,17 @@
+ 
+         Ok(LoginResult {
+             user_id: user.user_id,
+             token_pair,
+         })
+     }
+ 
+     pub fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
+-        let mut validation = Validation::new(Algorithm::HS256);
+-        validation.validate_exp = true;
+-
+-        let token_data = decode::<Claims>(
+-            token,
+-            &DecodingKey::from_secret(self.jwt_secret.as_bytes()),
+-            &validation,
+-        )
+-        .map_err(|_| AuthServiceError::TokenValidation)?;
+-
+-        Ok(token_data.claims)
++        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     fn create_token_pair(&self, user_id: &str) -> Result<TokenPair, AuthServiceError> {
+         let now = current_unix_seconds();
+         let access_exp = now + ACCESS_TOKEN_TTL_SECONDS;
+         let refresh_exp = now + REFRESH_TOKEN_TTL_SECONDS;
+ 
+         let access_token = self

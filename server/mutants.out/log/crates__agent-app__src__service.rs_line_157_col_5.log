@@ -1,0 +1,113 @@
+
+*** crates/agent-app/src/service.rs:157:5: replace map_auth_error -> AuthServiceError with Default::default()
+
+*** mutation diff:
+--- crates/agent-app/src/service.rs
++++ replace map_auth_error -> AuthServiceError with Default::default()
+@@ -149,21 +149,17 @@
+             &Header::default(),
+             &claims,
+             &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
+         )
+     }
+ }
+ 
+ fn map_auth_error(err: AuthError) -> AuthServiceError {
+-    match err {
+-        AuthError::InvalidCredentials => AuthServiceError::InvalidCredentials,
+-        AuthError::AlreadyExists(msg) => AuthServiceError::AlreadyExists(msg),
+-        AuthError::Internal(msg) => AuthServiceError::Internal(msg),
+-    }
++    Default::default() /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ fn current_unix_seconds() -> i64 {
+     SystemTime::now()
+         .duration_since(UNIX_EPOCH)
+         .expect("system clock should be after UNIX_EPOCH")
+         .as_secs() as i64
+ }
+
+
+*** REDACTED_PATH test --no-run --verbose --package=agent-app@0.1.0
+       Fresh unicode-ident v1.0.24
+       Fresh autocfg v1.5.0
+       Fresh shlex v1.3.0
+       Fresh find-msvc-tools v0.1.9
+       Fresh proc-macro2 v1.0.106
+       Fresh cc v1.2.56
+       Fresh powerfmt v0.2.0
+       Fresh quote v1.0.44
+       Fresh time-core v0.1.8
+       Fresh itoa v1.0.17
+       Fresh num-conv v0.2.0
+       Fresh syn v2.0.117
+       Fresh num-traits v0.2.19
+       Fresh serde_core v1.0.228
+       Fresh time-macros v0.2.27
+       Fresh libc v0.2.182
+       Fresh num-integer v0.1.46
+       Fresh thiserror-impl v2.0.18
+       Fresh deranged v0.5.6
+       Fresh cfg-if v1.0.4
+       Fresh getrandom v0.2.17
+       Fresh num-bigint v0.4.6
+       Fresh time v0.3.47
+       Fresh thiserror v2.0.18
+       Fresh serde_derive v1.0.228
+       Fresh zmij v1.0.21
+       Fresh memchr v2.8.0
+       Fresh base64 v0.22.1
+       Fresh untrusted v0.9.0
+       Fresh simple_asn1 v0.6.4
+       Fresh async-trait v0.1.89
+       Fresh serde v1.0.228
+       Fresh ring v0.17.14
+       Fresh pem v3.0.6
+       Fresh serde_json v1.0.149
+       Fresh agent-types v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-types)
+       Fresh tokio-macros v2.6.0
+       Fresh pin-project-lite v0.2.16
+       Fresh agent-domain v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-domain)
+       Fresh jsonwebtoken v9.3.1
+       Fresh tokio v1.49.0
+       Dirty agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app): the file `crates/agent-app/src/service.rs` has changed (1771789932.900952173s, 801025705ns after last build at 1771789932.099926468s)
+   Compiling agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app)
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cc16ec8dec5a2009 -C extra-filename=-0a88f113e2f6fe2a --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rlib --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rlib --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rlib --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rlib --extern tokio=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libtokio-28fff381377827e4.rlib -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=874221566eec50a6 -C extra-filename=-cdbb996f62323cb4 --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rmeta --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rmeta --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rmeta --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rmeta -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+error[E0277]: the trait bound `AuthServiceError: Default` is not satisfied
+   --> crates/agent-app/src/service.rs:157:5
+    |
+157 |     Default::default() /* ~ changed by cargo-mutants ~ */
+    |     ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Default` is not implemented for `AuthServiceError`
+   --> crates/agent-app/src/service.rs:26:1
+    |
+ 26 | pub enum AuthServiceError {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `agent-app` (lib) due to 1 previous error
+
+Caused by:
+  process didn't exit successfully: `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=874221566eec50a6 -C extra-filename=-cdbb996f62323cb4 --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rmeta --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rmeta --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rmeta --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rmeta -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out` (exit status: 1)
+warning: build failed, waiting for other jobs to finish...
+error[E0277]: the trait bound `service::AuthServiceError: Default` is not satisfied
+   --> crates/agent-app/src/service.rs:157:5
+    |
+157 |     Default::default() /* ~ changed by cargo-mutants ~ */
+    |     ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Default` is not implemented for `service::AuthServiceError`
+   --> crates/agent-app/src/service.rs:26:1
+    |
+ 26 | pub enum AuthServiceError {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `agent-app` (lib test) due to 1 previous error
+
+Caused by:
+  process didn't exit successfully: `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cc16ec8dec5a2009 -C extra-filename=-0a88f113e2f6fe2a --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rlib --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rlib --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rlib --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rlib --extern tokio=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libtokio-28fff381377827e4.rlib -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out` (exit status: 1)
+
+*** result: Failure(101)

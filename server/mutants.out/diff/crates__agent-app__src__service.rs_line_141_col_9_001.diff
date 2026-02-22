@@ -1,0 +1,32 @@
+--- crates/agent-app/src/service.rs
++++ replace AuthService::sign_token -> Result<String, jsonwebtoken::errors::Error> with Ok("xyzzy".into())
+@@ -133,28 +133,17 @@
+ 
+     fn sign_token(
+         &self,
+         user_id: &str,
+         iat: i64,
+         exp: i64,
+         token_type: &str,
+     ) -> Result<String, jsonwebtoken::errors::Error> {
+-        let claims = Claims {
+-            sub: user_id.to_string(),
+-            exp: exp as usize,
+-            iat: iat as usize,
+-            token_type: token_type.to_string(),
+-        };
+-
+-        encode(
+-            &Header::default(),
+-            &claims,
+-            &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
+-        )
++        Ok("xyzzy".into()) /* ~ changed by cargo-mutants ~ */
+     }
+ }
+ 
+ fn map_auth_error(err: AuthError) -> AuthServiceError {
+     match err {
+         AuthError::InvalidCredentials => AuthServiceError::InvalidCredentials,
+         AuthError::AlreadyExists(msg) => AuthServiceError::AlreadyExists(msg),
+         AuthError::Internal(msg) => AuthServiceError::Internal(msg),

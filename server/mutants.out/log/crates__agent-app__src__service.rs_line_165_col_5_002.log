@@ -1,0 +1,204 @@
+
+*** crates/agent-app/src/service.rs:165:5: replace current_unix_seconds -> i64 with -1
+
+*** mutation diff:
+--- crates/agent-app/src/service.rs
++++ replace current_unix_seconds -> i64 with -1
+@@ -157,17 +157,14 @@
+     match err {
+         AuthError::InvalidCredentials => AuthServiceError::InvalidCredentials,
+         AuthError::AlreadyExists(msg) => AuthServiceError::AlreadyExists(msg),
+         AuthError::Internal(msg) => AuthServiceError::Internal(msg),
+     }
+ }
+ 
+ fn current_unix_seconds() -> i64 {
+-    SystemTime::now()
+-        .duration_since(UNIX_EPOCH)
+-        .expect("system clock should be after UNIX_EPOCH")
+-        .as_secs() as i64
++    -1 /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ #[cfg(test)]
+ #[path = "service_tests.rs"]
+ mod tests;
+
+
+*** REDACTED_PATH test --no-run --verbose --package=agent-app@0.1.0
+       Fresh unicode-ident v1.0.24
+       Fresh autocfg v1.5.0
+       Fresh shlex v1.3.0
+       Fresh find-msvc-tools v0.1.9
+       Fresh proc-macro2 v1.0.106
+       Fresh cc v1.2.56
+       Fresh itoa v1.0.17
+       Fresh quote v1.0.44
+       Fresh num-conv v0.2.0
+       Fresh powerfmt v0.2.0
+       Fresh time-core v0.1.8
+       Fresh serde_core v1.0.228
+       Fresh syn v2.0.117
+       Fresh num-traits v0.2.19
+       Fresh time-macros v0.2.27
+       Fresh deranged v0.5.6
+       Fresh libc v0.2.182
+       Fresh thiserror-impl v2.0.18
+       Fresh num-integer v0.1.46
+       Fresh cfg-if v1.0.4
+       Fresh serde_derive v1.0.228
+       Fresh getrandom v0.2.17
+       Fresh num-bigint v0.4.6
+       Fresh thiserror v2.0.18
+       Fresh zmij v1.0.21
+       Fresh time v0.3.47
+       Fresh untrusted v0.9.0
+       Fresh memchr v2.8.0
+       Fresh base64 v0.22.1
+       Fresh serde v1.0.228
+       Fresh async-trait v0.1.89
+       Fresh agent-types v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-types)
+       Fresh serde_json v1.0.149
+       Fresh ring v0.17.14
+       Fresh simple_asn1 v0.6.4
+       Fresh pem v3.0.6
+       Fresh agent-domain v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-domain)
+       Fresh tokio-macros v2.6.0
+       Fresh pin-project-lite v0.2.16
+       Fresh jsonwebtoken v9.3.1
+       Fresh tokio v1.49.0
+       Dirty agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app): the file `crates/agent-app/src/service.rs` has changed (1771789935.174025114s, 1s after last build at 1771789934.466002393s)
+   Compiling agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app)
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cc16ec8dec5a2009 -C extra-filename=-0a88f113e2f6fe2a --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rlib --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rlib --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rlib --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rlib --extern tokio=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libtokio-28fff381377827e4.rlib -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=874221566eec50a6 -C extra-filename=-cdbb996f62323cb4 --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rmeta --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rmeta --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rmeta --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rmeta -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+ --> crates/agent-app/src/service.rs:2:17
+  |
+2 | use std::time::{SystemTime, UNIX_EPOCH};
+  |                 ^^^^^^^^^^  ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `agent-app` (lib) generated 1 warning (run `cargo fix --lib -p agent-app` to apply 1 suggestion)
+warning: `agent-app` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.65s
+  Executable `/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/agent_app-0a88f113e2f6fe2a`
+
+*** result: Success
+
+*** REDACTED_PATH test --verbose --package=agent-app@0.1.0
+       Fresh unicode-ident v1.0.24
+       Fresh proc-macro2 v1.0.106
+       Fresh quote v1.0.44
+       Fresh syn v2.0.117
+       Fresh autocfg v1.5.0
+       Fresh shlex v1.3.0
+       Fresh find-msvc-tools v0.1.9
+       Fresh num-conv v0.2.0
+       Fresh cc v1.2.56
+       Fresh itoa v1.0.17
+       Fresh powerfmt v0.2.0
+       Fresh time-core v0.1.8
+       Fresh num-traits v0.2.19
+       Fresh deranged v0.5.6
+       Fresh time-macros v0.2.27
+       Fresh libc v0.2.182
+       Fresh num-integer v0.1.46
+       Fresh serde_core v1.0.228
+       Fresh thiserror-impl v2.0.18
+       Fresh cfg-if v1.0.4
+       Fresh time v0.3.47
+       Fresh getrandom v0.2.17
+       Fresh num-bigint v0.4.6
+       Fresh thiserror v2.0.18
+       Fresh zmij v1.0.21
+       Fresh serde_derive v1.0.228
+       Fresh base64 v0.22.1
+       Fresh untrusted v0.9.0
+       Fresh memchr v2.8.0
+       Fresh simple_asn1 v0.6.4
+       Fresh async-trait v0.1.89
+       Fresh agent-types v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-types)
+       Fresh serde_json v1.0.149
+       Fresh ring v0.17.14
+       Fresh pem v3.0.6
+       Fresh serde v1.0.228
+       Fresh agent-domain v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-domain)
+       Fresh tokio-macros v2.6.0
+       Fresh pin-project-lite v0.2.16
+       Fresh jsonwebtoken v9.3.1
+       Fresh tokio v1.49.0
+warning: unused imports: `SystemTime` and `UNIX_EPOCH`
+ --> crates/agent-app/src/service.rs:2:17
+  |
+2 | use std::time::{SystemTime, UNIX_EPOCH};
+  |                 ^^^^^^^^^^  ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `agent-app` (lib) generated 1 warning (run `cargo fix --lib -p agent-app` to apply 1 suggestion)
+warning: `agent-app` (lib test) generated 1 warning (1 duplicate)
+       Fresh agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running `/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/agent_app-0a88f113e2f6fe2a`
+
+running 23 tests
+test runtime::tests::handle_message_creates_default_session_when_missing ... ok
+test runtime::tests::handle_message_rejects_empty_content ... ok
+test runtime::tests::handle_message_with_empty_session_id_creates_new_session ... ok
+test runtime::tests::handle_message_returns_store_error_when_default_session_creation_fails ... ok
+test runtime::tests::handle_message_returns_rate_limited_error_when_llm_rate_limited ... ok
+test runtime::tests::handle_message_returns_timeout_error_when_llm_times_out ... ok
+test runtime::tests::handle_message_returns_provider_error_when_llm_provider_fails ... ok
+test service::tests::login_auth_port_internal_error ... ok
+test service::tests::login_failure_returns_invalid_credentials ... ok
+test runtime::tests::handle_message_with_whitespace_session_id_creates_new_session ... ok
+test runtime::tests::handle_message_with_store_persists_and_uses_history ... ok
+test service::tests::login_access_token_expires_in_one_hour ... ok
+test service::tests::login_refresh_token_expires_in_seven_days ... ok
+test service::tests::register_with_duplicate_email_returns_already_exists ... ok
+test service::tests::login_success_returns_jwt_token_pair ... ok
+test service::tests::register_with_empty_email_or_password_returns_invalid_input ... ok
+test service::tests::register_success_returns_jwt_token_pair ... ok
+test service::tests::register_whitespace_email_returns_invalid_input ... ok
+test service::tests::validate_token_with_valid_access_token ... FAILED
+test service::tests::validate_token_expired_returns_error ... FAILED
+test service::tests::validate_token_wrong_secret_returns_error ... FAILED
+test service::tests::validate_token_invalid_returns_error ... ok
+test service::tests::login_tokens_are_valid_jwt ... FAILED
+
+failures:
+
+---- service::tests::validate_token_with_valid_access_token stdout ----
+
+thread 'service::tests::validate_token_with_valid_access_token' (64818) panicked at crates/agent-app/src/service_tests.rs:217:18:
+attempt to add with overflow
+
+---- service::tests::validate_token_expired_returns_error stdout ----
+
+thread 'service::tests::validate_token_expired_returns_error' (64816) panicked at crates/agent-app/src/service_tests.rs:279:46:
+called `Result::unwrap_err()` on an `Ok` value: Claims { sub: "user-001", exp: 18446744073709551495, iat: 18446744073709544415, token_type: "access" }
+
+---- service::tests::validate_token_wrong_secret_returns_error stdout ----
+
+thread 'service::tests::validate_token_wrong_secret_returns_error' (64819) panicked at crates/agent-app/src/service_tests.rs:299:18:
+attempt to add with overflow
+
+---- service::tests::login_tokens_are_valid_jwt stdout ----
+
+thread 'service::tests::login_tokens_are_valid_jwt' (64811) panicked at crates/agent-app/src/service_tests.rs:113:10:
+access token is valid jwt: TokenValidation
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    service::tests::login_tokens_are_valid_jwt
+    service::tests::validate_token_expired_returns_error
+    service::tests::validate_token_with_valid_access_token
+    service::tests::validate_token_wrong_secret_returns_error
+
+test result: FAILED. 19 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p agent-app --lib`
+
+*** result: Failure(101)

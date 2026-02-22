@@ -1,0 +1,1516 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 12.556988734,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.35339684,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/runtime.rs:35:9: replace AgentRuntime::handle_message -> Result<HandleMessageResult, AgentError> with Ok(Default::default())",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/runtime.rs",
+          "function": {
+            "function_name": "AgentRuntime::handle_message",
+            "return_type": "-> Result<HandleMessageResult, AgentError>",
+            "span": {
+              "start": {
+                "line": 29,
+                "column": 5
+              },
+              "end": {
+                "line": 85,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 35,
+              "column": 9
+            },
+            "end": {
+              "line": 84,
+              "column": 11
+            }
+          },
+          "replacement": "Ok(Default::default())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "Unviable",
+      "log_path": "log/crates__agent-app__src__runtime.rs_line_35_col_9.log",
+      "diff_path": "diff/crates__agent-app__src__runtime.rs_line_35_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.50527196,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/runtime.rs:42:25: replace match guard !id.trim().is_empty() with true in AgentRuntime::handle_message",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/runtime.rs",
+          "function": {
+            "function_name": "AgentRuntime::handle_message",
+            "return_type": "-> Result<HandleMessageResult, AgentError>",
+            "span": {
+              "start": {
+                "line": 29,
+                "column": 5
+              },
+              "end": {
+                "line": 85,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 42,
+              "column": 25
+            },
+            "end": {
+              "line": 42,
+              "column": 46
+            }
+          },
+          "replacement": "true",
+          "genre": "MatchArmGuard"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__runtime.rs_line_42_col_25.log",
+      "diff_path": "diff/crates__agent-app__src__runtime.rs_line_42_col_25.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.056920544,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.253673473,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/runtime.rs:42:25: replace match guard !id.trim().is_empty() with false in AgentRuntime::handle_message",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/runtime.rs",
+          "function": {
+            "function_name": "AgentRuntime::handle_message",
+            "return_type": "-> Result<HandleMessageResult, AgentError>",
+            "span": {
+              "start": {
+                "line": 29,
+                "column": 5
+              },
+              "end": {
+                "line": 85,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 42,
+              "column": 25
+            },
+            "end": {
+              "line": 42,
+              "column": 46
+            }
+          },
+          "replacement": "false",
+          "genre": "MatchArmGuard"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__runtime.rs_line_42_col_25_001.log",
+      "diff_path": "diff/crates__agent-app__src__runtime.rs_line_42_col_25_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.863378341,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.254701016,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/runtime.rs:42:25: delete ! in AgentRuntime::handle_message",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/runtime.rs",
+          "function": {
+            "function_name": "AgentRuntime::handle_message",
+            "return_type": "-> Result<HandleMessageResult, AgentError>",
+            "span": {
+              "start": {
+                "line": 29,
+                "column": 5
+              },
+              "end": {
+                "line": 85,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 42,
+              "column": 25
+            },
+            "end": {
+              "line": 42,
+              "column": 26
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__runtime.rs_line_42_col_25_002.log",
+      "diff_path": "diff/crates__agent-app__src__runtime.rs_line_42_col_25_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.858669068,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.205725197,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:9:42: replace * with +",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 9,
+              "column": 42
+            },
+            "end": {
+              "line": 9,
+              "column": 43
+            }
+          },
+          "replacement": "+",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_9_col_42.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_9_col_42.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.957006148,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.203413192,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:9:42: replace * with /",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 9,
+              "column": 42
+            },
+            "end": {
+              "line": 9,
+              "column": 43
+            }
+          },
+          "replacement": "/",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_9_col_42_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_9_col_42_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.755586022,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.203812614,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:10:52: replace * with +",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 10,
+              "column": 52
+            },
+            "end": {
+              "line": 10,
+              "column": 53
+            }
+          },
+          "replacement": "+",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_10_col_52.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_10_col_52.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.704831984,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202896744,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:10:52: replace * with /",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 10,
+              "column": 52
+            },
+            "end": {
+              "line": 10,
+              "column": 53
+            }
+          },
+          "replacement": "/",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_10_col_52_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_10_col_52_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.755552589,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.340889672,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:10:47: replace * with +",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 10,
+              "column": 47
+            },
+            "end": {
+              "line": 10,
+              "column": 48
+            }
+          },
+          "replacement": "+",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_10_col_47.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_10_col_47.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.761712599,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.203891787,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:10:47: replace * with /",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 10,
+              "column": 47
+            },
+            "end": {
+              "line": 10,
+              "column": 48
+            }
+          },
+          "replacement": "/",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_10_col_47_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_10_col_47_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.759519018,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.207200733,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:10:42: replace * with +",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 10,
+              "column": 42
+            },
+            "end": {
+              "line": 10,
+              "column": 43
+            }
+          },
+          "replacement": "+",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_10_col_42.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_10_col_42.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.758128392,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202973256,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:10:42: replace * with /",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": null,
+          "span": {
+            "start": {
+              "line": 10,
+              "column": 42
+            },
+            "end": {
+              "line": 10,
+              "column": 43
+            }
+          },
+          "replacement": "/",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_10_col_42_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_10_col_42_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.758157012,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.203482803,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:54:9: replace AuthService::login -> Result<LoginResult, AuthServiceError> with Ok(Default::default())",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::login",
+            "return_type": "-> Result<LoginResult, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 49,
+                "column": 5
+              },
+              "end": {
+                "line": 66,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 54,
+              "column": 9
+            },
+            "end": {
+              "line": 65,
+              "column": 11
+            }
+          },
+          "replacement": "Ok(Default::default())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "Unviable",
+      "log_path": "log/crates__agent-app__src__service.rs_line_54_col_9.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_54_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.40370314,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:74:9: replace AuthService::register -> Result<LoginResult, AuthServiceError> with Ok(Default::default())",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::register",
+            "return_type": "-> Result<LoginResult, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 68,
+                "column": 5
+              },
+              "end": {
+                "line": 97,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 74,
+              "column": 9
+            },
+            "end": {
+              "line": 96,
+              "column": 11
+            }
+          },
+          "replacement": "Ok(Default::default())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "Unviable",
+      "log_path": "log/crates__agent-app__src__service.rs_line_74_col_9.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_74_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.403767762,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:100:9: replace AuthService::validate_token -> Result<Claims, AuthServiceError> with Ok(Default::default())",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::validate_token",
+            "return_type": "-> Result<Claims, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 99,
+                "column": 5
+              },
+              "end": {
+                "line": 111,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 100,
+              "column": 9
+            },
+            "end": {
+              "line": 110,
+              "column": 30
+            }
+          },
+          "replacement": "Ok(Default::default())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "Unviable",
+      "log_path": "log/crates__agent-app__src__service.rs_line_100_col_9.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_100_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.402973976,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:114:9: replace AuthService::create_token_pair -> Result<TokenPair, AuthServiceError> with Ok(Default::default())",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::create_token_pair",
+            "return_type": "-> Result<TokenPair, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 113,
+                "column": 5
+              },
+              "end": {
+                "line": 132,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 114,
+              "column": 9
+            },
+            "end": {
+              "line": 131,
+              "column": 11
+            }
+          },
+          "replacement": "Ok(Default::default())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "Unviable",
+      "log_path": "log/crates__agent-app__src__service.rs_line_114_col_9.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_114_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.454835069,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:115:30: replace + with - in AuthService::create_token_pair",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::create_token_pair",
+            "return_type": "-> Result<TokenPair, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 113,
+                "column": 5
+              },
+              "end": {
+                "line": 132,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 115,
+              "column": 30
+            },
+            "end": {
+              "line": 115,
+              "column": 31
+            }
+          },
+          "replacement": "-",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_115_col_30.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_115_col_30.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.653724402,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202535353,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:115:30: replace + with * in AuthService::create_token_pair",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::create_token_pair",
+            "return_type": "-> Result<TokenPair, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 113,
+                "column": 5
+              },
+              "end": {
+                "line": 132,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 115,
+              "column": 30
+            },
+            "end": {
+              "line": 115,
+              "column": 31
+            }
+          },
+          "replacement": "*",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_115_col_30_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_115_col_30_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.656034866,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.204282249,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:116:31: replace + with - in AuthService::create_token_pair",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::create_token_pair",
+            "return_type": "-> Result<TokenPair, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 113,
+                "column": 5
+              },
+              "end": {
+                "line": 132,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 116,
+              "column": 31
+            },
+            "end": {
+              "line": 116,
+              "column": 32
+            }
+          },
+          "replacement": "-",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_116_col_31.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_116_col_31.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.655685677,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202989187,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:116:31: replace + with * in AuthService::create_token_pair",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::create_token_pair",
+            "return_type": "-> Result<TokenPair, AuthServiceError>",
+            "span": {
+              "start": {
+                "line": 113,
+                "column": 5
+              },
+              "end": {
+                "line": 132,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 116,
+              "column": 31
+            },
+            "end": {
+              "line": 116,
+              "column": 32
+            }
+          },
+          "replacement": "*",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_116_col_31_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_116_col_31_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.704442459,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202250792,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:141:9: replace AuthService::sign_token -> Result<String, jsonwebtoken::errors::Error> with Ok(String::new())",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::sign_token",
+            "return_type": "-> Result<String, jsonwebtoken::errors::Error>",
+            "span": {
+              "start": {
+                "line": 134,
+                "column": 5
+              },
+              "end": {
+                "line": 153,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 141,
+              "column": 9
+            },
+            "end": {
+              "line": 152,
+              "column": 10
+            }
+          },
+          "replacement": "Ok(String::new())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_141_col_9.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_141_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.805576957,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202706597,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:141:9: replace AuthService::sign_token -> Result<String, jsonwebtoken::errors::Error> with Ok(\"xyzzy\".into())",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "AuthService::sign_token",
+            "return_type": "-> Result<String, jsonwebtoken::errors::Error>",
+            "span": {
+              "start": {
+                "line": 134,
+                "column": 5
+              },
+              "end": {
+                "line": 153,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 141,
+              "column": 9
+            },
+            "end": {
+              "line": 152,
+              "column": 10
+            }
+          },
+          "replacement": "Ok(\"xyzzy\".into())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_141_col_9_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_141_col_9_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.754410108,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202938655,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:157:5: replace map_auth_error -> AuthServiceError with Default::default()",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "map_auth_error",
+            "return_type": "-> AuthServiceError",
+            "span": {
+              "start": {
+                "line": 156,
+                "column": 1
+              },
+              "end": {
+                "line": 162,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 157,
+              "column": 5
+            },
+            "end": {
+              "line": 161,
+              "column": 6
+            }
+          },
+          "replacement": "Default::default()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "Unviable",
+      "log_path": "log/crates__agent-app__src__service.rs_line_157_col_5.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_157_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.403649687,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:165:5: replace current_unix_seconds -> i64 with 0",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "current_unix_seconds",
+            "return_type": "-> i64",
+            "span": {
+              "start": {
+                "line": 164,
+                "column": 1
+              },
+              "end": {
+                "line": 169,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 165,
+              "column": 5
+            },
+            "end": {
+              "line": 168,
+              "column": 26
+            }
+          },
+          "replacement": "0",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_165_col_5.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_165_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.805574117,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202458019,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:165:5: replace current_unix_seconds -> i64 with 1",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "current_unix_seconds",
+            "return_type": "-> i64",
+            "span": {
+              "start": {
+                "line": 164,
+                "column": 1
+              },
+              "end": {
+                "line": 169,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 165,
+              "column": 5
+            },
+            "end": {
+              "line": 168,
+              "column": 26
+            }
+          },
+          "replacement": "1",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_165_col_5_001.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_165_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.654154346,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.202573622,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/agent-app/src/service.rs:165:5: replace current_unix_seconds -> i64 with -1",
+          "package": "agent-app",
+          "file": "crates/agent-app/src/service.rs",
+          "function": {
+            "function_name": "current_unix_seconds",
+            "return_type": "-> i64",
+            "span": {
+              "start": {
+                "line": 164,
+                "column": 1
+              },
+              "end": {
+                "line": 169,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 165,
+              "column": 5
+            },
+            "end": {
+              "line": 168,
+              "column": 26
+            }
+          },
+          "replacement": "-1",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__agent-app__src__service.rs_line_165_col_5_002.log",
+      "diff_path": "diff/crates__agent-app__src__service.rs_line_165_col_5_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.705434648,
+          "process_status": "Success",
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--no-run",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.203803792,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "REDACTED_PATH            "test",
+            "--verbose",
+            "--package=agent-app@0.1.0"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 26,
+  "missed": 0,
+  "caught": 20,
+  "timeout": 0,
+  "unviable": 6,
+  "success": 0,
+  "start_time": "2026-02-22T19:51:39.972745645Z",
+  "end_time": "2026-02-22T19:52:16.422708147Z",
+  "cargo_mutants_version": "26.2.0"
+}

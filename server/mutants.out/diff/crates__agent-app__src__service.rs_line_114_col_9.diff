@@ -1,0 +1,38 @@
+--- crates/agent-app/src/service.rs
++++ replace AuthService::create_token_pair -> Result<TokenPair, AuthServiceError> with Ok(Default::default())
+@@ -106,34 +106,17 @@
+             &validation,
+         )
+         .map_err(|_| AuthServiceError::TokenValidation)?;
+ 
+         Ok(token_data.claims)
+     }
+ 
+     fn create_token_pair(&self, user_id: &str) -> Result<TokenPair, AuthServiceError> {
+-        let now = current_unix_seconds();
+-        let access_exp = now + ACCESS_TOKEN_TTL_SECONDS;
+-        let refresh_exp = now + REFRESH_TOKEN_TTL_SECONDS;
+-
+-        let access_token = self
+-            .sign_token(user_id, now, access_exp, "access")
+-            .map_err(|_| AuthServiceError::TokenCreation)?;
+-
+-        let refresh_token = self
+-            .sign_token(user_id, now, refresh_exp, "refresh")
+-            .map_err(|_| AuthServiceError::TokenCreation)?;
+-
+-        Ok(TokenPair {
+-            access_token,
+-            refresh_token,
+-            access_token_expires_at: access_exp,
+-            refresh_token_expires_at: refresh_exp,
+-        })
++        Ok(Default::default()) /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     fn sign_token(
+         &self,
+         user_id: &str,
+         iat: i64,
+         exp: i64,
+         token_type: &str,

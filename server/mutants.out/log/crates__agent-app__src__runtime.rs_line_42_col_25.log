@@ -1,0 +1,172 @@
+
+*** crates/agent-app/src/runtime.rs:42:25: replace match guard !id.trim().is_empty() with true in AgentRuntime::handle_message
+
+*** mutation diff:
+--- crates/agent-app/src/runtime.rs
++++ replace match guard !id.trim().is_empty() with true in AgentRuntime::handle_message
+@@ -34,17 +34,17 @@
+     ) -> Result<HandleMessageResult, AgentError> {
+         if user_message.trim().is_empty() {
+             return Err(AgentError::InvalidInput(
+                 "message content cannot be empty".into(),
+             ));
+         }
+ 
+         let session_id = match session_id {
+-            Some(id) if !id.trim().is_empty() => id.to_string(),
++            Some(id) if true /* ~ changed by cargo-mutants ~ */ => id.to_string(),
+             _ => {
+                 self.message_store
+                     .get_or_create_default_session(user_id)
+                     .await?
+             }
+         };
+ 
+         self.message_store
+
+
+*** REDACTED_PATH test --no-run --verbose --package=agent-app@0.1.0
+       Fresh unicode-ident v1.0.24
+       Fresh autocfg v1.5.0
+       Fresh find-msvc-tools v0.1.9
+       Fresh shlex v1.3.0
+       Fresh proc-macro2 v1.0.106
+       Fresh cc v1.2.56
+       Fresh powerfmt v0.2.0
+       Fresh num-conv v0.2.0
+       Fresh quote v1.0.44
+       Fresh time-core v0.1.8
+       Fresh itoa v1.0.17
+       Fresh syn v2.0.117
+       Fresh num-traits v0.2.19
+       Fresh time-macros v0.2.27
+       Fresh serde_core v1.0.228
+       Fresh deranged v0.5.6
+       Fresh thiserror-impl v2.0.18
+       Fresh num-integer v0.1.46
+       Fresh libc v0.2.182
+       Fresh cfg-if v1.0.4
+       Fresh serde_derive v1.0.228
+       Fresh getrandom v0.2.17
+       Fresh num-bigint v0.4.6
+       Fresh thiserror v2.0.18
+       Fresh zmij v1.0.21
+       Fresh time v0.3.47
+       Fresh memchr v2.8.0
+       Fresh base64 v0.22.1
+       Fresh untrusted v0.9.0
+       Fresh serde v1.0.228
+       Fresh simple_asn1 v0.6.4
+       Fresh async-trait v0.1.89
+       Fresh pem v3.0.6
+       Fresh ring v0.17.14
+       Fresh serde_json v1.0.149
+       Fresh agent-types v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-types)
+       Fresh tokio-macros v2.6.0
+       Fresh pin-project-lite v0.2.16
+       Fresh jsonwebtoken v9.3.1
+       Fresh agent-domain v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-domain)
+       Fresh tokio v1.49.0
+       Dirty agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app): couldn't read metadata for file `target/debug/deps/libagent_app-cdbb996f62323cb4.rlib`
+   Compiling agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app)
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=874221566eec50a6 -C extra-filename=-cdbb996f62323cb4 --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rmeta --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rmeta --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rmeta --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rmeta -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+     Running `REDACTED_PATH --crate-name agent_app --edition=2024 crates/agent-app/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cc16ec8dec5a2009 -C extra-filename=-0a88f113e2f6fe2a --out-dir /tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps -C incremental=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/incremental -L dependency=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps --extern agent_domain=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_domain-460359649e05bec6.rlib --extern agent_types=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libagent_types-b68d3971266f34ca.rlib --extern async_trait=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libasync_trait-9adde6f5d2681a7d.so --extern jsonwebtoken=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libjsonwebtoken-8bc183a20072b4a9.rlib --extern serde=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libserde-889fd825d4b029e0.rlib --extern tokio=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/libtokio-28fff381377827e4.rlib -L native=/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/build/ring-3283d88c8fb0c49e/out`
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.97s
+  Executable `/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/agent_app-0a88f113e2f6fe2a`
+
+*** result: Success
+
+*** REDACTED_PATH test --verbose --package=agent-app@0.1.0
+       Fresh unicode-ident v1.0.24
+       Fresh proc-macro2 v1.0.106
+       Fresh autocfg v1.5.0
+       Fresh shlex v1.3.0
+       Fresh find-msvc-tools v0.1.9
+       Fresh quote v1.0.44
+       Fresh cc v1.2.56
+       Fresh itoa v1.0.17
+       Fresh syn v2.0.117
+       Fresh time-core v0.1.8
+       Fresh num-conv v0.2.0
+       Fresh powerfmt v0.2.0
+       Fresh num-traits v0.2.19
+       Fresh thiserror-impl v2.0.18
+       Fresh deranged v0.5.6
+       Fresh time-macros v0.2.27
+       Fresh libc v0.2.182
+       Fresh num-integer v0.1.46
+       Fresh serde_core v1.0.228
+       Fresh cfg-if v1.0.4
+       Fresh thiserror v2.0.18
+       Fresh num-bigint v0.4.6
+       Fresh getrandom v0.2.17
+       Fresh time v0.3.47
+       Fresh zmij v1.0.21
+       Fresh serde_derive v1.0.228
+       Fresh memchr v2.8.0
+       Fresh base64 v0.22.1
+       Fresh untrusted v0.9.0
+       Fresh serde v1.0.228
+       Fresh simple_asn1 v0.6.4
+       Fresh async-trait v0.1.89
+       Fresh agent-types v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-types)
+       Fresh pem v3.0.6
+       Fresh ring v0.17.14
+       Fresh serde_json v1.0.149
+       Fresh agent-domain v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-domain)
+       Fresh tokio-macros v2.6.0
+       Fresh pin-project-lite v0.2.16
+       Fresh jsonwebtoken v9.3.1
+       Fresh tokio v1.49.0
+       Fresh agent-app v0.1.0 (/tmp/cargo-mutants-server-aRWaOX.tmp/crates/agent-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running `/tmp/cargo-mutants-server-aRWaOX.tmp/target/debug/deps/agent_app-0a88f113e2f6fe2a`
+
+running 23 tests
+test runtime::tests::handle_message_creates_default_session_when_missing ... ok
+test runtime::tests::handle_message_returns_store_error_when_default_session_creation_fails ... ok
+test runtime::tests::handle_message_returns_rate_limited_error_when_llm_rate_limited ... ok
+test runtime::tests::handle_message_returns_provider_error_when_llm_provider_fails ... ok
+test runtime::tests::handle_message_rejects_empty_content ... ok
+test service::tests::login_auth_port_internal_error ... ok
+test service::tests::login_access_token_expires_in_one_hour ... ok
+test runtime::tests::handle_message_returns_timeout_error_when_llm_times_out ... ok
+test runtime::tests::handle_message_with_empty_session_id_creates_new_session ... FAILED
+test service::tests::login_failure_returns_invalid_credentials ... ok
+test runtime::tests::handle_message_with_whitespace_session_id_creates_new_session ... FAILED
+test runtime::tests::handle_message_with_store_persists_and_uses_history ... ok
+test service::tests::login_refresh_token_expires_in_seven_days ... ok
+test service::tests::login_success_returns_jwt_token_pair ... ok
+test service::tests::register_success_returns_jwt_token_pair ... ok
+test service::tests::login_tokens_are_valid_jwt ... ok
+test service::tests::register_whitespace_email_returns_invalid_input ... ok
+test service::tests::register_with_empty_email_or_password_returns_invalid_input ... ok
+test service::tests::register_with_duplicate_email_returns_already_exists ... ok
+test service::tests::validate_token_invalid_returns_error ... ok
+test service::tests::validate_token_expired_returns_error ... ok
+test service::tests::validate_token_with_valid_access_token ... ok
+test service::tests::validate_token_wrong_secret_returns_error ... ok
+
+failures:
+
+---- runtime::tests::handle_message_with_empty_session_id_creates_new_session stdout ----
+
+thread 'runtime::tests::handle_message_with_empty_session_id_creates_new_session' (60644) panicked at crates/agent-app/src/runtime_tests.rs:174:5:
+assertion failed: !result.session_id.is_empty()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- runtime::tests::handle_message_with_whitespace_session_id_creates_new_session stdout ----
+
+thread 'runtime::tests::handle_message_with_whitespace_session_id_creates_new_session' (60646) panicked at crates/agent-app/src/runtime_tests.rs:202:5:
+assertion failed: !result.session_id.trim().is_empty()
+
+
+failures:
+    runtime::tests::handle_message_with_empty_session_id_creates_new_session
+    runtime::tests::handle_message_with_whitespace_session_id_creates_new_session
+
+test result: FAILED. 21 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p agent-app --lib`
+
+*** result: Failure(101)
