@@ -31,6 +31,9 @@
 - ✅ T4.1 PostgreSQL 接入（PR #1）
 - ✅ T4.2 真实用户注册（PR #2）
 - ✅ T4.3 消息持久化（PR #3）
+- ✅ QG5 测试分离 + 文件限制强化（PR #4）
+- ✅ QG6 覆盖率 CI 门禁（PR #5，阈值 54%）
+- ✅ QG7 集成测试（PR #6，5 个 sqlx::test）
 
 ## 已知待修
 
@@ -38,8 +41,10 @@
 
 ## 基础设施
 
-- PostgreSQL 16.11：users + sessions + messages 表
+- PostgreSQL 16.11：users + sessions + messages 表（含 sequence_num BIGSERIAL）
 - 仓库 public，CI 免费
+- 测试：38 个（33 单元 + 5 集成），覆盖率 54%
+- CI 门禁：fmt + clippy + arch deps + file size + tests + coverage ≥54%
 - 部署已验证：注册 → 登录 → 发消息 → AI 回复 → DB 持久化 ✅
 
 ---
