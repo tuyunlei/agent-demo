@@ -69,6 +69,7 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | MQG3 | ViewModel 重构 + 单元测试 | ✅ | ChatViewModel + ChatServiceProtocol + 5 个 Swift Testing 单测 |
+| MQG4 | 测试补全 + Protocol 化 | 🔲 | SessionServiceClient → protocol，loadHistory 可测；AppState 测试；补边界 case |
 
 ### 质量铁律
 
