@@ -56,13 +56,13 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | MQG1 | SwiftLint + SwiftFormat | ✅ | SwiftLint --strict + SwiftFormat --lint，CI 门禁（PR #7） |
-| MQG2 | 文件大小 & 复杂度 | ⏳ | 单文件 ≤300 行，单函数 ≤50 行；脚本 + CI 门禁（PR #8） |
+| MQG2 | 文件大小 & 复杂度 | ✅ | 单文件 ≤300 行，单函数 ≤50 行；脚本 + CI 门禁（PR #8） |
 
 ### 基础设施
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| MQG-infra | SPM Build Plugin 替代手动 protoc | 🔲 | 用 grpc-swift v2 官方 SPM plugin 自动从 .proto 生成 Swift 代码，删除 Generated/ 目录，proto 变更零成本同步 |
+| MQG-infra | SPM Build Plugin 替代手动 protoc | ✅ | PR #9，grpc-swift v2 SPM plugin，proto 变更零成本同步 |
 
 ### 功能质量（测试保障）
 
@@ -84,7 +84,7 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| FIX-1 | Chat 页面显示 AI 回复 | 🔲 | 依赖 MQG-infra（proto 重新生成后才能访问 assistantContent 字段） |
+| FIX-1 | Chat 页面显示 AI 回复 | ✅ | PR #10，解析 assistantContent 中的 TextBlock |
 
 ---
 

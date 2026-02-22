@@ -4,17 +4,17 @@
 
 ---
 
-## Phase: dev-pending
+## Phase: idle
 
 ---
 
 ## 当前阶段
 
-**iOS 质量底线建设中。** 下一步：FIX-1（Chat 显示 AI 回复）→ MQG3（ViewModel + 单测）→ 暂停等涂涂验收。
+**iOS 质量底线建设中。** 下一步：MQG3（ViewModel + 单测）→ 暂停等涂涂验收。
 
 ## 当前执行中
 
-- FIX-1 dev sub-agent（gpt-5.3-codex）：Chat 显示 AI 回复，分支 `feature/fix-1-display-ai-reply`
+无。
 
 ## 阻塞点
 
@@ -26,11 +26,12 @@
 - ✅ TM3.1a~TM3.4 Walking Skeleton
 - ✅ MQG1 SwiftLint + SwiftFormat CI 门禁（PR #7）
 - ✅ MQG2 File size & complexity check（PR #8）
-- ✅ MQG-infra SPM Build Plugin（PR #9）— proto 变更自动同步
+- ✅ MQG-infra SPM Build Plugin（PR #9）
+- ✅ FIX-1 Chat 显示 AI 回复（PR #10）
 
 ## 已知问题
 
-- Chat 页面显示 `[sent] request_id=...` 而非 AI 回复（FIX-1 修复中）
+无。
 
 ---
 
