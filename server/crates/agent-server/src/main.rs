@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
 use agent_app::{AgentRuntime, AuthService};
-use agent_channel::{AuthServiceHandler, ChatServiceHandler, auth_interceptor};
+use agent_channel::{
+    AuthServiceHandler, ChatServiceHandler, SessionServiceHandler, auth_interceptor,
+};
 use agent_llm::OpenAiProvider;
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
+use agent_proto::session_service_server::SessionServiceServer;
 use agent_storage::pg::{PostgresMessageStore, PostgresUserStore};
 use sqlx::postgres::PgPoolOptions;
 use tonic::transport::Server;
@@ -50,16 +53,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         llm_base_url,
         llm_model,
     ));
-    let runtime = Arc::new(AgentRuntime::new(llm_provider, message_store));
+    let runtime = Arc::new(AgentRuntime::new(llm_provider, message_store.clone()));
 
     let chat_service = ChatServiceServer::with_interceptor(
         ChatServiceHandler::new(runtime),
+        auth_interceptor(auth_service.clone()),
+    );
+    let session_service = SessionServiceServer::with_interceptor(
+        SessionServiceHandler::new(message_store),
         auth_interceptor(auth_service.clone()),
     );
     let auth_service = AuthServiceServer::new(AuthServiceHandler::new(auth_service));
 
     Server::builder()
         .add_service(chat_service)
+        .add_service(session_service)
         .add_service(auth_service)
         .serve(addr)
         .await?;
