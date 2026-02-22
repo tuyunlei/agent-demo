@@ -89,7 +89,7 @@ impl MessageStore for PostgresMessageStore {
                     EXTRACT(EPOCH FROM created_at)::BIGINT AS created_at
              FROM messages
              WHERE session_id = $1
-             ORDER BY created_at DESC
+             ORDER BY sequence_num DESC
              LIMIT $2",
         )
         .bind(session_uuid)
