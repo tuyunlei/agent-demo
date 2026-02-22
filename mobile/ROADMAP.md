@@ -84,7 +84,7 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| FIX-1 | Chat 页面显示 AI 回复 | ✅ | PR #10，解析 assistantContent 中的 TextBlock |
+| FIX-1 | Chat 页面显示 AI 回复 | ✅ | 解析 assistantContent 中的 TextBlock |
 
 ---
 
@@ -93,17 +93,18 @@
 > 质量门禁 + 修复完成后恢复功能开发。
 > **Mobile 做完以下内容后暂停，等涂涂验收，之后与服务端同步推进。**
 
-### Step 4：持久化
+### Step 4：注册 + 持久化
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
+| TM-REG | 用户注册 | ✅ | PR #7，LoginView Sign In/Sign Up 切换 + AuthServiceClient.register |
 | TM4.1 | GRDB + SQLite | 🔲 | 本地消息缓存，离线查看历史 |
 
 ### Step 5：韧性
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| TM5.1 | 网络错误处理 | 🔲 | 连接失败/超时的 UI 反馈 |
+| TM5.1 | 网络错误处理 | ✅ | PR #8，友好错误提示 + 失败回滚 + 错误横幅 + Sign Out |
 | TM5.2 | Token 自动刷新 | 🔲 | RefreshToken 逻辑，过期自动续期 |
 
 ### Step 6：会话管理
