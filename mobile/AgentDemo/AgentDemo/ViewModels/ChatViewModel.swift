@@ -34,10 +34,31 @@ final class ChatViewModel: ObservableObject {
             updateSessionID(from: response)
             appendAssistantMessage(from: response)
         } catch {
-            errorMessage = error.localizedDescription
+            if !messages.isEmpty {
+                messages.removeLast()
+            }
+            errorMessage = friendlyError(from: error)
         }
 
         isSending = false
+    }
+
+    private func friendlyError(from error: Error) -> String {
+        let description = error.localizedDescription.lowercased()
+
+        let isNetworkError = description.contains("could not connect")
+            || description.contains("network")
+            || description.contains("timed out")
+
+        if isNetworkError {
+            return "Unable to connect to server. Please check your network and try again."
+        }
+
+        if description.contains("unauthenticated") || description.contains("401") {
+            return "Your session has expired. Please sign in again."
+        }
+
+        return "Something went wrong: \(error.localizedDescription)"
     }
 
     private func updateSessionID(from response: Ai_Agent_Platform_V1_SendMessageResponse) {

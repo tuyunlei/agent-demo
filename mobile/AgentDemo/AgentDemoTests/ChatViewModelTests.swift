@@ -32,14 +32,24 @@ struct ChatViewModelTests {
 
     @Test func sendMessage_setsErrorMessageWhenServiceFails() async throws {
         let mockService = MockChatService()
-        await mockService.enqueue(result: .failure(MockError.network))
+        await mockService.setShouldFail(true)
         let viewModel = ChatViewModel(chatService: mockService)
 
         await viewModel.sendMessage(text: "Hi", token: "token")
 
+        #expect(viewModel.errorMessage == "Unable to connect to server. Please check your network and try again.")
+        #expect(viewModel.messages.isEmpty)
+    }
+
+    @Test func sendMessageFailureRemovesOptimisticMessage() async {
+        let mockService = MockChatService()
+        await mockService.setShouldFail(true)
+        let viewModel = ChatViewModel(chatService: mockService)
+
+        await viewModel.sendMessage(text: "hello", token: "token")
+
+        #expect(viewModel.messages.isEmpty)
         #expect(viewModel.errorMessage != nil)
-        #expect(viewModel.messages.count == 1)
-        #expect(viewModel.messages[0].role == .user)
     }
 
     @Test func sendMessage_updatesSendingStateDuringRequest() async throws {
@@ -85,6 +95,11 @@ struct ChatViewModelTests {
 
 private actor MockChatService: ChatServiceProtocol {
     private var queue: [QueuedResult] = []
+    private var shouldFail = false
+
+    func setShouldFail(_ value: Bool) {
+        shouldFail = value
+    }
 
     func enqueue(
         result: Result<Ai_Agent_Platform_V1_SendMessageResponse, Error>,
@@ -100,6 +115,10 @@ private actor MockChatService: ChatServiceProtocol {
         sessionID _: String,
         agentID _: String
     ) async throws -> Ai_Agent_Platform_V1_SendMessageResponse {
+        if shouldFail {
+            throw MockError.network
+        }
+
         guard !queue.isEmpty else {
             throw MockError.missingStub
         }

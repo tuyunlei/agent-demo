@@ -9,6 +9,25 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if let errorMessage = viewModel.errorMessage {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.yellow)
+                        Text(errorMessage)
+                            .font(.caption)
+                        Spacer()
+                        Button("Dismiss") {
+                            viewModel.errorMessage = nil
+                        }
+                        .font(.caption)
+                    }
+                    .padding(8)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+
                 List(viewModel.messages) { message in
                     HStack {
                         if message.role == .assistant { Spacer(minLength: 40) }
@@ -29,14 +48,6 @@ struct ChatView: View {
                 }
                 .listStyle(.plain)
 
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .font(.footnote)
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                }
-
                 HStack(spacing: 8) {
                     TextField("Type a message", text: $inputText, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
@@ -51,7 +62,7 @@ struct ChatView: View {
             .navigationTitle("Chat")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Logout") {
+                    Button("Sign Out") {
                         appState.logout()
                     }
                 }
