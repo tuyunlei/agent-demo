@@ -3,5 +3,8 @@
     "clients": false,
     "servers": false,
     "messages": true
+  },
+  "swiftOptions": {
+    "visibility": "public"
   }
 }
