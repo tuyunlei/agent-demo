@@ -4,17 +4,17 @@
 
 ---
 
-## Phase: dev-pending
+## Phase: idle
 
 ---
 
 ## 当前阶段
 
-**Step 4 持久化。** T4.2 用户注册。
+**Step 4 持久化全部完成。** 🎉 等涂涂确认下一步方向（Step 5 韧性 or Step 6 会话管理）。
 
 ## 当前执行中
 
-- T4.2 dev sub-agent（gpt-5.3-codex）：Register 端点实现，分支 `feature/t4.2-user-registration`
+无。
 
 ## 阻塞点
 
@@ -28,14 +28,19 @@
 - ✅ T3.1~T3.4 真实 AI 回复 + 部署
 - ✅ 安全加固
 - ✅ QG1-4 代码质量 + 测试
-- ✅ T4.1 PostgreSQL 接入（PR #1 merged + 部署验证通过）
+- ✅ T4.1 PostgreSQL 接入（PR #1）
+- ✅ T4.2 真实用户注册（PR #2）
+- ✅ T4.3 消息持久化（PR #3）
+
+## 已知待修
+
+- user_message_id 返回固定 "msg-001"，应返回真实 message_id
 
 ## 基础设施
 
-- PostgreSQL 16.11：DB `agentdemo` + user `agentdemo`
-- users 表已创建（migration 自动）
-- admin 用户 auto-seed
+- PostgreSQL 16.11：users + sessions + messages 表
 - 仓库 public，CI 免费
+- 部署已验证：注册 → 登录 → 发消息 → AI 回复 → DB 持久化 ✅
 
 ---
 

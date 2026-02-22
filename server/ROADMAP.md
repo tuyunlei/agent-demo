@@ -92,9 +92,9 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| T4.1 | PostgreSQL 接入 | 🔲 | agent-storage crate，sqlx，users 表 + UserStore 实现 |
-| T4.2 | 真实用户注册/登录 | 🔲 | AuthService.Register，密码哈希（argon2），DB 存储 |
-| T4.3 | 消息持久化 | 🔲 | MessageStore 实现，聊天记录入库 + 历史查询 |
+| T4.1 | PostgreSQL 接入 | ✅ | PR #1，sqlx + bcrypt + users 表 + migration |
+| T4.2 | 真实用户注册 | ✅ | PR #2，Register 端点 + AuthPort.create_user |
+| T4.3 | 消息持久化 | ✅ | PR #3，sessions + messages 表，历史 context 送 LLM |
 
 ### Step 5：韧性
 
