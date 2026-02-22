@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: dev-pending
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## 当前执行中
 
-无。
+- FIX-1 dev sub-agent（gpt-5.3-codex）：Chat 显示 AI 回复，分支 `feature/fix-1-display-ai-reply`
 
 ## 阻塞点
 
@@ -30,7 +30,7 @@
 
 ## 已知问题
 
-- Chat 页面显示 `[sent] request_id=...` 而非 AI 回复（FIX-1，现在 proto 已有 assistantContent 字段，可以修了）
+- Chat 页面显示 `[sent] request_id=...` 而非 AI 回复（FIX-1 修复中）
 
 ---
 
