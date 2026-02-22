@@ -88,7 +88,7 @@ struct ChatView: View {
                 }
 
                 let assistantTextBlocks = response.assistantContent.compactMap { block -> String? in
-                    switch block.block {
+                    switch block.kind {
                     case let .text(textBlock):
                         return textBlock.text
                     default:
