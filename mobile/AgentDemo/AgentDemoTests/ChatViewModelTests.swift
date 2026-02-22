@@ -5,6 +5,10 @@ import Testing
 
 @MainActor
 struct ChatViewModelTests {
+    init() {
+        UserDefaults.standard.removeObject(forKey: "lastSessionID")
+    }
+
     @Test func sendMessage_appendsUserAndAssistantMessages() async throws {
         let mockService = MockChatService()
         await mockService.enqueue(result: .success(makeResponse(texts: ["Hello from AI"])))

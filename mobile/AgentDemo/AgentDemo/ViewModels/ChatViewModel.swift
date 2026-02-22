@@ -8,11 +8,17 @@ final class ChatViewModel: ObservableObject {
     @Published var isSending = false
     @Published var errorMessage: String?
 
-    private(set) var sessionID = ""
+    private(set) var sessionID: String = "" {
+        didSet {
+            UserDefaults.standard.set(sessionID, forKey: "lastSessionID")
+        }
+    }
+
     private let chatService: ChatServiceProtocol
 
     init(chatService: ChatServiceProtocol = ChatServiceClient()) {
         self.chatService = chatService
+        sessionID = UserDefaults.standard.string(forKey: "lastSessionID") ?? ""
     }
 
     func sendMessage(text: String, token: String) async {
