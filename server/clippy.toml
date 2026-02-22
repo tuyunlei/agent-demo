@@ -1,0 +1,3 @@
+# QG10: 认知复杂度阈值
+# 超过此值 clippy 会报 warning（配合 -D warnings 变为 error）
+cognitive-complexity-threshold = 10

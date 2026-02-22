@@ -61,20 +61,29 @@ access_token="$(json_get "$login_resp" "tokenPair.accessToken")"
 [[ -n "$access_token" ]] || fail "Login did not return accessToken"
 pass "Login and extract token"
 
-# 3) 发送消息
+# 3) 发送消息（需要 LLM）
 user_text="Hello from acceptance test $(date +%s)"
 send_payload="{\"requestId\":\"acceptance-$(date +%s)\",\"agentId\":\"default\",\"content\":[{\"text\":{\"text\":\"$user_text\"}}]}"
-send_resp="$(grpc_call chat.proto ai.agent.platform.v1.ChatService/SendMessage "$send_payload" -H "authorization: Bearer $access_token")" || fail "SendMessage call failed"
-session_id="$(json_get "$send_resp" "sessionId")"
-assistant_content="$(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); c=d.get("assistantContent") or []; print(c[0].get("text",{}).get("text","") if c else "")' "$send_resp")"
-[[ -n "$session_id" ]] || fail "SendMessage did not return sessionId"
-[[ -n "$assistant_content" ]] || fail "SendMessage did not return assistantContent"
-pass "SendMessage with auth and validate response"
+if [[ "${SKIP_LLM_TESTS:-}" == "1" ]]; then
+  echo "⏭ Skipped: SendMessage (SKIP_LLM_TESTS=1)"
+  TOTAL=$((TOTAL - 1))
+else
+  send_resp="$(grpc_call chat.proto ai.agent.platform.v1.ChatService/SendMessage "$send_payload" -H "authorization: Bearer $access_token")" || fail "SendMessage call failed"
+  session_id="$(json_get "$send_resp" "sessionId")"
+  assistant_content="$(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); c=d.get("assistantContent") or []; print(c[0].get("text",{}).get("text","") if c else "")' "$send_resp")"
+  [[ -n "$session_id" ]] || fail "SendMessage did not return sessionId"
+  [[ -n "$assistant_content" ]] || fail "SendMessage did not return assistantContent"
+  pass "SendMessage with auth and validate response"
+fi
 
-# 4) 拉取历史并验证包含刚发消息
-list_payload="{\"sessionId\":\"$session_id\",\"createdAtOrder\":\"SORT_ORDER_ASC\"}"
-list_resp="$(grpc_call session.proto ai.agent.platform.v1.SessionService/ListSessionMessages "$list_payload" -H "authorization: Bearer $access_token")" || fail "ListSessionMessages call failed"
-contains_msg="$(python3 -c 'import json,sys
+# 4) 拉取历史（依赖 SendMessage 的 session_id）
+if [[ "${SKIP_LLM_TESTS:-}" == "1" ]]; then
+  echo "⏭ Skipped: ListSessionMessages (SKIP_LLM_TESTS=1)"
+  TOTAL=$((TOTAL - 1))
+else
+  list_payload="{\"sessionId\":\"$session_id\",\"createdAtOrder\":\"SORT_ORDER_ASC\"}"
+  list_resp="$(grpc_call session.proto ai.agent.platform.v1.SessionService/ListSessionMessages "$list_payload" -H "authorization: Bearer $access_token")" || fail "ListSessionMessages call failed"
+  contains_msg="$(python3 -c 'import json,sys
 needle=sys.argv[2]
 d=json.loads(sys.argv[1])
 found=False
@@ -87,8 +96,9 @@ for m in d.get("messages",[]):
     if found:
         break
 print("1" if found else "")' "$list_resp" "$user_text")"
-[[ "$contains_msg" == "1" ]] || fail "History does not contain sent message"
-pass "ListSessionMessages contains sent message"
+  [[ "$contains_msg" == "1" ]] || fail "History does not contain sent message"
+  pass "ListSessionMessages contains sent message"
+fi
 
 # 5) 重复注册同一邮箱（允许报错，验证冲突语义）
 set +e
