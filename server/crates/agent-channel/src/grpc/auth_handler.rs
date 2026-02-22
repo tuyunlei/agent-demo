@@ -23,9 +23,28 @@ impl AuthServiceHandler {
 impl AuthServiceTrait for AuthServiceHandler {
     async fn register(
         &self,
-        _request: Request<RegisterRequest>,
+        request: Request<RegisterRequest>,
     ) -> Result<Response<RegisterResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let result = self
+            .auth_service
+            .register(&req.email, &req.password, &req.display_name)
+            .await
+            .map_err(map_error)?;
+
+        Ok(Response::new(RegisterResponse {
+            user_id: result.user_id,
+            token_pair: Some(TokenPair {
+                access_token: result.token_pair.access_token,
+                refresh_token: result.token_pair.refresh_token,
+                access_token_expires_at: Some(to_timestamp(
+                    result.token_pair.access_token_expires_at,
+                )),
+                refresh_token_expires_at: Some(to_timestamp(
+                    result.token_pair.refresh_token_expires_at,
+                )),
+            }),
+        }))
     }
 
     async fn login(
@@ -73,6 +92,8 @@ impl AuthServiceTrait for AuthServiceHandler {
 fn map_error(err: AuthServiceError) -> Status {
     match err {
         AuthServiceError::InvalidCredentials => Status::unauthenticated("invalid credentials"),
+        AuthServiceError::AlreadyExists(_) => Status::already_exists("email already in use"),
+        AuthServiceError::InvalidInput(msg) => Status::invalid_argument(msg),
         AuthServiceError::TokenCreation | AuthServiceError::TokenValidation => {
             Status::internal("token handling failed")
         }
@@ -102,6 +123,21 @@ mod tests {
             } else {
                 Err(AuthError::InvalidCredentials)
             }
+        }
+
+        async fn create_user(
+            &self,
+            email: &str,
+            _password: &str,
+            display_name: &str,
+        ) -> Result<AuthResult, AuthError> {
+            if email == "taken@example.com" {
+                return Err(AuthError::AlreadyExists("email already in use".to_string()));
+            }
+            Ok(AuthResult {
+                user_id: "user-001".to_string(),
+                display_name: display_name.to_string(),
+            })
         }
     }
 
@@ -143,5 +179,45 @@ mod tests {
 
         let err = handler.login(request).await.unwrap_err();
         assert_eq!(err.code(), tonic::Code::Unauthenticated);
+    }
+
+    #[tokio::test]
+    async fn register_success_returns_token_pair() {
+        let auth_service = Arc::new(AuthService::new(
+            Arc::new(MockAuthPort),
+            "test-secret".to_string(),
+        ));
+        let handler = AuthServiceHandler::new(auth_service);
+
+        let request = Request::new(RegisterRequest {
+            email: "new@example.com".to_string(),
+            password: "password123".to_string(),
+            display_name: "New User".to_string(),
+            invite_code: "ignored".to_string(),
+        });
+
+        let response = handler.register(request).await.unwrap().into_inner();
+
+        assert_eq!(response.user_id, "user-001");
+        assert!(response.token_pair.is_some());
+    }
+
+    #[tokio::test]
+    async fn register_duplicate_email_returns_already_exists() {
+        let auth_service = Arc::new(AuthService::new(
+            Arc::new(MockAuthPort),
+            "test-secret".to_string(),
+        ));
+        let handler = AuthServiceHandler::new(auth_service);
+
+        let request = Request::new(RegisterRequest {
+            email: "taken@example.com".to_string(),
+            password: "password123".to_string(),
+            display_name: "Dup User".to_string(),
+            invite_code: "ignored".to_string(),
+        });
+
+        let err = handler.register(request).await.unwrap_err();
+        assert_eq!(err.code(), tonic::Code::AlreadyExists);
     }
 }

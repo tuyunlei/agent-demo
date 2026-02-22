@@ -73,9 +73,13 @@ async fn ensure_admin_user(
 ) -> Result<(), agent_domain::AuthError> {
     let existing = user_store.find_by_email(admin_email).await?;
     if existing.is_none() {
-        user_store
-            .create_user(admin_email, admin_password, "Administrator")
-            .await?;
+        agent_domain::AuthPort::create_user(
+            user_store,
+            admin_email,
+            admin_password,
+            "Administrator",
+        )
+        .await?;
         println!("created admin user: {}", admin_email);
     }
 

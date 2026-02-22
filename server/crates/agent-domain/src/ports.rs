@@ -1,6 +1,13 @@
 #[async_trait::async_trait]
 pub trait AuthPort: Send + Sync {
     async fn authenticate(&self, email: &str, password: &str) -> Result<AuthResult, AuthError>;
+
+    async fn create_user(
+        &self,
+        email: &str,
+        password: &str,
+        display_name: &str,
+    ) -> Result<AuthResult, AuthError>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -12,6 +19,7 @@ pub struct AuthResult {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuthError {
     InvalidCredentials,
+    AlreadyExists(String),
     Internal(String),
 }
 
@@ -75,9 +83,14 @@ mod tests {
     #[test]
     fn auth_error_variants() {
         let invalid = AuthError::InvalidCredentials;
+        let exists = AuthError::AlreadyExists("email already in use".to_string());
         let internal = AuthError::Internal("db down".to_string());
 
         assert_eq!(invalid, AuthError::InvalidCredentials);
+        assert_eq!(
+            exists,
+            AuthError::AlreadyExists("email already in use".to_string())
+        );
         assert_eq!(internal, AuthError::Internal("db down".to_string()));
         assert!(format!("{internal:?}").contains("db down"));
     }

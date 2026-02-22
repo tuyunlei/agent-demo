@@ -10,11 +10,11 @@
 
 ## 当前阶段
 
-**Step 4 持久化。** T4.1 PostgreSQL 接入。
+**Step 4 持久化。** T4.2 用户注册。
 
 ## 当前执行中
 
-- T4.1 dev sub-agent（gpt-5.3-codex）：PostgreSQL + sqlx + bcrypt，分支 `feature/t4.1-postgresql`
+- T4.2 dev sub-agent（gpt-5.3-codex）：Register 端点实现，分支 `feature/t4.2-user-registration`
 
 ## 阻塞点
 
@@ -28,11 +28,14 @@
 - ✅ T3.1~T3.4 真实 AI 回复 + 部署
 - ✅ 安全加固
 - ✅ QG1-4 代码质量 + 测试
+- ✅ T4.1 PostgreSQL 接入（PR #1 merged + 部署验证通过）
 
 ## 基础设施
 
-- PostgreSQL 16.11：DB `agentdemo` + user `agentdemo`，TCP 已验证
-- 仓库已迁移至 public，CI 免费
+- PostgreSQL 16.11：DB `agentdemo` + user `agentdemo`
+- users 表已创建（migration 自动）
+- admin 用户 auto-seed
+- 仓库 public，CI 免费
 
 ---
 

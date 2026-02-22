@@ -20,7 +20,7 @@ impl PostgresUserStore {
         Self { pool }
     }
 
-    pub async fn create_user(
+    async fn create_user_record(
         &self,
         email: &str,
         password: &str,
@@ -90,6 +90,15 @@ impl AuthPort for PostgresUserStore {
             display_name: user.display_name,
         })
     }
+
+    async fn create_user(
+        &self,
+        email: &str,
+        password: &str,
+        display_name: &str,
+    ) -> Result<AuthResult, AuthError> {
+        self.create_user_record(email, password, display_name).await
+    }
 }
 
 fn hash_password(password: &str) -> Result<String, AuthError> {
@@ -104,7 +113,7 @@ fn map_sqlx_error(err: sqlx::Error) -> AuthError {
     if let sqlx::Error::Database(ref db_err) = err
         && db_err.code().as_deref() == Some("23505")
     {
-        return AuthError::Internal("email already exists".to_string());
+        return AuthError::AlreadyExists("email already in use".to_string());
     }
     AuthError::Internal(err.to_string())
 }

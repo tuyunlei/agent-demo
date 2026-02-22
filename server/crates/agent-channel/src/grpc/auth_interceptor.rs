@@ -49,6 +49,15 @@ mod tests {
                 Err(AuthError::InvalidCredentials)
             }
         }
+
+        async fn create_user(
+            &self,
+            _email: &str,
+            _password: &str,
+            _display_name: &str,
+        ) -> Result<AuthResult, AuthError> {
+            Err(AuthError::Internal("not used".to_string()))
+        }
     }
 
     fn test_auth_service() -> Arc<AuthService> {
