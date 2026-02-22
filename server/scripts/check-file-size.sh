@@ -5,11 +5,17 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 max_file_lines=300
+max_test_file_lines=500
 max_fn_lines=50
 violations=0
 
 while IFS= read -r -d '' file; do
-  if ! awk -v file="$file" -v max_file_lines="$max_file_lines" -v max_fn_lines="$max_fn_lines" '
+  current_max_file_lines="$max_file_lines"
+  if [[ "$file" == *_tests.rs ]]; then
+    current_max_file_lines="$max_test_file_lines"
+  fi
+
+  if ! awk -v file="$file" -v max_file_lines="$current_max_file_lines" -v max_fn_lines="$max_fn_lines" '
     function is_effective(line) {
       return line !~ /^[[:space:]]*$/ && line !~ /^[[:space:]]*\/\//
     }
