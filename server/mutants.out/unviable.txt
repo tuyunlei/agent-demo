@@ -1,6 +1,0 @@
-crates/agent-app/src/runtime.rs:35:9: replace AgentRuntime::handle_message -> Result<HandleMessageResult, AgentError> with Ok(Default::default())
-crates/agent-app/src/service.rs:54:9: replace AuthService::login -> Result<LoginResult, AuthServiceError> with Ok(Default::default())
-crates/agent-app/src/service.rs:74:9: replace AuthService::register -> Result<LoginResult, AuthServiceError> with Ok(Default::default())
-crates/agent-app/src/service.rs:100:9: replace AuthService::validate_token -> Result<Claims, AuthServiceError> with Ok(Default::default())
-crates/agent-app/src/service.rs:114:9: replace AuthService::create_token_pair -> Result<TokenPair, AuthServiceError> with Ok(Default::default())
-crates/agent-app/src/service.rs:157:5: replace map_auth_error -> AuthServiceError with Default::default()
