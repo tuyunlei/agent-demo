@@ -5,7 +5,7 @@ use agent_channel::{AuthServiceHandler, ChatServiceHandler, auth_interceptor};
 use agent_llm::OpenAiProvider;
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
-use agent_storage::pg::PostgresUserStore;
+use agent_storage::pg::{PostgresMessageStore, PostgresUserStore};
 use sqlx::postgres::PgPoolOptions;
 use tonic::transport::Server;
 
@@ -37,7 +37,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .run(&pool)
         .await?;
 
-    let user_store = Arc::new(PostgresUserStore::new(pool));
+    let user_store = Arc::new(PostgresUserStore::new(pool.clone()));
+    let message_store = Arc::new(PostgresMessageStore::new(pool));
     ensure_admin_user(&user_store, &admin_email, &admin_password)
         .await
         .map_err(|err| std::io::Error::other(format!("{err:?}")))?;
@@ -49,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         llm_base_url,
         llm_model,
     ));
-    let runtime = Arc::new(AgentRuntime::new(llm_provider));
+    let runtime = Arc::new(AgentRuntime::new(llm_provider, message_store));
 
     let chat_service = ChatServiceServer::with_interceptor(
         ChatServiceHandler::new(runtime),

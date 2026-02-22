@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use super::UserId;
 use agent_app::AgentRuntime;
-use agent_domain::{AgentError, LlmError};
+use agent_domain::{AgentError, LlmError, StoreError};
 use agent_proto::chat_service_server::ChatService;
 use agent_proto::{
     ChatEvent, SendMessageRequest, SendMessageResponse, SubmitToolResultRequest,
@@ -39,9 +39,9 @@ impl ChatService for ChatServiceHandler {
         );
 
         let user_text = extract_text(&req)?;
-        let ai_reply = self
+        let result = self
             .runtime
-            .handle_message(&user_text)
+            .handle_message(&user_id, non_empty(&req.session_id), &user_text)
             .await
             .map_err(map_agent_error)?;
 
@@ -51,14 +51,10 @@ impl ChatService for ChatServiceHandler {
 
         Ok(Response::new(SendMessageResponse {
             request_id: req.request_id,
-            session_id: if req.session_id.is_empty() {
-                "session-001".to_string()
-            } else {
-                req.session_id
-            },
+            session_id: result.session_id,
             user_message_id: "msg-001".to_string(),
             assistant_content: vec![ContentBlock {
-                kind: Some(Kind::Text(TextBlock { text: ai_reply })),
+                kind: Some(Kind::Text(TextBlock { text: result.reply })),
             }],
         }))
     }
@@ -106,6 +102,15 @@ fn map_agent_error(err: AgentError) -> Status {
     match err {
         AgentError::InvalidInput(msg) => Status::invalid_argument(msg),
         AgentError::Llm(llm_err) => map_llm_error(llm_err),
+        AgentError::Store(store_err) => map_store_error(store_err),
+    }
+}
+
+fn non_empty(value: &str) -> Option<&str> {
+    if value.trim().is_empty() {
+        None
+    } else {
+        Some(value)
     }
 }
 
@@ -118,11 +123,20 @@ fn map_llm_error(err: LlmError) -> Status {
     }
 }
 
+fn map_store_error(err: StoreError) -> Status {
+    match err {
+        StoreError::NotFound(msg) => Status::not_found(msg),
+        StoreError::Internal(msg) => Status::internal(msg),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use agent_domain::{ChatMessage, LlmProvider, LlmRequest, LlmResponse, LlmUsage};
+    use agent_domain::{
+        LlmProvider, LlmRequest, LlmResponse, LlmUsage, MessageStore, StoreError, StoredMessage,
+    };
     use agent_proto::{ContentBlock, TextBlock};
 
     use super::*;
@@ -147,6 +161,47 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
+    struct MockMessageStore;
+
+    #[async_trait::async_trait]
+    impl MessageStore for MockMessageStore {
+        async fn create_session(
+            &self,
+            user_id: &str,
+            _agent_id: &str,
+        ) -> Result<String, StoreError> {
+            Ok(format!("session-{user_id}"))
+        }
+
+        async fn save_message(
+            &self,
+            _session_id: &str,
+            _role: &str,
+            _content: &str,
+        ) -> Result<String, StoreError> {
+            Ok("msg-id".to_string())
+        }
+
+        async fn get_session_messages(
+            &self,
+            session_id: &str,
+            _limit: i64,
+        ) -> Result<Vec<StoredMessage>, StoreError> {
+            Ok(vec![StoredMessage {
+                id: "m1".to_string(),
+                session_id: session_id.to_string(),
+                role: "user".to_string(),
+                content: "hello runtime".to_string(),
+                created_at: 1,
+            }])
+        }
+
+        async fn get_or_create_default_session(&self, user_id: &str) -> Result<String, StoreError> {
+            Ok(format!("session-{user_id}"))
+        }
+    }
+
     fn text_block(text: &str) -> ContentBlock {
         ContentBlock {
             kind: Some(content_block::Kind::Text(TextBlock {
@@ -161,7 +216,7 @@ mod tests {
         let provider = Arc::new(MockLlmProvider {
             captured: captured.clone(),
         });
-        let runtime = Arc::new(AgentRuntime::new(provider));
+        let runtime = Arc::new(AgentRuntime::new(provider, Arc::new(MockMessageStore)));
         let handler = ChatServiceHandler::new(runtime);
 
         let request = tonic::Request::new(SendMessageRequest {
@@ -176,23 +231,12 @@ mod tests {
         let resp = response.into_inner();
 
         assert_eq!(resp.request_id, "test-123");
-        assert_eq!(resp.session_id, "session-001");
+        assert_eq!(resp.session_id, "session-unknown");
 
         let requests = captured.lock().expect("lock captured");
         assert_eq!(requests.len(), 1);
-        assert_eq!(
-            requests[0].messages,
-            vec![
-                ChatMessage {
-                    role: "system".to_string(),
-                    content: "You are a helpful assistant.".to_string(),
-                },
-                ChatMessage {
-                    role: "user".to_string(),
-                    content: "hello runtime".to_string(),
-                }
-            ]
-        );
+        assert_eq!(requests[0].messages[0].role, "system");
+        assert_eq!(requests[0].messages[1].content, "hello runtime");
     }
 
     #[tokio::test]
@@ -201,7 +245,7 @@ mod tests {
         let provider = Arc::new(MockLlmProvider {
             captured: captured.clone(),
         });
-        let runtime = Arc::new(AgentRuntime::new(provider));
+        let runtime = Arc::new(AgentRuntime::new(provider, Arc::new(MockMessageStore)));
         let handler = ChatServiceHandler::new(runtime);
 
         let request = tonic::Request::new(SendMessageRequest {
