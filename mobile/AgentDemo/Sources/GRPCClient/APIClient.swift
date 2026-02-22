@@ -1,7 +1,7 @@
 import GRPCCore
 import GRPCNIOTransportHTTP2TransportServices
 
-public struct APIClient {
+public struct APIClient: Sendable {
     public let host: String
     public let port: Int
 
