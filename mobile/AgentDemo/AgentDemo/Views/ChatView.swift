@@ -28,6 +28,11 @@ struct ChatView: View {
                     .padding(.bottom, 8)
                 }
 
+                if viewModel.isLoadingHistory {
+                    ProgressView("Loading history...")
+                        .padding()
+                }
+
                 List(viewModel.messages) { message in
                     HStack {
                         if message.role == .assistant { Spacer(minLength: 40) }
@@ -65,6 +70,11 @@ struct ChatView: View {
                     Button("Sign Out") {
                         appState.logout()
                     }
+                }
+            }
+            .task {
+                if let token = appState.accessToken {
+                    await viewModel.loadHistory(token: token)
                 }
             }
         }

@@ -6,6 +6,7 @@ import SwiftUI
 final class ChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var isSending = false
+    @Published var isLoadingHistory = false
     @Published var errorMessage: String?
 
     private(set) var sessionID: String = "" {
@@ -15,6 +16,7 @@ final class ChatViewModel: ObservableObject {
     }
 
     private let chatService: ChatServiceProtocol
+    private let sessionClient = SessionServiceClient()
 
     init(chatService: ChatServiceProtocol = ChatServiceClient()) {
         self.chatService = chatService
@@ -47,6 +49,37 @@ final class ChatViewModel: ObservableObject {
         }
 
         isSending = false
+    }
+
+    func loadHistory(token: String) async {
+        guard !sessionID.isEmpty else { return }
+        guard messages.isEmpty else { return }
+
+        isLoadingHistory = true
+        defer { isLoadingHistory = false }
+
+        do {
+            let response = try await sessionClient.listMessages(
+                token: token,
+                sessionID: sessionID
+            )
+
+            messages = response.messages.map { protoMsg in
+                let role: ChatMessage.Role = protoMsg.role == "user" ? .user : .assistant
+                let text = protoMsg.blocks.compactMap { block -> String? in
+                    switch block.kind {
+                    case let .text(textBlock):
+                        return textBlock.text
+                    default:
+                        return nil
+                    }
+                }.joined(separator: "\n")
+
+                return ChatMessage(role: role, text: text.isEmpty ? "(empty)" : text)
+            }
+        } catch {
+            // History loading failure is non-fatal, don't show error.
+        }
     }
 
     private func friendlyError(from error: Error) -> String {
