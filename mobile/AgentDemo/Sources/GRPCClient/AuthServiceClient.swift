@@ -1,7 +1,7 @@
 import GRPCCore
 import GRPCProtobuf
 
-public struct AuthServiceClient {
+public struct AuthServiceClient: Sendable {
     private let apiClient: APIClient
 
     public init(apiClient: APIClient = APIClient()) {

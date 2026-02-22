@@ -4,8 +4,8 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject private var appState: AppState
 
-    @State private var email = "admin@agent-demo.dev"
-    @State private var password = "REDACTED_PASSWORD"
+    @State private var email = ""
+    @State private var password = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
 

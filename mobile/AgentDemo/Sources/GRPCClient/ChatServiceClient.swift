@@ -1,7 +1,7 @@
 import GRPCCore
 import GRPCProtobuf
 
-public struct ChatServiceClient {
+public struct ChatServiceClient: ChatServiceProtocol {
     private let apiClient: APIClient
 
     public init(apiClient: APIClient = APIClient()) {
