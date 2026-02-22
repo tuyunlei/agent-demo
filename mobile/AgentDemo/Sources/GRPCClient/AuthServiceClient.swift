@@ -32,4 +32,29 @@ public struct AuthServiceClient: Sendable {
             )
         }
     }
+
+    public func register(
+        email: String,
+        password: String,
+        displayName: String
+    ) async throws -> Ai_Agent_Platform_V1_RegisterResponse {
+        var request = Ai_Agent_Platform_V1_RegisterRequest()
+        request.email = email
+        request.password = password
+        request.displayName = displayName
+
+        return try await apiClient.withClient { client in
+            try await client.unary(
+                request: ClientRequest(message: request),
+                descriptor: MethodDescriptor(
+                    fullyQualifiedService: "ai.agent.platform.v1.AuthService",
+                    method: "Register"
+                ),
+                serializer: ProtobufSerializer<Ai_Agent_Platform_V1_RegisterRequest>(),
+                deserializer: ProtobufDeserializer<Ai_Agent_Platform_V1_RegisterResponse>(),
+                options: .defaults,
+                onResponse: { try $0.message }
+            )
+        }
+    }
 }

@@ -6,6 +6,8 @@ struct LoginView: View {
 
     @State private var email = ""
     @State private var password = ""
+    @State private var displayName = ""
+    @State private var isRegistering = false
     @State private var isLoading = false
     @State private var errorMessage: String?
 
@@ -14,7 +16,11 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Login") {
+                Section("Credentials") {
+                    if isRegistering {
+                        TextField("Display Name", text: $displayName)
+                    }
+
                     TextField("Email", text: $email)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
@@ -24,16 +30,23 @@ struct LoginView: View {
                 }
 
                 Section {
-                    Button(action: login) {
+                    Button(action: isRegistering ? register : login) {
                         if isLoading {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Sign In")
+                            Text(isRegistering ? "Sign Up" : "Sign In")
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .disabled(isLoading || email.isEmpty || password.isEmpty)
+                    .disabled(isLoading || email.isEmpty || password.isEmpty || (isRegistering && displayName.isEmpty))
+                }
+
+                Section {
+                    Button(isRegistering ? "Already have an account? Sign In" : "Don't have an account? Sign Up") {
+                        isRegistering.toggle()
+                        errorMessage = nil
+                    }
                 }
 
                 if let errorMessage {
@@ -63,6 +76,35 @@ struct LoginView: View {
                 appState.accessToken = token
             } catch {
                 errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func register() {
+        errorMessage = nil
+        isLoading = true
+
+        Task {
+            defer { isLoading = false }
+            do {
+                let response = try await authClient.register(
+                    email: email,
+                    password: password,
+                    displayName: displayName
+                )
+                let token = response.tokenPair.accessToken
+                guard !token.isEmpty else {
+                    errorMessage = "Sign up succeeded but access token is empty."
+                    return
+                }
+                appState.accessToken = token
+            } catch {
+                let localizedDescription = error.localizedDescription.lowercased()
+                if localizedDescription.contains("email"), localizedDescription.contains("exist") {
+                    errorMessage = "This email is already registered. Please sign in instead."
+                } else {
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }
