@@ -148,6 +148,62 @@ async fn handle_message_creates_default_session_when_missing() {
 }
 
 #[tokio::test]
+async fn handle_message_with_empty_session_id_creates_new_session() {
+    let store = Arc::new(MockMessageStore {
+        default_session: Arc::new(Mutex::new(Some("new-default-session".to_string()))),
+        ..Default::default()
+    });
+
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            response: Ok(LlmResponse {
+                content: "ok".to_string(),
+                model: "mock-model".to_string(),
+                usage: None,
+            }),
+        }),
+        store,
+    );
+
+    let result = runtime
+        .handle_message("user-1", Some(""), "hello")
+        .await
+        .expect("ok");
+
+    assert!(!result.session_id.is_empty());
+    assert_eq!(result.session_id, "new-default-session");
+}
+
+#[tokio::test]
+async fn handle_message_with_whitespace_session_id_creates_new_session() {
+    let store = Arc::new(MockMessageStore {
+        default_session: Arc::new(Mutex::new(Some("whitespace-default-session".to_string()))),
+        ..Default::default()
+    });
+
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            response: Ok(LlmResponse {
+                content: "ok".to_string(),
+                model: "mock-model".to_string(),
+                usage: None,
+            }),
+        }),
+        store,
+    );
+
+    let result = runtime
+        .handle_message("user-1", Some("  \t  "), "hello")
+        .await
+        .expect("ok");
+
+    assert!(!result.session_id.trim().is_empty());
+    assert_eq!(result.session_id, "whitespace-default-session");
+}
+
+#[tokio::test]
 async fn handle_message_rejects_empty_content() {
     let runtime = AgentRuntime::new(
         Arc::new(MockLlmProvider {

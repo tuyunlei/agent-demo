@@ -54,6 +54,74 @@ async fn login_success_returns_jwt_token_pair() {
 }
 
 #[tokio::test]
+async fn login_access_token_expires_in_one_hour() {
+    let service = mock_service();
+    let result = service
+        .login("test@example.com", "password123")
+        .await
+        .expect("login success");
+
+    let now = current_unix_seconds();
+    let access_exp = result.token_pair.access_token_expires_at;
+
+    assert!(
+        access_exp > now + 3500,
+        "access token should expire in ~1 hour, got {}",
+        access_exp - now
+    );
+    assert!(
+        access_exp < now + 3700,
+        "access token should expire in ~1 hour, got {}",
+        access_exp - now
+    );
+}
+
+#[tokio::test]
+async fn login_refresh_token_expires_in_seven_days() {
+    let service = mock_service();
+    let result = service
+        .login("test@example.com", "password123")
+        .await
+        .expect("login success");
+
+    let now = current_unix_seconds();
+    let refresh_exp = result.token_pair.refresh_token_expires_at;
+    let seven_days = 7 * 24 * 60 * 60;
+
+    assert!(
+        refresh_exp > now + seven_days - 100,
+        "refresh token should expire in ~7 days, got {}",
+        refresh_exp - now
+    );
+    assert!(
+        refresh_exp < now + seven_days + 100,
+        "refresh token should expire in ~7 days, got {}",
+        refresh_exp - now
+    );
+}
+
+#[tokio::test]
+async fn login_tokens_are_valid_jwt() {
+    let service = mock_service();
+    let result = service
+        .login("test@example.com", "password123")
+        .await
+        .expect("login success");
+
+    let access_claims = service
+        .validate_token(&result.token_pair.access_token)
+        .expect("access token is valid jwt");
+    assert_eq!(access_claims.sub, result.user_id);
+    assert_eq!(access_claims.token_type, "access");
+
+    let refresh_claims = service
+        .validate_token(&result.token_pair.refresh_token)
+        .expect("refresh token is valid jwt");
+    assert_eq!(refresh_claims.sub, result.user_id);
+    assert_eq!(refresh_claims.token_type, "refresh");
+}
+
+#[tokio::test]
 async fn login_failure_returns_invalid_credentials() {
     let service = AuthService::new(
         Arc::new(MockAuthPort {
