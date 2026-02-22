@@ -99,3 +99,72 @@ async fn list_messages_empty_session_id_returns_error() {
     let err = handler.list_session_messages(request).await.unwrap_err();
     assert_eq!(err.code(), tonic::Code::InvalidArgument);
 }
+
+#[tokio::test]
+async fn list_messages_respects_page_size() {
+    let store = Arc::new(MockMessageStore::default());
+    let captured = store.captured.clone();
+    let handler = SessionServiceHandler::new(store);
+
+    let mut request = tonic::Request::new(ListSessionMessagesRequest {
+        session_id: "session-002".to_string(),
+        pagination: Some(PaginationRequest {
+            page_size: 7,
+            page_token: String::new(),
+        }),
+        created_at_order: 0,
+    });
+    request
+        .extensions_mut()
+        .insert(UserId("user-001".to_string()));
+
+    handler.list_session_messages(request).await.unwrap();
+
+    let calls = captured.lock().expect("lock captured");
+    assert_eq!(calls.as_slice(), &[("session-002".to_string(), 7)]);
+}
+
+#[tokio::test]
+async fn list_messages_default_page_size() {
+    let store = Arc::new(MockMessageStore::default());
+    let captured = store.captured.clone();
+    let handler = SessionServiceHandler::new(store);
+
+    let mut request = tonic::Request::new(ListSessionMessagesRequest {
+        session_id: "session-003".to_string(),
+        pagination: None,
+        created_at_order: 0,
+    });
+    request
+        .extensions_mut()
+        .insert(UserId("user-001".to_string()));
+
+    handler.list_session_messages(request).await.unwrap();
+
+    let calls = captured.lock().expect("lock captured");
+    assert_eq!(calls.as_slice(), &[("session-003".to_string(), 50)]);
+}
+
+#[tokio::test]
+async fn list_messages_caps_page_size_at_200() {
+    let store = Arc::new(MockMessageStore::default());
+    let captured = store.captured.clone();
+    let handler = SessionServiceHandler::new(store);
+
+    let mut request = tonic::Request::new(ListSessionMessagesRequest {
+        session_id: "session-004".to_string(),
+        pagination: Some(PaginationRequest {
+            page_size: 500,
+            page_token: String::new(),
+        }),
+        created_at_order: 0,
+    });
+    request
+        .extensions_mut()
+        .insert(UserId("user-001".to_string()));
+
+    handler.list_session_messages(request).await.unwrap();
+
+    let calls = captured.lock().expect("lock captured");
+    assert_eq!(calls.as_slice(), &[("session-004".to_string(), 200)]);
+}

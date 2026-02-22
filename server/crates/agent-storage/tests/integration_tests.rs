@@ -105,3 +105,81 @@ async fn message_store_get_or_create_default_session(pool: PgPool) {
         .unwrap();
     assert_eq!(s1, s2);
 }
+
+#[sqlx::test(migrations = "./migrations")]
+async fn list_messages_respects_limit(pool: PgPool) {
+    let user_store = PostgresUserStore::new(pool.clone());
+    let user = user_store
+        .create_user("limit@test.com", "pass", "Limit")
+        .await
+        .unwrap();
+
+    let msg_store = PostgresMessageStore::new(pool);
+    let session_id = msg_store
+        .create_session(&user.user_id, "agent-1")
+        .await
+        .unwrap();
+
+    for idx in 1..=10 {
+        msg_store
+            .save_message(&session_id, "user", &format!("message-{idx}"))
+            .await
+            .unwrap();
+    }
+
+    let messages = msg_store
+        .get_session_messages(&session_id, 3)
+        .await
+        .unwrap();
+    assert_eq!(messages.len(), 3);
+    assert_eq!(messages[0].content, "message-8");
+    assert_eq!(messages[1].content, "message-9");
+    assert_eq!(messages[2].content, "message-10");
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn list_messages_returns_in_sequence_order(pool: PgPool) {
+    let user_store = PostgresUserStore::new(pool.clone());
+    let user = user_store
+        .create_user("sequence@test.com", "pass", "Sequence")
+        .await
+        .unwrap();
+
+    let msg_store = PostgresMessageStore::new(pool);
+    let session_id = msg_store
+        .create_session(&user.user_id, "agent-1")
+        .await
+        .unwrap();
+
+    for content in ["first", "second", "third", "fourth"] {
+        msg_store
+            .save_message(&session_id, "assistant", content)
+            .await
+            .unwrap();
+    }
+
+    let messages = msg_store
+        .get_session_messages(&session_id, 50)
+        .await
+        .unwrap();
+
+    let contents: Vec<&str> = messages.iter().map(|m| m.content.as_str()).collect();
+    assert_eq!(contents, vec!["first", "second", "third", "fourth"]);
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn create_user_duplicate_email_returns_error(pool: PgPool) {
+    let store = PostgresUserStore::new(pool);
+
+    store
+        .create_user("dup-user@test.com", "pass1", "Dupe1")
+        .await
+        .unwrap();
+
+    let err = store
+        .create_user("dup-user@test.com", "pass2", "Dupe2")
+        .await
+        .unwrap_err();
+
+    assert!(matches!(err, agent_domain::AuthError::AlreadyExists(_)));
+}

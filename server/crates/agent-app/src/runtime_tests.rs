@@ -22,6 +22,7 @@ struct MockMessageStore {
     saved: Arc<Mutex<Vec<(String, String, String)>>>,
     history: Arc<Mutex<Vec<StoredMessage>>>,
     default_session: Arc<Mutex<Option<String>>>,
+    default_session_result: Arc<Mutex<Option<Result<String, StoreError>>>>,
 }
 
 #[async_trait::async_trait]
@@ -53,6 +54,15 @@ impl MessageStore for MockMessageStore {
     }
 
     async fn get_or_create_default_session(&self, _user_id: &str) -> Result<String, StoreError> {
+        if let Some(result) = self
+            .default_session_result
+            .lock()
+            .expect("default result")
+            .clone()
+        {
+            return result;
+        }
+
         Ok(self
             .default_session
             .lock()
@@ -135,4 +145,118 @@ async fn handle_message_creates_default_session_when_missing() {
         .expect("ok");
 
     assert_eq!(result.session_id, "generated-session");
+}
+
+#[tokio::test]
+async fn handle_message_rejects_empty_content() {
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            response: Ok(LlmResponse {
+                content: "unused".to_string(),
+                model: "mock-model".to_string(),
+                usage: None,
+            }),
+        }),
+        Arc::new(MockMessageStore::default()),
+    );
+
+    let err = runtime
+        .handle_message("user-1", Some("s1"), "   \n\t")
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        AgentError::InvalidInput("message content cannot be empty".to_string())
+    );
+}
+
+#[tokio::test]
+async fn handle_message_returns_rate_limited_error_when_llm_rate_limited() {
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            response: Err(LlmError::RateLimited),
+        }),
+        Arc::new(MockMessageStore::default()),
+    );
+
+    let err = runtime
+        .handle_message("user-1", Some("session-1"), "hello")
+        .await
+        .unwrap_err();
+
+    assert_eq!(err, AgentError::Llm(LlmError::RateLimited));
+}
+
+#[tokio::test]
+async fn handle_message_returns_timeout_error_when_llm_times_out() {
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            response: Err(LlmError::Timeout),
+        }),
+        Arc::new(MockMessageStore::default()),
+    );
+
+    let err = runtime
+        .handle_message("user-1", Some("session-1"), "hello")
+        .await
+        .unwrap_err();
+
+    assert_eq!(err, AgentError::Llm(LlmError::Timeout));
+}
+
+#[tokio::test]
+async fn handle_message_returns_provider_error_when_llm_provider_fails() {
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            response: Err(LlmError::ProviderError("provider down".to_string())),
+        }),
+        Arc::new(MockMessageStore::default()),
+    );
+
+    let err = runtime
+        .handle_message("user-1", Some("session-1"), "hello")
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        AgentError::Llm(LlmError::ProviderError("provider down".to_string()))
+    );
+}
+
+#[tokio::test]
+async fn handle_message_returns_store_error_when_default_session_creation_fails() {
+    let store = Arc::new(MockMessageStore {
+        default_session_result: Arc::new(Mutex::new(Some(Err(StoreError::Internal(
+            "db unavailable".to_string(),
+        ))))),
+        ..Default::default()
+    });
+
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            response: Ok(LlmResponse {
+                content: "unused".to_string(),
+                model: "mock-model".to_string(),
+                usage: None,
+            }),
+        }),
+        store,
+    );
+
+    let err = runtime
+        .handle_message("user-1", None, "hello")
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        AgentError::Store(StoreError::Internal("db unavailable".to_string()))
+    );
 }

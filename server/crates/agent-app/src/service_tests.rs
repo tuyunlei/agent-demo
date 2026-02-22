@@ -157,3 +157,83 @@ fn validate_token_with_valid_access_token() {
     assert_eq!(claims.sub, "user-001");
     assert_eq!(claims.token_type, "access");
 }
+
+#[tokio::test]
+async fn register_whitespace_email_returns_invalid_input() {
+    let service = mock_service();
+
+    let err = service
+        .register("   \n\t", "password123", "User")
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        AuthServiceError::InvalidInput("email is required".to_string())
+    );
+}
+
+#[tokio::test]
+async fn login_auth_port_internal_error() {
+    let service = AuthService::new(
+        Arc::new(MockAuthPort {
+            auth_result: Err(AuthError::Internal("db unavailable".to_string())),
+            create_result: Ok(success_user()),
+        }),
+        "test-secret".to_string(),
+    );
+
+    let err = service
+        .login("test@example.com", "password123")
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        AuthServiceError::Internal("db unavailable".to_string())
+    );
+}
+
+#[test]
+fn validate_token_expired_returns_error() {
+    let service = mock_service();
+    let now = current_unix_seconds() as usize;
+    let token = sign_test_token(
+        "test-secret",
+        &Claims {
+            sub: "user-001".to_string(),
+            exp: now.saturating_sub(120),
+            iat: now.saturating_sub(7200),
+            token_type: "access".to_string(),
+        },
+    );
+
+    let err = service.validate_token(&token).unwrap_err();
+    assert_eq!(err, AuthServiceError::TokenValidation);
+}
+
+#[test]
+fn validate_token_invalid_returns_error() {
+    let service = mock_service();
+
+    let err = service.validate_token("this-is-not-a-jwt").unwrap_err();
+    assert_eq!(err, AuthServiceError::TokenValidation);
+}
+
+#[test]
+fn validate_token_wrong_secret_returns_error() {
+    let service = mock_service();
+    let now = current_unix_seconds() as usize;
+    let token = sign_test_token(
+        "another-secret",
+        &Claims {
+            sub: "user-001".to_string(),
+            exp: now + 3600,
+            iat: now,
+            token_type: "access".to_string(),
+        },
+    );
+
+    let err = service.validate_token(&token).unwrap_err();
+    assert_eq!(err, AuthServiceError::TokenValidation);
+}
