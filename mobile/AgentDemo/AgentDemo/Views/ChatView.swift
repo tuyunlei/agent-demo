@@ -122,3 +122,4 @@ private struct ChatMessage: Identifiable {
     let role: Role
     let text: String
 }
+
