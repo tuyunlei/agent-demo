@@ -42,8 +42,9 @@ struct ChatView: View {
                         .textFieldStyle(.roundedBorder)
                         .lineLimit(1 ... 4)
 
+                    let isInputEmpty = inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     Button("Send", action: sendMessage)
-                        .disabled(viewModel.isSending || inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(viewModel.isSending || isInputEmpty)
                 }
                 .padding()
             }
