@@ -4,17 +4,17 @@
 
 ---
 
-## Phase: idle
+## Phase: dev-pending
 
 ---
 
 ## 当前阶段
 
-**iOS 质量底线建设中。** 下一步：MQG3（ViewModel + 单测）→ 暂停等涂涂验收。
+**iOS 质量底线建设中。** MQG3 完成后暂停等涂涂验收。
 
 ## 当前执行中
 
-无。
+- MQG3 dev sub-agent（gpt-5.3-codex）：ViewModel 重构 + 单测，分支 `feature/mqg3-viewmodel-tests`
 
 ## 阻塞点
 
