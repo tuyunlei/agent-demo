@@ -98,6 +98,7 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | TM-REG | 用户注册 | ✅ | PR #7，LoginView Sign In/Sign Up 切换 + AuthServiceClient.register |
+| TM-PERSIST | Token + Session 持久化 | ✅ | PR #9，Keychain 存 token + UserDefaults 存 sessionID |
 | TM4.1 | GRDB + SQLite | 🔲 | 本地消息缓存，离线查看历史 |
 
 ### Step 5：韧性
