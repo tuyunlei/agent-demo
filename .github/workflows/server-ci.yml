@@ -93,7 +93,7 @@ jobs:
           echo "$OUTPUT" | tail -5
           COVERAGE=$(echo "$OUTPUT" | grep -oP '[\d.]+% coverage' | grep -oP '[\d.]+')
           echo "Coverage: ${COVERAGE}%"
-          THRESHOLD=54
+          THRESHOLD=65
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
             echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
             exit 1

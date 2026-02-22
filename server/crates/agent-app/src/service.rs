@@ -171,3 +171,7 @@ fn current_unix_seconds() -> i64 {
 #[cfg(test)]
 #[path = "service_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "service_prop_tests.rs"]
+mod prop_tests;
