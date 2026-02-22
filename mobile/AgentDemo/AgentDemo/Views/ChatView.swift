@@ -88,7 +88,7 @@ struct ChatView: View {
                 }
 
                 let assistantTextBlocks = response.assistantContent.compactMap { block -> String? in
-                    switch block.block {
+                    switch block.kind {
                     case let .text(textBlock):
                         return textBlock.text
                     default:
@@ -96,7 +96,8 @@ struct ChatView: View {
                     }
                 }
                 let assistantText = assistantTextBlocks.joined(separator: "\n")
-                messages.append(ChatMessage(role: .assistant, text: assistantText.isEmpty ? "(no response)" : assistantText))
+                let displayText = assistantText.isEmpty ? "(no response)" : assistantText
+                messages.append(ChatMessage(role: .assistant, text: displayText))
             } catch {
                 errorMessage = error.localizedDescription
             }
