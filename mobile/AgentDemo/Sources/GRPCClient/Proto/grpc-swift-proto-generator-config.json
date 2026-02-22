@@ -4,7 +4,7 @@
     "servers": false,
     "messages": true
   },
-  "swiftOptions": {
-    "visibility": "public"
+  "generatedSource": {
+    "accessLevel": "Public"
   }
 }
