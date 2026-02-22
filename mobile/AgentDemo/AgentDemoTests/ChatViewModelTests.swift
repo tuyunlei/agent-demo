@@ -93,11 +93,11 @@ private actor MockChatService: ChatServiceProtocol {
     }
 
     func sendMessage(
-        token: String,
-        requestID: String,
-        text: String,
-        sessionID: String,
-        agentID: String
+        token _: String,
+        requestID _: String,
+        text _: String,
+        sessionID _: String,
+        agentID _: String
     ) async throws -> Ai_Agent_Platform_V1_SendMessageResponse {
         guard !queue.isEmpty else {
             throw MockError.missingStub
