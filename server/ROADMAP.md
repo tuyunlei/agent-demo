@@ -74,9 +74,19 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | QG7 | 集成测试 | ✅ | PR #6，sqlx::test + CI PG service + 5 集成测试 + sequence_num 排序修复 |
-| QG8 | 验收测试脚本化 | 🔲 | 关键业务流程 grpcurl 脚本，部署后自动验证（注册→登录→发消息→拉历史） |
+| QG8 | 验收测试脚本化 | ✅ | PR #12，grpcurl 脚本 6 场景（注册→登录→发消息→拉历史→重复注册→无效 token） |
 
-### 质量铁律（QG 全部就位后强制执行）
+### 质量深化
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| QG9 | 覆盖率提升 70%+ | 🔲 | 补核心路径单测 + 集成测试，棘轮目标 70% |
+| QG10 | 专业复杂度度量 | 🔲 | rust-code-analysis-cli 替代手写脚本，CI 卡圈复杂度 ≤10 / 认知复杂度 ≤15 |
+| QG11 | 验收测试进 CI | 🔲 | CI job 起真实服务 + PG，跑 acceptance-test.sh |
+| QG12 | Mutation testing | 🔲 | cargo-mutants 试跑，评估 mutation score，找测试盲区 |
+| QG13 | Property testing | 🔲 | proptest 关键路径（JWT 解析、消息排序等边界逻辑） |
+
+### 质量铁律
 
 - CI 红 = 不能 merge，没有例外
 - 新功能 PR 必须包含对应测试
