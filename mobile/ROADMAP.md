@@ -68,7 +68,7 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| MQG3 | ViewModel 重构 + 单元测试 | 🔲 | 业务逻辑从 View 抽到 ViewModel，ChatServiceClient 协议化可 mock，验证 AI 回复内容正确显示 |
+| MQG3 | ViewModel 重构 + 单元测试 | ✅ | ChatViewModel + ChatServiceProtocol + 5 个 Swift Testing 单测 |
 
 ### 质量铁律
 
