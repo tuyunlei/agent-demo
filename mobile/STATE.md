@@ -4,17 +4,17 @@
 
 ---
 
-## Phase: review-pending
+## Phase: idle
 
 ---
 
 ## 当前阶段
 
-**iOS 质量底线建设中。** 推进顺序：~~MQG2~~ → MQG-infra（SPM plugin） → MQG3（ViewModel + 单测） → FIX-1（AI 回复显示）→ 暂停等涂涂验收。
+**iOS 质量底线建设中。** 下一步：FIX-1（Chat 显示 AI 回复）→ MQG3（ViewModel + 单测）→ 暂停等涂涂验收。
 
 ## 当前执行中
 
-MQG-infra PR #9：CI watch + review sub-agent 运行中。
+无。
 
 ## 阻塞点
 
@@ -23,17 +23,14 @@ MQG-infra PR #9：CI watch + review sub-agent 运行中。
 ## 已完成
 
 - ✅ M01-M07 架构设计
-- ✅ TM3.1a Xcode 项目初始化
-- ✅ TM3.1b grpc-swift v2 + proto 编译
-- ✅ TM3.2 GitHub Actions iOS CI
-- ✅ TM3.3 Login 页面
-- ✅ TM3.4 Chat 页面
+- ✅ TM3.1a~TM3.4 Walking Skeleton
 - ✅ MQG1 SwiftLint + SwiftFormat CI 门禁（PR #7）
 - ✅ MQG2 File size & complexity check（PR #8）
+- ✅ MQG-infra SPM Build Plugin（PR #9）— proto 变更自动同步
 
 ## 已知问题
 
-- Chat 页面显示 `[sent] request_id=...` 而非 AI 回复（FIX-1，依赖 MQG-infra 重新生成 proto）
+- Chat 页面显示 `[sent] request_id=...` 而非 AI 回复（FIX-1，现在 proto 已有 assistantContent 字段，可以修了）
 
 ---
 
