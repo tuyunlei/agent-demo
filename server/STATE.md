@@ -10,15 +10,24 @@
 
 ## 当前阶段
 
-**质量体系全部完成（QG1-14 + E2E-1~5）。** 等涂涂确认下一步功能开发方向。
+**Agent 核心能力开发。** 按 ROADMAP 顺序推进：工具调用 → web_search → 上下文时间戳 → 多会话 → Token 刷新 → 统一错误处理。
+
+## 任务队列
+
+1. 🔲 工具调用链路 + get_current_time（PR #22）
+2. 🔲 web_search 工具（PR #23）
+3. 🔲 上下文时间戳 + System Prompt 增强（PR #24）
+4. 🔲 多会话管理（PR #25）
+5. 🔲 Token 自动刷新（PR #26）
+6. 🔲 统一错误处理（PR #27）
 
 ## 当前执行中
 
-无。
+无。准备派第一个任务。
 
 ## 阻塞点
 
-等涂涂确认功能开发优先级：T5.1 统一错误处理 → T6.2+ListSessions → RefreshToken → T5.2
+无。
 
 ## 已完成
 
@@ -27,7 +36,7 @@
 - ✅ T2.1~T2.3 真实认证
 - ✅ T3.1~T3.4 真实 AI 回复 + 部署
 - ✅ 安全加固
-- ✅ QG1-14 质量体系（fmt/clippy/arch/filesize/tests/coverage/mutation/proptest/e2e/Rust arch tests）
+- ✅ QG1-14 质量体系
 - ✅ E2E-1~5 专业 e2e 测试体系
 - ✅ T4.1~T4.3 持久化
 - ✅ T6.1 ListSessionMessages
