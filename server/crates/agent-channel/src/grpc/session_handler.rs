@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use super::UserId;
-use agent_domain::{MessageStore, StoreError, StoredMessage, StoredSession};
+use agent_domain::{MessageStore, StoredMessage, StoredSession};
 use agent_proto::content_block::Kind;
 use agent_proto::session_service_server::SessionService;
 use agent_proto::{
@@ -11,6 +11,8 @@ use agent_proto::{
 };
 use prost_types::Timestamp;
 use tonic::{Request, Response, Status};
+
+use super::error::into_status;
 
 pub struct SessionServiceHandler {
     message_store: Arc<dyn MessageStore + Send + Sync>,
@@ -35,7 +37,7 @@ impl SessionService for SessionServiceHandler {
             .message_store
             .create_session_with_title(&user_id, req.title.trim())
             .await
-            .map_err(map_store_error)?;
+            .map_err(into_status)?;
 
         Ok(Response::new(CreateSessionResponse {
             session: Some(to_proto_session(session)),
@@ -58,7 +60,7 @@ impl SessionService for SessionServiceHandler {
             .message_store
             .get_session(&user_id, session_id)
             .await
-            .map_err(map_store_error)?
+            .map_err(into_status)?
             .ok_or_else(|| Status::not_found("session not found"))?;
 
         Ok(Response::new(GetSessionResponse {
@@ -76,7 +78,7 @@ impl SessionService for SessionServiceHandler {
             .message_store
             .list_sessions(&user_id)
             .await
-            .map_err(map_store_error)?;
+            .map_err(into_status)?;
 
         Ok(Response::new(ListSessionsResponse {
             sessions: sessions.into_iter().map(to_proto_session).collect(),
@@ -109,7 +111,7 @@ impl SessionService for SessionServiceHandler {
             .message_store
             .get_session_messages(session_id, limit)
             .await
-            .map_err(map_store_error)?;
+            .map_err(into_status)?;
 
         Ok(Response::new(ListSessionMessagesResponse {
             messages: messages.into_iter().map(to_proto_message).collect(),
@@ -163,13 +165,6 @@ fn to_proto_message(message: StoredMessage) -> ChatMessage {
 
 fn to_timestamp(seconds: i64) -> Timestamp {
     Timestamp { seconds, nanos: 0 }
-}
-
-fn map_store_error(err: StoreError) -> Status {
-    match err {
-        StoreError::NotFound(msg) => Status::not_found(msg),
-        StoreError::Internal(msg) => Status::internal(msg),
-    }
 }
 
 #[cfg(test)]

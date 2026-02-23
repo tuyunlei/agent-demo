@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use agent_app::{AuthService, AuthServiceError};
+use agent_app::AuthService;
 use agent_proto::auth_service_server::AuthService as AuthServiceTrait;
 use agent_proto::{
     LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest,
@@ -8,6 +8,8 @@ use agent_proto::{
 };
 use prost_types::Timestamp;
 use tonic::{Request, Response, Status};
+
+use super::error::into_status;
 
 pub struct AuthServiceHandler {
     auth_service: Arc<AuthService>,
@@ -30,7 +32,7 @@ impl AuthServiceTrait for AuthServiceHandler {
             .auth_service
             .register(&req.email, &req.password, &req.display_name)
             .await
-            .map_err(map_error)?;
+            .map_err(into_status)?;
 
         Ok(Response::new(RegisterResponse {
             user_id: result.user_id,
@@ -57,7 +59,7 @@ impl AuthServiceTrait for AuthServiceHandler {
             .auth_service
             .login(&req.email, &req.password)
             .await
-            .map_err(map_error)?;
+            .map_err(into_status)?;
 
         Ok(Response::new(LoginResponse {
             user_id: result.user_id,
@@ -84,7 +86,7 @@ impl AuthServiceTrait for AuthServiceHandler {
             .auth_service
             .refresh_token(&req.refresh_token)
             .await
-            .map_err(map_error)?;
+            .map_err(into_status)?;
 
         Ok(Response::new(RefreshTokenResponse {
             token_pair: Some(TokenPair {
@@ -105,18 +107,6 @@ impl AuthServiceTrait for AuthServiceHandler {
         _request: Request<LogoutRequest>,
     ) -> Result<Response<LogoutResponse>, Status> {
         Err(Status::unimplemented("not implemented"))
-    }
-}
-
-fn map_error(err: AuthServiceError) -> Status {
-    match err {
-        AuthServiceError::InvalidCredentials => Status::unauthenticated("invalid credentials"),
-        AuthServiceError::AlreadyExists(_) => Status::already_exists("email already in use"),
-        AuthServiceError::InvalidInput(msg) => Status::invalid_argument(msg),
-        AuthServiceError::TokenCreation | AuthServiceError::TokenValidation => {
-            Status::internal("token handling failed")
-        }
-        AuthServiceError::Internal(msg) => Status::internal(msg),
     }
 }
 

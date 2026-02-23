@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use agent_domain::{
-    FinishReason, LlmProvider, LlmRequest, LlmResponse, LlmUsage, MessageStore, StoreError,
-    StoredMessage, ToolResult, ToolRuntime, ToolSpec,
+    FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse, LlmUsage, MessageStore,
+    StoreError, StoredMessage, ToolResult, ToolRuntime, ToolSpec,
 };
 use agent_proto::{ContentBlock, TextBlock};
 

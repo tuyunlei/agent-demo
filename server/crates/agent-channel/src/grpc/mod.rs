@@ -1,6 +1,7 @@
 mod auth_handler;
 mod auth_interceptor;
 mod chat_handler;
+mod error;
 pub mod session_handler;
 
 pub use auth_handler::AuthServiceHandler;

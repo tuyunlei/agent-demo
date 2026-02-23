@@ -3,13 +3,14 @@ use std::sync::Arc;
 
 use super::UserId;
 use agent_app::AgentRuntime;
-use agent_domain::{AgentError, LlmError, StoreError};
 use agent_proto::chat_service_server::ChatService;
 use agent_proto::{
     ChatEvent, SendMessageRequest, SendMessageResponse, SubmitToolResultRequest,
     SubmitToolResultResponse, SubscribeRequest, content_block,
 };
 use tonic::{Request, Response, Status};
+
+use super::error::into_status;
 
 pub struct ChatServiceHandler {
     runtime: Arc<AgentRuntime>,
@@ -43,7 +44,7 @@ impl ChatService for ChatServiceHandler {
             .runtime
             .handle_message(&user_id, non_empty(&req.session_id), &user_text)
             .await
-            .map_err(map_agent_error)?;
+            .map_err(into_status)?;
 
         use agent_proto::ContentBlock;
         use agent_proto::TextBlock;
@@ -98,35 +99,11 @@ fn extract_text(req: &SendMessageRequest) -> Result<String, Status> {
     Ok(text)
 }
 
-fn map_agent_error(err: AgentError) -> Status {
-    match err {
-        AgentError::InvalidInput(msg) => Status::invalid_argument(msg),
-        AgentError::Llm(llm_err) => map_llm_error(llm_err),
-        AgentError::Store(store_err) => map_store_error(store_err),
-    }
-}
-
 fn non_empty(value: &str) -> Option<&str> {
     if value.trim().is_empty() {
         None
     } else {
         Some(value)
-    }
-}
-
-fn map_llm_error(err: LlmError) -> Status {
-    match err {
-        LlmError::RateLimited => Status::resource_exhausted("llm request rate limited"),
-        LlmError::InvalidRequest(msg) => Status::invalid_argument(msg),
-        LlmError::Timeout => Status::deadline_exceeded("llm request timeout"),
-        LlmError::ProviderError(msg) => Status::internal(msg),
-    }
-}
-
-fn map_store_error(err: StoreError) -> Status {
-    match err {
-        StoreError::NotFound(msg) => Status::not_found(msg),
-        StoreError::Internal(msg) => Status::internal(msg),
     }
 }
 
