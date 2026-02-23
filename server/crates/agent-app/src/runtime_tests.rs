@@ -25,6 +25,7 @@ impl LlmProvider for MockLlmProvider {
 struct MockToolRuntime {
     tools: Vec<ToolSpec>,
     results: Arc<Mutex<HashMap<String, String>>>,
+    failure: Option<AgentError>,
 }
 
 #[async_trait::async_trait]
@@ -34,6 +35,10 @@ impl ToolRuntime for MockToolRuntime {
     }
 
     async fn execute(&self, name: &str, _arguments: &str) -> Result<ToolResult, AgentError> {
+        if let Some(err) = &self.failure {
+            return Err(err.clone());
+        }
+
         let content = self
             .results
             .lock()
@@ -51,6 +56,7 @@ impl ToolRuntime for MockToolRuntime {
 #[derive(Default)]
 struct MockMessageStore {
     saved: Arc<Mutex<Vec<(String, String, String)>>>,
+    saved_ext: Arc<Mutex<Vec<(String, ChatMessage)>>>,
     history: Arc<Mutex<Vec<StoredMessage>>>,
     default_session: Arc<Mutex<Option<String>>>,
     default_session_result: Arc<Mutex<Option<Result<String, StoreError>>>>,
@@ -81,6 +87,10 @@ impl MessageStore for MockMessageStore {
         session_id: &str,
         message: &ChatMessage,
     ) -> Result<String, StoreError> {
+        self.saved_ext
+            .lock()
+            .expect("saved ext")
+            .push((session_id.to_string(), message.clone()));
         self.save_message(session_id, &message.role, &message.content)
             .await
     }
@@ -123,6 +133,16 @@ fn stop_response(content: &str) -> Result<LlmResponse, LlmError> {
         }),
         tool_calls: vec![],
         finish_reason: FinishReason::Stop,
+    })
+}
+
+fn tool_calls_response(tool_calls: Vec<ToolCall>) -> Result<LlmResponse, LlmError> {
+    Ok(LlmResponse {
+        content: String::new(),
+        model: "mock-model".to_string(),
+        usage: None,
+        tool_calls,
+        finish_reason: FinishReason::ToolCalls,
     })
 }
 
@@ -175,17 +195,11 @@ async fn handle_message_executes_tools_then_returns_final_text() {
         Arc::new(MockLlmProvider {
             captured,
             responses: Arc::new(Mutex::new(vec![
-                Ok(LlmResponse {
-                    content: String::new(),
-                    model: "mock".to_string(),
-                    usage: None,
-                    tool_calls: vec![ToolCall {
-                        call_id: "call-1".to_string(),
-                        name: "get_current_time".to_string(),
-                        arguments: "{}".to_string(),
-                    }],
-                    finish_reason: FinishReason::ToolCalls,
-                }),
+                tool_calls_response(vec![ToolCall {
+                    call_id: "call-1".to_string(),
+                    name: "get_current_time".to_string(),
+                    arguments: "{}".to_string(),
+                }]),
                 stop_response("final answer"),
             ])),
         }),
@@ -200,6 +214,7 @@ async fn handle_message_executes_tools_then_returns_final_text() {
                 "get_current_time".to_string(),
                 "2026-01-01T00:00:00+00:00".to_string(),
             )]))),
+            ..Default::default()
         }),
     );
 
@@ -214,6 +229,14 @@ async fn handle_message_executes_tools_then_returns_final_text() {
     assert_eq!(saved[1].1, "assistant");
     assert_eq!(saved[2].1, "tool");
     assert_eq!(saved[3].1, "assistant");
+
+    let saved_ext = store.saved_ext.lock().expect("saved ext");
+    assert_eq!(saved_ext.len(), 2);
+    assert_eq!(saved_ext[0].1.role, "assistant");
+    assert!(saved_ext[0].1.content.is_empty());
+    assert!(saved_ext[0].1.tool_calls.is_some());
+    assert_eq!(saved_ext[1].1.role, "tool");
+    assert_eq!(saved_ext[1].1.tool_call_id.as_deref(), Some("call-1"));
 }
 
 #[tokio::test]
@@ -260,4 +283,99 @@ async fn handle_message_rejects_empty_content() {
         err,
         AgentError::InvalidInput("message content cannot be empty".to_string())
     );
+}
+
+#[tokio::test]
+async fn handle_message_errors_when_max_tool_rounds_exceeded() {
+    let responses = (0..10)
+        .map(|_| {
+            tool_calls_response(vec![ToolCall {
+                call_id: "call-1".to_string(),
+                name: "loop_tool".to_string(),
+                arguments: "{}".to_string(),
+            }])
+        })
+        .collect::<Vec<_>>();
+
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            responses: Arc::new(Mutex::new(responses)),
+        }),
+        Arc::new(MockMessageStore::default()),
+        Arc::new(MockToolRuntime {
+            tools: vec![ToolSpec {
+                name: "loop_tool".to_string(),
+                description: "loop".to_string(),
+                parameters: serde_json::json!({"type":"object"}),
+            }],
+            ..Default::default()
+        }),
+    );
+
+    let err = runtime
+        .handle_message("user-1", Some("s1"), "loop")
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        err,
+        AgentError::InvalidInput("max tool rounds exceeded".to_string())
+    );
+}
+
+#[tokio::test]
+async fn handle_message_propagates_tool_execution_failure() {
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            responses: Arc::new(Mutex::new(vec![tool_calls_response(vec![ToolCall {
+                call_id: "call-1".to_string(),
+                name: "failing_tool".to_string(),
+                arguments: "{}".to_string(),
+            }])])),
+        }),
+        Arc::new(MockMessageStore::default()),
+        Arc::new(MockToolRuntime {
+            tools: vec![ToolSpec {
+                name: "failing_tool".to_string(),
+                description: "fails".to_string(),
+                parameters: serde_json::json!({"type":"object"}),
+            }],
+            failure: Some(AgentError::InvalidInput("tool failed".to_string())),
+            ..Default::default()
+        }),
+    );
+
+    let err = runtime
+        .handle_message("user-1", Some("s1"), "run failing tool")
+        .await
+        .unwrap_err();
+
+    assert_eq!(err, AgentError::InvalidInput("tool failed".to_string()));
+}
+
+#[tokio::test]
+async fn handle_message_returns_partial_content_on_length_finish_reason() {
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: Arc::new(Mutex::new(Vec::new())),
+            responses: Arc::new(Mutex::new(vec![Ok(LlmResponse {
+                content: "partial response".to_string(),
+                model: "mock-model".to_string(),
+                usage: None,
+                tool_calls: vec![],
+                finish_reason: FinishReason::Length,
+            })])),
+        }),
+        Arc::new(MockMessageStore::default()),
+        Arc::new(MockToolRuntime::default()),
+    );
+
+    let result = runtime
+        .handle_message("user-1", Some("s1"), "long answer")
+        .await
+        .expect("partial content should be returned");
+
+    assert_eq!(result.reply, "partial response");
 }

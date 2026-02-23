@@ -67,21 +67,39 @@ impl AgentRuntime {
             };
 
             let response = self.llm_provider.generate(request).await?;
-            if response.finish_reason == FinishReason::Stop {
-                self.message_store
-                    .save_message(&session_id, "assistant", &response.content)
-                    .await?;
-                return Ok(HandleMessageResult {
-                    session_id,
-                    reply: response.content,
-                });
-            }
+            match response.finish_reason {
+                FinishReason::Stop => {
+                    self.message_store
+                        .save_message(&session_id, "assistant", &response.content)
+                        .await?;
+                    return Ok(HandleMessageResult {
+                        session_id,
+                        reply: response.content,
+                    });
+                }
+                FinishReason::ToolCalls => {
+                    self.save_assistant_tool_call_message(&session_id, &response.tool_calls)
+                        .await?;
+                    self.append_assistant_tool_calls(&mut messages, response.tool_calls.clone());
+                    self.execute_tool_calls(&session_id, &mut messages, response.tool_calls)
+                        .await?;
+                }
+                FinishReason::Length => {
+                    if response.content.is_empty() {
+                        return Err(AgentError::InvalidInput(
+                            "response truncated with empty content".to_string(),
+                        ));
+                    }
 
-            self.save_assistant_tool_call_message(&session_id, &response.tool_calls)
-                .await?;
-            self.append_assistant_tool_calls(&mut messages, response.tool_calls.clone());
-            self.execute_tool_calls(&session_id, &mut messages, response.tool_calls)
-                .await?;
+                    self.message_store
+                        .save_message(&session_id, "assistant", &response.content)
+                        .await?;
+                    return Ok(HandleMessageResult {
+                        session_id,
+                        reply: response.content,
+                    });
+                }
+            }
         }
 
         Err(AgentError::InvalidInput(
@@ -126,10 +144,14 @@ impl AgentRuntime {
         session_id: &str,
         tool_calls: &[ToolCall],
     ) -> Result<(), AgentError> {
-        let encoded = serde_json::to_string(tool_calls)
-            .map_err(|e| AgentError::InvalidInput(format!("failed to encode tool_calls: {e}")))?;
+        let message = ChatMessage {
+            role: "assistant".to_string(),
+            content: String::new(),
+            tool_calls: Some(tool_calls.to_vec()),
+            tool_call_id: None,
+        };
         self.message_store
-            .save_message(session_id, "assistant", &encoded)
+            .save_message_ext(session_id, &message)
             .await?;
         Ok(())
     }
@@ -163,15 +185,16 @@ impl AgentRuntime {
             } else {
                 result.call_id
             };
-            self.message_store
-                .save_message(session_id, "tool", &result.content)
-                .await?;
-            messages.push(ChatMessage {
+            let message = ChatMessage {
                 role: "tool".to_string(),
                 content: result.content,
                 tool_calls: None,
                 tool_call_id: Some(call_id),
-            });
+            };
+            self.message_store
+                .save_message_ext(session_id, &message)
+                .await?;
+            messages.push(message);
         }
         Ok(())
     }
