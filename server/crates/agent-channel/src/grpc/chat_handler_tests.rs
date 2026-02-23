@@ -123,7 +123,10 @@ async fn test_send_message_calls_runtime_chain() {
     let requests = captured.lock().expect("lock captured");
     assert_eq!(requests.len(), 1);
     assert_eq!(requests[0].messages[0].role, "system");
-    assert_eq!(requests[0].messages[1].content, "hello runtime");
+    assert_eq!(
+        requests[0].messages[1].content,
+        "[1970-01-01 08:00] hello runtime"
+    );
 }
 
 #[tokio::test]

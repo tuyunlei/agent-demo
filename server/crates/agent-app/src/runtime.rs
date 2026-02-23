@@ -2,10 +2,12 @@ use std::sync::Arc;
 
 use agent_domain::{
     AgentError, ChatMessage, FinishReason, LlmProvider, LlmRequest, MessageStore, ToolCall,
-    ToolRuntime,
+    ToolRuntime, ToolSpec,
 };
+use chrono::{DateTime, TimeZone, Utc};
+use chrono_tz::Tz;
 
-const SYSTEM_PROMPT: &str = "You are a helpful assistant.";
+const CONTEXT_TIMEZONE: &str = "Asia/Shanghai";
 const MAX_TOOL_ROUNDS: usize = 10;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,8 +56,10 @@ impl AgentRuntime {
             .message_store
             .get_session_messages(&session_id, 50)
             .await?;
-        let mut messages = self.build_messages(history);
         let tool_specs = self.tool_runtime.list_tools();
+        let timezone = parse_timezone(CONTEXT_TIMEZONE);
+        let system_prompt = build_system_prompt(&tool_specs, timezone);
+        let mut messages = self.build_messages(history, &system_prompt, timezone);
 
         for _ in 0..MAX_TOOL_ROUNDS {
             let request = LlmRequest {
@@ -121,17 +125,22 @@ impl AgentRuntime {
         }
     }
 
-    fn build_messages(&self, history: Vec<agent_domain::StoredMessage>) -> Vec<ChatMessage> {
+    fn build_messages(
+        &self,
+        history: Vec<agent_domain::StoredMessage>,
+        system_prompt: &str,
+        timezone: Tz,
+    ) -> Vec<ChatMessage> {
         let mut messages = vec![ChatMessage {
             role: "system".to_string(),
-            content: SYSTEM_PROMPT.to_string(),
+            content: system_prompt.to_string(),
             tool_calls: None,
             tool_call_id: None,
         }];
 
         messages.extend(history.into_iter().map(|item| ChatMessage {
-            role: item.role,
-            content: item.content,
+            role: item.role.clone(),
+            content: format_message_content(&item.role, &item.content, item.created_at, timezone),
             tool_calls: None,
             tool_call_id: None,
         }));
@@ -198,6 +207,45 @@ impl AgentRuntime {
         }
         Ok(())
     }
+}
+
+fn parse_timezone(name: &str) -> Tz {
+    name.parse().unwrap_or(chrono_tz::UTC)
+}
+
+fn format_message_content(role: &str, content: &str, created_at: i64, timezone: Tz) -> String {
+    if role != "user" && role != "assistant" {
+        return content.to_string();
+    }
+
+    match Utc.timestamp_opt(created_at, 0).single() {
+        Some(timestamp) => format!("[{}] {content}", format_timestamp(timestamp, timezone)),
+        None => content.to_string(),
+    }
+}
+
+fn format_timestamp(timestamp: DateTime<Utc>, timezone: Tz) -> String {
+    timestamp
+        .with_timezone(&timezone)
+        .format("%Y-%m-%d %H:%M")
+        .to_string()
+}
+
+fn build_system_prompt(tool_specs: &[ToolSpec], timezone: Tz) -> String {
+    let now = format_timestamp(Utc::now(), timezone);
+    let tools = if tool_specs.is_empty() {
+        "- (none)".to_string()
+    } else {
+        tool_specs
+            .iter()
+            .map(|tool| format!("- {}: {}", tool.name, tool.description))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    format!(
+        "You are a helpful AI assistant.\n\nCurrent time: {now} ({timezone})\n\nYou have access to the following tools:\n{tools}\n\nWhen the user asks about current events, time, or facts you're unsure about, use the appropriate tool.\nBe concise and helpful. Respond in the same language the user uses."
+    )
 }
 
 #[cfg(test)]

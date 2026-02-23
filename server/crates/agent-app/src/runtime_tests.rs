@@ -179,7 +179,12 @@ async fn handle_message_with_store_persists_and_uses_history() {
 
     let requests = captured.lock().expect("lock captured");
     assert_eq!(requests[0].messages[0].role, "system");
-    assert_eq!(requests[0].messages[1].content, "old message");
+    assert!(requests[0].messages[0].content.contains("Current time: "));
+    assert!(requests[0].messages[0].content.contains("(Asia/Shanghai)"));
+    assert_eq!(
+        requests[0].messages[1].content,
+        "[1970-01-01 08:00] old message"
+    );
 
     let saved = store.saved.lock().expect("saved");
     assert_eq!(saved.len(), 2);
@@ -378,4 +383,75 @@ async fn handle_message_returns_partial_content_on_length_finish_reason() {
         .expect("partial content should be returned");
 
     assert_eq!(result.reply, "partial response");
+}
+
+#[tokio::test]
+async fn handle_message_system_prompt_contains_tool_list() {
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: captured.clone(),
+            responses: Arc::new(Mutex::new(vec![stop_response("ok")])),
+        }),
+        Arc::new(MockMessageStore::default()),
+        Arc::new(MockToolRuntime {
+            tools: vec![
+                ToolSpec {
+                    name: "get_current_time".to_string(),
+                    description: "Get the current time in any timezone".to_string(),
+                    parameters: serde_json::json!({"type":"object"}),
+                },
+                ToolSpec {
+                    name: "web_search".to_string(),
+                    description: "Search the web for current information".to_string(),
+                    parameters: serde_json::json!({"type":"object"}),
+                },
+            ],
+            ..Default::default()
+        }),
+    );
+
+    runtime
+        .handle_message("u1", Some("s1"), "hi")
+        .await
+        .expect("ok");
+
+    let requests = captured.lock().expect("lock captured");
+    let prompt = &requests[0].messages[0].content;
+    assert!(prompt.contains("Current time: "));
+    assert!(prompt.contains("(Asia/Shanghai)"));
+    assert!(prompt.contains("- get_current_time: Get the current time in any timezone"));
+    assert!(prompt.contains("- web_search: Search the web for current information"));
+}
+
+#[tokio::test]
+async fn handle_message_does_not_add_timestamp_to_tool_messages() {
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let store = Arc::new(MockMessageStore {
+        history: Arc::new(Mutex::new(vec![StoredMessage {
+            id: "m1".to_string(),
+            session_id: "s1".to_string(),
+            role: "tool".to_string(),
+            content: "tool output".to_string(),
+            created_at: 1,
+        }])),
+        ..Default::default()
+    });
+
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured: captured.clone(),
+            responses: Arc::new(Mutex::new(vec![stop_response("ok")])),
+        }),
+        store,
+        Arc::new(MockToolRuntime::default()),
+    );
+
+    runtime
+        .handle_message("u1", Some("s1"), "next")
+        .await
+        .expect("ok");
+
+    let requests = captured.lock().expect("lock captured");
+    assert_eq!(requests[0].messages[1].content, "tool output");
 }
