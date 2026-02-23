@@ -5,7 +5,7 @@ public struct APIClient: Sendable {
     public let host: String
     public let port: Int
 
-    public init(host: String = "REDACTED_HOST", port: Int = 8443) {
+    public init(host: String = "localhost", port: Int = 8443) {
         self.host = host
         self.port = port
     }

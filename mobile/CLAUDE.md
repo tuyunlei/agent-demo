@@ -5,7 +5,7 @@
 AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
 
 - **代码**：当前目录（`mobile/`）
-- **服务端**：`../server/`（Rust，已部署 `REDACTED_HOST:8443`）
+- **服务端**：`../server/`（Rust，部署地址见 `deploy/.env`）
 - **Proto**：`../proto/`（SPM Build Plugin 自动生成 Swift 代码）
 - **设计文档**：`docs/design/`
 - **CI**：GitHub Actions macOS runner

@@ -10,7 +10,7 @@
 ## 技术选型
 
 - **gRPC 库**：grpc-swift v2（grpc-swift-protobuf + grpc-swift-nio-transport）— Swift Concurrency 原生
-- **Server 地址**：`REDACTED_HOST:8443`（gRPC over TLS，Caddy 反代）
+- **Server 地址**：见 `deploy/.env`（gRPC over TLS，Caddy 反代）
 
 ---
 
