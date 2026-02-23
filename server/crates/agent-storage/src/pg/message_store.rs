@@ -1,4 +1,4 @@
-use agent_domain::{MessageStore, StoreError, StoredMessage};
+use agent_domain::{MessageStore, StoreError, StoredMessage, StoredSession};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -10,6 +10,19 @@ pub struct PostgresMessageStore {
 #[derive(sqlx::FromRow)]
 struct SessionRow {
     id: Uuid,
+}
+
+#[derive(sqlx::FromRow)]
+struct SessionDetailRow {
+    id: Uuid,
+    user_id: Uuid,
+    agent_id: String,
+    title: String,
+    summary: String,
+    created_at: i64,
+    updated_at: i64,
+    last_message_at: Option<i64>,
+    archived: bool,
 }
 
 #[derive(sqlx::FromRow)]
@@ -41,6 +54,76 @@ impl MessageStore for PostgresMessageStore {
         .map_err(map_sqlx_error)?;
 
         Ok(session.id.to_string())
+    }
+
+    async fn create_session_with_title(
+        &self,
+        user_id: &str,
+        title: &str,
+    ) -> Result<StoredSession, StoreError> {
+        let user_uuid = parse_uuid(user_id, "user_id")?;
+        let row = sqlx::query_as::<_, SessionDetailRow>(
+            "INSERT INTO sessions (user_id, agent_id, title)
+             VALUES ($1, '', $2)
+             RETURNING id, user_id, agent_id, title, summary,
+                EXTRACT(EPOCH FROM created_at)::BIGINT AS created_at,
+                EXTRACT(EPOCH FROM updated_at)::BIGINT AS updated_at,
+                EXTRACT(EPOCH FROM last_message_at)::BIGINT AS last_message_at,
+                archived",
+        )
+        .bind(user_uuid)
+        .bind(title)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(to_stored_session(row))
+    }
+
+    async fn list_sessions(&self, user_id: &str) -> Result<Vec<StoredSession>, StoreError> {
+        let user_uuid = parse_uuid(user_id, "user_id")?;
+        let rows = sqlx::query_as::<_, SessionDetailRow>(
+            "SELECT id, user_id, agent_id, title, summary,
+                EXTRACT(EPOCH FROM created_at)::BIGINT AS created_at,
+                EXTRACT(EPOCH FROM updated_at)::BIGINT AS updated_at,
+                EXTRACT(EPOCH FROM last_message_at)::BIGINT AS last_message_at,
+                archived
+             FROM sessions
+             WHERE user_id = $1 AND archived = false
+             ORDER BY updated_at DESC
+             LIMIT 50",
+        )
+        .bind(user_uuid)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(rows.into_iter().map(to_stored_session).collect())
+    }
+
+    async fn get_session(
+        &self,
+        user_id: &str,
+        session_id: &str,
+    ) -> Result<Option<StoredSession>, StoreError> {
+        let user_uuid = parse_uuid(user_id, "user_id")?;
+        let session_uuid = parse_uuid(session_id, "session_id")?;
+        let row = sqlx::query_as::<_, SessionDetailRow>(
+            "SELECT id, user_id, agent_id, title, summary,
+                EXTRACT(EPOCH FROM created_at)::BIGINT AS created_at,
+                EXTRACT(EPOCH FROM updated_at)::BIGINT AS updated_at,
+                EXTRACT(EPOCH FROM last_message_at)::BIGINT AS last_message_at,
+                archived
+             FROM sessions
+             WHERE id = $1 AND user_id = $2",
+        )
+        .bind(session_uuid)
+        .bind(user_uuid)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(row.map(to_stored_session))
     }
 
     async fn save_message(
@@ -131,6 +214,20 @@ impl MessageStore for PostgresMessageStore {
             Some(row) => Ok(row.id.to_string()),
             None => self.create_session(user_id, "").await,
         }
+    }
+}
+
+fn to_stored_session(row: SessionDetailRow) -> StoredSession {
+    StoredSession {
+        id: row.id.to_string(),
+        user_id: row.user_id.to_string(),
+        agent_id: row.agent_id,
+        title: row.title,
+        summary: row.summary,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        last_message_at: row.last_message_at,
+        archived: row.archived,
     }
 }
 

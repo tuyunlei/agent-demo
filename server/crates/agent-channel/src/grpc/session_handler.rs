@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use super::UserId;
-use agent_domain::{MessageStore, StoreError, StoredMessage};
+use agent_domain::{MessageStore, StoreError, StoredMessage, StoredSession};
 use agent_proto::content_block::Kind;
 use agent_proto::session_service_server::SessionService;
 use agent_proto::{
-    ChatMessage, ContentBlock, GetSessionRequest, GetSessionResponse, ListSessionMessagesRequest,
-    ListSessionMessagesResponse, ListSessionsRequest, ListSessionsResponse, PaginationResponse,
-    TextBlock,
+    ChatMessage, ContentBlock, CreateSessionRequest, CreateSessionResponse, GetSessionRequest,
+    GetSessionResponse, ListSessionMessagesRequest, ListSessionMessagesResponse,
+    ListSessionsRequest, ListSessionsResponse, PaginationResponse, Session, TextBlock,
 };
 use prost_types::Timestamp;
 use tonic::{Request, Response, Status};
@@ -24,28 +24,74 @@ impl SessionServiceHandler {
 
 #[tonic::async_trait]
 impl SessionService for SessionServiceHandler {
+    async fn create_session(
+        &self,
+        request: Request<CreateSessionRequest>,
+    ) -> Result<Response<CreateSessionResponse>, Status> {
+        let user_id = user_id_from_request(&request)
+            .ok_or_else(|| Status::unauthenticated("missing user identity"))?;
+        let req = request.into_inner();
+        let session = self
+            .message_store
+            .create_session_with_title(&user_id, req.title.trim())
+            .await
+            .map_err(map_store_error)?;
+
+        Ok(Response::new(CreateSessionResponse {
+            session: Some(to_proto_session(session)),
+        }))
+    }
+
     async fn get_session(
         &self,
-        _request: Request<GetSessionRequest>,
+        request: Request<GetSessionRequest>,
     ) -> Result<Response<GetSessionResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let user_id = user_id_from_request(&request)
+            .ok_or_else(|| Status::unauthenticated("missing user identity"))?;
+        let req = request.into_inner();
+        let session_id = req.session_id.trim();
+        if session_id.is_empty() {
+            return Err(Status::invalid_argument("session_id is required"));
+        }
+
+        let session = self
+            .message_store
+            .get_session(&user_id, session_id)
+            .await
+            .map_err(map_store_error)?
+            .ok_or_else(|| Status::not_found("session not found"))?;
+
+        Ok(Response::new(GetSessionResponse {
+            session: Some(to_proto_session(session)),
+        }))
     }
 
     async fn list_sessions(
         &self,
-        _request: Request<ListSessionsRequest>,
+        request: Request<ListSessionsRequest>,
     ) -> Result<Response<ListSessionsResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let user_id = user_id_from_request(&request)
+            .ok_or_else(|| Status::unauthenticated("missing user identity"))?;
+        let sessions = self
+            .message_store
+            .list_sessions(&user_id)
+            .await
+            .map_err(map_store_error)?;
+
+        Ok(Response::new(ListSessionsResponse {
+            sessions: sessions.into_iter().map(to_proto_session).collect(),
+            pagination: Some(PaginationResponse {
+                next_page_token: String::new(),
+                total_size: 0,
+            }),
+        }))
     }
 
     async fn list_session_messages(
         &self,
         request: Request<ListSessionMessagesRequest>,
     ) -> Result<Response<ListSessionMessagesResponse>, Status> {
-        let _user_id = request
-            .extensions()
-            .get::<UserId>()
-            .map(|id| id.0.clone())
+        let _user_id = user_id_from_request(&request)
             .ok_or_else(|| Status::unauthenticated("missing user identity"))?;
 
         let req = request.into_inner();
@@ -75,11 +121,29 @@ impl SessionService for SessionServiceHandler {
     }
 }
 
+fn user_id_from_request<T>(request: &Request<T>) -> Option<String> {
+    request.extensions().get::<UserId>().map(|id| id.0.clone())
+}
+
 fn normalize_page_size(page_size: i32) -> i64 {
     if page_size <= 0 {
         50
     } else {
         i64::from(page_size.min(200))
+    }
+}
+
+fn to_proto_session(session: StoredSession) -> Session {
+    Session {
+        session_id: session.id,
+        user_id: session.user_id,
+        agent_id: session.agent_id,
+        title: session.title,
+        summary: session.summary,
+        created_at: Some(to_timestamp(session.created_at)),
+        updated_at: Some(to_timestamp(session.updated_at)),
+        last_message_at: session.last_message_at.map(to_timestamp),
+        archived: session.archived,
     }
 }
 

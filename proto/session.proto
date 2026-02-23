@@ -7,9 +7,18 @@ import "common.proto";
 option go_package = "ai/agent/platform/v1;platformv1";
 
 service SessionService {
+  rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
   rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
   rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
   rpc ListSessionMessages(ListSessionMessagesRequest) returns (ListSessionMessagesResponse);
+}
+
+message CreateSessionRequest {
+  string title = 1;
+}
+
+message CreateSessionResponse {
+  Session session = 1;
 }
 
 message GetSessionRequest {

@@ -105,6 +105,26 @@ pub trait ToolRuntime: Send + Sync {
 #[async_trait::async_trait]
 pub trait MessageStore: Send + Sync {
     async fn create_session(&self, user_id: &str, agent_id: &str) -> Result<String, StoreError>;
+    async fn create_session_with_title(
+        &self,
+        user_id: &str,
+        _title: &str,
+    ) -> Result<StoredSession, StoreError> {
+        let session_id = self.create_session(user_id, "").await?;
+        self.get_session(user_id, &session_id)
+            .await?
+            .ok_or_else(|| StoreError::NotFound("session not found".to_string()))
+    }
+    async fn list_sessions(&self, _user_id: &str) -> Result<Vec<StoredSession>, StoreError> {
+        Ok(Vec::new())
+    }
+    async fn get_session(
+        &self,
+        _user_id: &str,
+        _session_id: &str,
+    ) -> Result<Option<StoredSession>, StoreError> {
+        Ok(None)
+    }
     async fn save_message(
         &self,
         session_id: &str,
@@ -134,6 +154,19 @@ pub struct StoredMessage {
     pub role: String,
     pub content: String,
     pub created_at: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredSession {
+    pub id: String,
+    pub user_id: String,
+    pub agent_id: String,
+    pub title: String,
+    pub summary: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub last_message_at: Option<i64>,
+    pub archived: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -87,6 +87,52 @@ async fn message_store_create_session_and_save(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "./migrations")]
+async fn message_store_create_with_title_and_get(pool: PgPool) {
+    let user_store = PostgresUserStore::new(pool.clone());
+    let user = user_store
+        .create_user("title@test.com", "pass", "Title")
+        .await
+        .unwrap();
+
+    let msg_store = PostgresMessageStore::new(pool);
+    let created = msg_store
+        .create_session_with_title(&user.user_id, "Roadmap")
+        .await
+        .unwrap();
+    assert_eq!(created.title, "Roadmap");
+
+    let fetched = msg_store
+        .get_session(&user.user_id, &created.id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(fetched.id, created.id);
+    assert_eq!(fetched.user_id, user.user_id);
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn message_store_list_sessions(pool: PgPool) {
+    let user_store = PostgresUserStore::new(pool.clone());
+    let user = user_store
+        .create_user("list@test.com", "pass", "List")
+        .await
+        .unwrap();
+
+    let msg_store = PostgresMessageStore::new(pool);
+    msg_store
+        .create_session_with_title(&user.user_id, "Session A")
+        .await
+        .unwrap();
+    msg_store
+        .create_session_with_title(&user.user_id, "Session B")
+        .await
+        .unwrap();
+
+    let sessions = msg_store.list_sessions(&user.user_id).await.unwrap();
+    assert_eq!(sessions.len(), 2);
+}
+
+#[sqlx::test(migrations = "./migrations")]
 async fn message_store_get_or_create_default_session(pool: PgPool) {
     let user_store = PostgresUserStore::new(pool.clone());
     let user = user_store
