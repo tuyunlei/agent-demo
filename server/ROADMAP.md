@@ -86,6 +86,18 @@
 | QG12 | Mutation testing | ✅ | PR #16，cargo-mutants 0 MISSED |
 | QG13 | Property testing + 棘轮 | ✅ | PR #17，proptest JWT 属性 + 覆盖率棘轮 65% |
 
+### 专业 e2e 测试体系
+
+> 替换 shell 脚本方案，用 Rust 原生 e2e 测试：类型安全 gRPC client + in-process server + mock LLM + 数据库隔离
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| E2E-1 | TestServer harness | 🔲 | 抽取 main.rs 启动逻辑为可复用的 `ServerBuilder`；支持注入 mock LLM；in-process 启动 + 随机端口 |
+| E2E-2 | Mock LLM provider | 🔲 | 实现 `MockLlmProvider`：可配置响应/延迟/错误；线程安全 + 调用记录 |
+| E2E-3 | e2e 测试 crate | 🔲 | `crates/agent-e2e/`：用 tonic client 调真实 gRPC；sqlx::test 隔离数据库；覆盖完整业务流程 |
+| E2E-4 | 核心场景覆盖 | 🔲 | 注册→登录→聊天→拉历史 full round-trip；重复注册冲突；无效 token 拒绝；LLM 错误降级 |
+| E2E-5 | CI 集成 + 清理旧脚本 | 🔲 | e2e 测试进 CI（替代 acceptance-test job）；删除 shell 脚本 + grpcurl 依赖 |
+
 ### 质量铁律
 
 - CI 红 = 不能 merge，没有例外
