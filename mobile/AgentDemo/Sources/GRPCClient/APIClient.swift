@@ -1,3 +1,4 @@
+import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2TransportServices
 
@@ -5,7 +6,10 @@ public struct APIClient: Sendable {
     public let host: String
     public let port: Int
 
-    public init(host: String = "localhost", port: Int = 8443) {
+    public init(
+        host: String = ProcessInfo.processInfo.environment["SERVER_HOST"] ?? "localhost",
+        port: Int = Int(ProcessInfo.processInfo.environment["SERVER_PORT"] ?? "") ?? 8443
+    ) {
         self.host = host
         self.port = port
     }
