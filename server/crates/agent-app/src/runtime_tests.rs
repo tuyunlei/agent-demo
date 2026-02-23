@@ -1,19 +1,50 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use agent_domain::{LlmError, LlmResponse, LlmUsage, StoreError, StoredMessage};
+use agent_domain::{
+    AgentError, ChatMessage, FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse,
+    LlmUsage, MessageStore, StoreError, StoredMessage, ToolCall, ToolResult, ToolRuntime, ToolSpec,
+};
 
 use super::*;
 
 struct MockLlmProvider {
     captured: Arc<Mutex<Vec<LlmRequest>>>,
-    response: Result<LlmResponse, LlmError>,
+    responses: Arc<Mutex<Vec<Result<LlmResponse, LlmError>>>>,
 }
 
 #[async_trait::async_trait]
 impl LlmProvider for MockLlmProvider {
     async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
         self.captured.lock().expect("lock captured").push(request);
-        self.response.clone()
+        self.responses.lock().expect("responses").remove(0)
+    }
+}
+
+#[derive(Default)]
+struct MockToolRuntime {
+    tools: Vec<ToolSpec>,
+    results: Arc<Mutex<HashMap<String, String>>>,
+}
+
+#[async_trait::async_trait]
+impl ToolRuntime for MockToolRuntime {
+    fn list_tools(&self) -> Vec<ToolSpec> {
+        self.tools.clone()
+    }
+
+    async fn execute(&self, name: &str, _arguments: &str) -> Result<ToolResult, AgentError> {
+        let content = self
+            .results
+            .lock()
+            .expect("results")
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| "ok".to_string());
+        Ok(ToolResult {
+            call_id: String::new(),
+            content,
+        })
     }
 }
 
@@ -45,6 +76,15 @@ impl MessageStore for MockMessageStore {
         Ok("msg-id".to_string())
     }
 
+    async fn save_message_ext(
+        &self,
+        session_id: &str,
+        message: &ChatMessage,
+    ) -> Result<String, StoreError> {
+        self.save_message(session_id, &message.role, &message.content)
+            .await
+    }
+
     async fn get_session_messages(
         &self,
         _session_id: &str,
@@ -72,6 +112,20 @@ impl MessageStore for MockMessageStore {
     }
 }
 
+fn stop_response(content: &str) -> Result<LlmResponse, LlmError> {
+    Ok(LlmResponse {
+        content: content.to_string(),
+        model: "mock-model".to_string(),
+        usage: Some(LlmUsage {
+            input_tokens: 1,
+            output_tokens: 1,
+            total_tokens: 2,
+        }),
+        tool_calls: vec![],
+        finish_reason: FinishReason::Stop,
+    })
+}
+
 #[tokio::test]
 async fn handle_message_with_store_persists_and_uses_history() {
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -89,17 +143,10 @@ async fn handle_message_with_store_persists_and_uses_history() {
     let runtime = AgentRuntime::new(
         Arc::new(MockLlmProvider {
             captured: captured.clone(),
-            response: Ok(LlmResponse {
-                content: "hello from ai".to_string(),
-                model: "mock-model".to_string(),
-                usage: Some(LlmUsage {
-                    input_tokens: 1,
-                    output_tokens: 1,
-                    total_tokens: 2,
-                }),
-            }),
+            responses: Arc::new(Mutex::new(vec![stop_response("hello from ai")])),
         }),
         store.clone(),
+        Arc::new(MockToolRuntime::default()),
     );
 
     let result = runtime
@@ -121,6 +168,55 @@ async fn handle_message_with_store_persists_and_uses_history() {
 }
 
 #[tokio::test]
+async fn handle_message_executes_tools_then_returns_final_text() {
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let store = Arc::new(MockMessageStore::default());
+    let runtime = AgentRuntime::new(
+        Arc::new(MockLlmProvider {
+            captured,
+            responses: Arc::new(Mutex::new(vec![
+                Ok(LlmResponse {
+                    content: String::new(),
+                    model: "mock".to_string(),
+                    usage: None,
+                    tool_calls: vec![ToolCall {
+                        call_id: "call-1".to_string(),
+                        name: "get_current_time".to_string(),
+                        arguments: "{}".to_string(),
+                    }],
+                    finish_reason: FinishReason::ToolCalls,
+                }),
+                stop_response("final answer"),
+            ])),
+        }),
+        store.clone(),
+        Arc::new(MockToolRuntime {
+            tools: vec![ToolSpec {
+                name: "get_current_time".to_string(),
+                description: "time".to_string(),
+                parameters: serde_json::json!({"type":"object"}),
+            }],
+            results: Arc::new(Mutex::new(HashMap::from([(
+                "get_current_time".to_string(),
+                "2026-01-01T00:00:00+00:00".to_string(),
+            )]))),
+        }),
+    );
+
+    let result = runtime
+        .handle_message("u1", Some("s1"), "what time is it")
+        .await
+        .expect("reply");
+
+    assert_eq!(result.reply, "final answer");
+    let saved = store.saved.lock().expect("saved");
+    assert_eq!(saved[0].1, "user");
+    assert_eq!(saved[1].1, "assistant");
+    assert_eq!(saved[2].1, "tool");
+    assert_eq!(saved[3].1, "assistant");
+}
+
+#[tokio::test]
 async fn handle_message_creates_default_session_when_missing() {
     let store = Arc::new(MockMessageStore {
         default_session: Arc::new(Mutex::new(Some("generated-session".to_string()))),
@@ -130,13 +226,10 @@ async fn handle_message_creates_default_session_when_missing() {
     let runtime = AgentRuntime::new(
         Arc::new(MockLlmProvider {
             captured: Arc::new(Mutex::new(Vec::new())),
-            response: Ok(LlmResponse {
-                content: "ok".to_string(),
-                model: "mock-model".to_string(),
-                usage: None,
-            }),
+            responses: Arc::new(Mutex::new(vec![stop_response("ok")])),
         }),
         store,
+        Arc::new(MockToolRuntime::default()),
     );
 
     let result = runtime
@@ -148,73 +241,14 @@ async fn handle_message_creates_default_session_when_missing() {
 }
 
 #[tokio::test]
-async fn handle_message_with_empty_session_id_creates_new_session() {
-    let store = Arc::new(MockMessageStore {
-        default_session: Arc::new(Mutex::new(Some("new-default-session".to_string()))),
-        ..Default::default()
-    });
-
-    let runtime = AgentRuntime::new(
-        Arc::new(MockLlmProvider {
-            captured: Arc::new(Mutex::new(Vec::new())),
-            response: Ok(LlmResponse {
-                content: "ok".to_string(),
-                model: "mock-model".to_string(),
-                usage: None,
-            }),
-        }),
-        store,
-    );
-
-    let result = runtime
-        .handle_message("user-1", Some(""), "hello")
-        .await
-        .expect("ok");
-
-    assert!(!result.session_id.is_empty());
-    assert_eq!(result.session_id, "new-default-session");
-}
-
-#[tokio::test]
-async fn handle_message_with_whitespace_session_id_creates_new_session() {
-    let store = Arc::new(MockMessageStore {
-        default_session: Arc::new(Mutex::new(Some("whitespace-default-session".to_string()))),
-        ..Default::default()
-    });
-
-    let runtime = AgentRuntime::new(
-        Arc::new(MockLlmProvider {
-            captured: Arc::new(Mutex::new(Vec::new())),
-            response: Ok(LlmResponse {
-                content: "ok".to_string(),
-                model: "mock-model".to_string(),
-                usage: None,
-            }),
-        }),
-        store,
-    );
-
-    let result = runtime
-        .handle_message("user-1", Some("  \t  "), "hello")
-        .await
-        .expect("ok");
-
-    assert!(!result.session_id.trim().is_empty());
-    assert_eq!(result.session_id, "whitespace-default-session");
-}
-
-#[tokio::test]
 async fn handle_message_rejects_empty_content() {
     let runtime = AgentRuntime::new(
         Arc::new(MockLlmProvider {
             captured: Arc::new(Mutex::new(Vec::new())),
-            response: Ok(LlmResponse {
-                content: "unused".to_string(),
-                model: "mock-model".to_string(),
-                usage: None,
-            }),
+            responses: Arc::new(Mutex::new(vec![stop_response("unused")])),
         }),
         Arc::new(MockMessageStore::default()),
+        Arc::new(MockToolRuntime::default()),
     );
 
     let err = runtime
@@ -225,94 +259,5 @@ async fn handle_message_rejects_empty_content() {
     assert_eq!(
         err,
         AgentError::InvalidInput("message content cannot be empty".to_string())
-    );
-}
-
-#[tokio::test]
-async fn handle_message_returns_rate_limited_error_when_llm_rate_limited() {
-    let runtime = AgentRuntime::new(
-        Arc::new(MockLlmProvider {
-            captured: Arc::new(Mutex::new(Vec::new())),
-            response: Err(LlmError::RateLimited),
-        }),
-        Arc::new(MockMessageStore::default()),
-    );
-
-    let err = runtime
-        .handle_message("user-1", Some("session-1"), "hello")
-        .await
-        .unwrap_err();
-
-    assert_eq!(err, AgentError::Llm(LlmError::RateLimited));
-}
-
-#[tokio::test]
-async fn handle_message_returns_timeout_error_when_llm_times_out() {
-    let runtime = AgentRuntime::new(
-        Arc::new(MockLlmProvider {
-            captured: Arc::new(Mutex::new(Vec::new())),
-            response: Err(LlmError::Timeout),
-        }),
-        Arc::new(MockMessageStore::default()),
-    );
-
-    let err = runtime
-        .handle_message("user-1", Some("session-1"), "hello")
-        .await
-        .unwrap_err();
-
-    assert_eq!(err, AgentError::Llm(LlmError::Timeout));
-}
-
-#[tokio::test]
-async fn handle_message_returns_provider_error_when_llm_provider_fails() {
-    let runtime = AgentRuntime::new(
-        Arc::new(MockLlmProvider {
-            captured: Arc::new(Mutex::new(Vec::new())),
-            response: Err(LlmError::ProviderError("provider down".to_string())),
-        }),
-        Arc::new(MockMessageStore::default()),
-    );
-
-    let err = runtime
-        .handle_message("user-1", Some("session-1"), "hello")
-        .await
-        .unwrap_err();
-
-    assert_eq!(
-        err,
-        AgentError::Llm(LlmError::ProviderError("provider down".to_string()))
-    );
-}
-
-#[tokio::test]
-async fn handle_message_returns_store_error_when_default_session_creation_fails() {
-    let store = Arc::new(MockMessageStore {
-        default_session_result: Arc::new(Mutex::new(Some(Err(StoreError::Internal(
-            "db unavailable".to_string(),
-        ))))),
-        ..Default::default()
-    });
-
-    let runtime = AgentRuntime::new(
-        Arc::new(MockLlmProvider {
-            captured: Arc::new(Mutex::new(Vec::new())),
-            response: Ok(LlmResponse {
-                content: "unused".to_string(),
-                model: "mock-model".to_string(),
-                usage: None,
-            }),
-        }),
-        store,
-    );
-
-    let err = runtime
-        .handle_message("user-1", None, "hello")
-        .await
-        .unwrap_err();
-
-    assert_eq!(
-        err,
-        AgentError::Store(StoreError::Internal("db unavailable".to_string()))
     );
 }

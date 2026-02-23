@@ -34,11 +34,34 @@ pub struct LlmRequest {
     pub model: Option<String>,
     pub temperature: Option<f32>,
     pub max_tokens: Option<u32>,
+    pub tools: Vec<ToolSpec>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChatMessage {
     pub role: String,
+    pub content: String,
+    pub tool_calls: Option<Vec<ToolCall>>,
+    pub tool_call_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ToolSpec {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct ToolCall {
+    pub call_id: String,
+    pub name: String,
+    pub arguments: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ToolResult {
+    pub call_id: String,
     pub content: String,
 }
 
@@ -47,6 +70,15 @@ pub struct LlmResponse {
     pub content: String,
     pub model: String,
     pub usage: Option<LlmUsage>,
+    pub tool_calls: Vec<ToolCall>,
+    pub finish_reason: FinishReason,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FinishReason {
+    Stop,
+    ToolCalls,
+    Length,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,6 +97,12 @@ pub enum LlmError {
 }
 
 #[async_trait::async_trait]
+pub trait ToolRuntime: Send + Sync {
+    fn list_tools(&self) -> Vec<ToolSpec>;
+    async fn execute(&self, name: &str, arguments: &str) -> Result<ToolResult, AgentError>;
+}
+
+#[async_trait::async_trait]
 pub trait MessageStore: Send + Sync {
     async fn create_session(&self, user_id: &str, agent_id: &str) -> Result<String, StoreError>;
     async fn save_message(
@@ -73,6 +111,14 @@ pub trait MessageStore: Send + Sync {
         role: &str,
         content: &str,
     ) -> Result<String, StoreError>;
+    async fn save_message_ext(
+        &self,
+        session_id: &str,
+        message: &ChatMessage,
+    ) -> Result<String, StoreError> {
+        self.save_message(session_id, &message.role, &message.content)
+            .await
+    }
     async fn get_session_messages(
         &self,
         session_id: &str,

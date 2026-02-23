@@ -2,7 +2,7 @@ use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use agent_app::{AgentRuntime, AuthService};
+use agent_app::{AgentRuntime, AuthService, BuiltinToolRuntime};
 use agent_channel::{
     AuthServiceHandler, ChatServiceHandler, SessionServiceHandler, auth_interceptor,
 };
@@ -49,6 +49,7 @@ impl ServerBuilder {
         let runtime = Arc::new(AgentRuntime::new(
             self.llm_provider,
             self.message_store.clone(),
+            Arc::new(BuiltinToolRuntime::new()),
         ));
 
         let chat_service = ChatServiceServer::with_interceptor(

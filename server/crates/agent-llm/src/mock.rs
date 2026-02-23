@@ -1,10 +1,12 @@
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
-use agent_domain::{LlmError, LlmProvider, LlmRequest, LlmResponse};
+use agent_domain::{FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse};
 
 #[derive(Clone)]
 pub struct MockLlmProvider {
     response: Arc<Mutex<Result<LlmResponse, LlmError>>>,
+    sequence: Arc<Mutex<VecDeque<Result<LlmResponse, LlmError>>>>,
     calls: Arc<Mutex<Vec<LlmRequest>>>,
 }
 
@@ -12,17 +14,22 @@ impl MockLlmProvider {
     pub fn new(response: Result<LlmResponse, LlmError>) -> Self {
         Self {
             response: Arc::new(Mutex::new(response)),
+            sequence: Arc::new(Mutex::new(VecDeque::new())),
+            calls: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    pub fn with_tool_call_sequence(responses: Vec<Result<LlmResponse, LlmError>>) -> Self {
+        Self {
+            response: Arc::new(Mutex::new(Ok(default_response("mock")))),
+            sequence: Arc::new(Mutex::new(VecDeque::from(responses))),
             calls: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
     /// 创建一个返回固定文本的 mock
     pub fn with_text(text: &str) -> Self {
-        Self::new(Ok(LlmResponse {
-            content: text.to_string(),
-            model: "mock".to_string(),
-            usage: None,
-        }))
+        Self::new(Ok(default_response(text)))
     }
 
     /// 获取调用记录
@@ -42,6 +49,16 @@ impl MockLlmProvider {
     }
 }
 
+fn default_response(text: &str) -> LlmResponse {
+    LlmResponse {
+        content: text.to_string(),
+        model: "mock".to_string(),
+        usage: None,
+        tool_calls: Vec::new(),
+        finish_reason: FinishReason::Stop,
+    }
+}
+
 #[async_trait::async_trait]
 impl LlmProvider for MockLlmProvider {
     async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
@@ -49,6 +66,16 @@ impl LlmProvider for MockLlmProvider {
             .lock()
             .expect("calls mutex should not be poisoned")
             .push(request);
+
+        let next = self
+            .sequence
+            .lock()
+            .expect("sequence mutex should not be poisoned")
+            .pop_front();
+        if let Some(response) = next {
+            return response;
+        }
+
         self.response
             .lock()
             .expect("response mutex should not be poisoned")
@@ -62,7 +89,7 @@ mod tests {
     use std::pin::Pin;
     use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 
-    use agent_domain::{ChatMessage, LlmError, LlmProvider, LlmRequest};
+    use agent_domain::{ChatMessage, FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse};
 
     use super::MockLlmProvider;
 
@@ -73,10 +100,13 @@ mod tests {
             messages: vec![ChatMessage {
                 role: "user".to_string(),
                 content: "ping".to_string(),
+                tool_calls: None,
+                tool_call_id: None,
             }],
             model: Some("test-model".to_string()),
             temperature: Some(0.3),
             max_tokens: Some(10),
+            tools: Vec::new(),
         };
 
         let response = block_on(provider.generate(request.clone())).expect("mock should return ok");
@@ -93,12 +123,47 @@ mod tests {
             model: None,
             temperature: None,
             max_tokens: None,
+            tools: Vec::new(),
         };
 
         let result = block_on(provider.generate(request.clone()));
 
         assert_eq!(result, Err(LlmError::Timeout));
         assert_eq!(provider.calls(), vec![request]);
+    }
+
+    #[test]
+    fn generate_uses_sequence_before_default_response() {
+        let provider = MockLlmProvider::with_tool_call_sequence(vec![
+            Ok(LlmResponse {
+                content: String::new(),
+                model: "mock".to_string(),
+                usage: None,
+                tool_calls: vec![],
+                finish_reason: FinishReason::ToolCalls,
+            }),
+            Ok(LlmResponse {
+                content: "final".to_string(),
+                model: "mock".to_string(),
+                usage: None,
+                tool_calls: vec![],
+                finish_reason: FinishReason::Stop,
+            }),
+        ]);
+
+        let request = LlmRequest {
+            messages: vec![],
+            model: None,
+            temperature: None,
+            max_tokens: None,
+            tools: Vec::new(),
+        };
+
+        let first = block_on(provider.generate(request.clone())).expect("first response");
+        let second = block_on(provider.generate(request.clone())).expect("second response");
+
+        assert_eq!(first.finish_reason, FinishReason::ToolCalls);
+        assert_eq!(second.content, "final");
     }
 
     fn block_on<F: Future>(mut future: F) -> F::Output {

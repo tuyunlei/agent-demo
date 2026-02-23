@@ -1,4 +1,5 @@
 use super::*;
+use agent_domain::FinishReason;
 use serde_json::json;
 
 #[test]
@@ -8,10 +9,17 @@ fn serializes_request_body_correctly() {
         messages: vec![agent_domain::ChatMessage {
             role: "user".into(),
             content: "hello".into(),
+            tool_calls: None,
+            tool_call_id: None,
         }],
         model: None,
         temperature: Some(0.3),
         max_tokens: Some(128),
+        tools: vec![agent_domain::ToolSpec {
+            name: "get_current_time".to_string(),
+            description: "Get current time".to_string(),
+            parameters: json!({"type":"object"}),
+        }],
     };
 
     let payload = provider.build_request_body(request);
@@ -23,6 +31,11 @@ fn serializes_request_body_correctly() {
         json!([{"role": "user", "content": "hello"}])
     );
     assert_eq!(value["max_tokens"], json!(128));
+    assert_eq!(value["tools"][0]["type"], json!("function"));
+    assert_eq!(
+        value["tools"][0]["function"]["name"],
+        json!("get_current_time")
+    );
 
     let temperature = value["temperature"]
         .as_f64()
@@ -34,7 +47,7 @@ fn serializes_request_body_correctly() {
 fn parses_response_body_correctly() {
     let raw = r#"{
             "model": "gpt-4o-mini",
-            "choices": [{"message": {"content": "Hi there"}}],
+            "choices": [{"message": {"content": "Hi there"}, "finish_reason": "stop"}],
             "usage": {
                 "prompt_tokens": 10,
                 "completion_tokens": 5,
@@ -46,6 +59,8 @@ fn parses_response_body_correctly() {
 
     assert_eq!(response.content, "Hi there");
     assert_eq!(response.model, "gpt-4o-mini");
+    assert_eq!(response.finish_reason, FinishReason::Stop);
+    assert_eq!(response.tool_calls, vec![]);
     assert_eq!(
         response.usage,
         Some(LlmUsage {
@@ -54,6 +69,36 @@ fn parses_response_body_correctly() {
             total_tokens: 15,
         })
     );
+}
+
+#[test]
+fn parses_tool_calls_response_body() {
+    let raw = r#"{
+            "model": "gpt-4o-mini",
+            "choices": [{
+                "message": {
+                    "content": null,
+                    "tool_calls": [{
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "get_current_time",
+                            "arguments": "{\"timezone\":\"Asia/Shanghai\"}"
+                        }
+                    }]
+                },
+                "finish_reason": "tool_calls"
+            }],
+            "usage": null
+        }"#;
+
+    let response = OpenAiProvider::parse_success_body(raw).expect("parse success body");
+
+    assert_eq!(response.finish_reason, FinishReason::ToolCalls);
+    assert_eq!(response.content, "");
+    assert_eq!(response.tool_calls.len(), 1);
+    assert_eq!(response.tool_calls[0].call_id, "call_1");
+    assert_eq!(response.tool_calls[0].name, "get_current_time");
 }
 
 #[test]
@@ -82,6 +127,7 @@ fn empty_messages_serialization() {
         model: None,
         temperature: None,
         max_tokens: None,
+        tools: vec![],
     };
 
     let payload = provider.build_request_body(request);
@@ -89,6 +135,7 @@ fn empty_messages_serialization() {
 
     assert_eq!(value["messages"], json!([]));
     assert_eq!(value["model"], json!("gpt-test"));
+    assert!(value.get("tools").is_none());
 }
 
 #[test]
@@ -97,10 +144,7 @@ fn response_missing_choices_returns_error() {
 
     let err = OpenAiProvider::parse_success_body(raw).expect_err("should fail");
 
-    assert_eq!(
-        err,
-        LlmError::ProviderError("missing choices[0].message.content".into())
-    );
+    assert_eq!(err, LlmError::ProviderError("missing choices[0]".into()));
 }
 
 #[test]

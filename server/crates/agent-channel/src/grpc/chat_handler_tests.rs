@@ -1,7 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use agent_domain::{
-    LlmProvider, LlmRequest, LlmResponse, LlmUsage, MessageStore, StoreError, StoredMessage,
+    FinishReason, LlmProvider, LlmRequest, LlmResponse, LlmUsage, MessageStore, StoreError,
+    StoredMessage, ToolResult, ToolRuntime, ToolSpec,
 };
 use agent_proto::{ContentBlock, TextBlock};
 
@@ -23,7 +24,27 @@ impl LlmProvider for MockLlmProvider {
                 output_tokens: 10,
                 total_tokens: 20,
             }),
+            tool_calls: vec![],
+            finish_reason: FinishReason::Stop,
         })
+    }
+}
+
+#[derive(Default)]
+struct MockToolRuntime;
+
+#[async_trait::async_trait]
+impl ToolRuntime for MockToolRuntime {
+    fn list_tools(&self) -> Vec<ToolSpec> {
+        vec![]
+    }
+
+    async fn execute(
+        &self,
+        _name: &str,
+        _arguments: &str,
+    ) -> Result<ToolResult, agent_domain::AgentError> {
+        unreachable!("not used in test")
     }
 }
 
@@ -78,7 +99,11 @@ async fn test_send_message_calls_runtime_chain() {
     let provider = Arc::new(MockLlmProvider {
         captured: captured.clone(),
     });
-    let runtime = Arc::new(AgentRuntime::new(provider, Arc::new(MockMessageStore)));
+    let runtime = Arc::new(AgentRuntime::new(
+        provider,
+        Arc::new(MockMessageStore),
+        Arc::new(MockToolRuntime),
+    ));
     let handler = ChatServiceHandler::new(runtime);
 
     let request = tonic::Request::new(SendMessageRequest {
@@ -107,7 +132,11 @@ async fn test_send_message_requires_text_content() {
     let provider = Arc::new(MockLlmProvider {
         captured: captured.clone(),
     });
-    let runtime = Arc::new(AgentRuntime::new(provider, Arc::new(MockMessageStore)));
+    let runtime = Arc::new(AgentRuntime::new(
+        provider,
+        Arc::new(MockMessageStore),
+        Arc::new(MockToolRuntime),
+    ));
     let handler = ChatServiceHandler::new(runtime);
 
     let request = tonic::Request::new(SendMessageRequest {

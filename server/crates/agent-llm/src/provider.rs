@@ -1,4 +1,6 @@
-use agent_domain::{LlmError, LlmProvider, LlmRequest, LlmResponse, LlmUsage};
+use agent_domain::{
+    FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse, LlmUsage, ToolCall,
+};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
@@ -45,10 +47,38 @@ impl OpenAiProvider {
                 .map(|m| OpenAiMessage {
                     role: m.role,
                     content: m.content,
+                    tool_calls: m.tool_calls.map(|calls| {
+                        calls
+                            .into_iter()
+                            .map(|call| OpenAiToolCall {
+                                id: call.call_id,
+                                call_type: "function".to_string(),
+                                function: OpenAiFunctionCall {
+                                    name: call.name,
+                                    arguments: call.arguments,
+                                },
+                            })
+                            .collect()
+                    }),
+                    tool_call_id: m.tool_call_id,
                 })
                 .collect(),
             temperature: request.temperature,
             max_tokens: request.max_tokens,
+            tools: (!request.tools.is_empty()).then(|| {
+                request
+                    .tools
+                    .into_iter()
+                    .map(|tool| OpenAiToolSpec {
+                        tool_type: "function".to_string(),
+                        function: OpenAiFunctionSpec {
+                            name: tool.name,
+                            description: tool.description,
+                            parameters: tool.parameters,
+                        },
+                    })
+                    .collect()
+            }),
         }
     }
 
@@ -56,13 +86,11 @@ impl OpenAiProvider {
         let parsed: OpenAiChatCompletionResponse = serde_json::from_str(body)
             .map_err(|e| LlmError::ProviderError(format!("invalid response body: {e}")))?;
 
-        let content = parsed
+        let choice = parsed
             .choices
             .into_iter()
             .next()
-            .map(|c| c.message.content)
-            .filter(|c| !c.is_empty())
-            .ok_or_else(|| LlmError::ProviderError("missing choices[0].message.content".into()))?;
+            .ok_or_else(|| LlmError::ProviderError("missing choices[0]".into()))?;
 
         let usage = parsed.usage.map(|u| LlmUsage {
             input_tokens: u.prompt_tokens,
@@ -71,9 +99,11 @@ impl OpenAiProvider {
         });
 
         Ok(LlmResponse {
-            content,
+            content: choice.message.content.unwrap_or_default(),
             model: parsed.model,
             usage,
+            tool_calls: parse_tool_calls(choice.message.tool_calls),
+            finish_reason: parse_finish_reason(choice.finish_reason),
         })
     }
 
@@ -91,6 +121,26 @@ impl OpenAiProvider {
         }
 
         LlmError::ProviderError(format!("unexpected status: {status}"))
+    }
+}
+
+fn parse_tool_calls(tool_calls: Option<Vec<OpenAiToolCall>>) -> Vec<ToolCall> {
+    tool_calls
+        .unwrap_or_default()
+        .into_iter()
+        .map(|call| ToolCall {
+            call_id: call.id,
+            name: call.function.name,
+            arguments: call.function.arguments,
+        })
+        .collect()
+}
+
+fn parse_finish_reason(reason: Option<String>) -> FinishReason {
+    match reason.as_deref() {
+        Some("tool_calls") => FinishReason::ToolCalls,
+        Some("length") => FinishReason::Length,
+        _ => FinishReason::Stop,
     }
 }
 
@@ -131,6 +181,10 @@ impl LlmProvider for OpenAiProvider {
 struct OpenAiMessage {
     role: String,
     content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tool_calls: Option<Vec<OpenAiToolCall>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tool_call_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -141,6 +195,36 @@ struct OpenAiChatCompletionRequest {
     temperature: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     max_tokens: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tools: Option<Vec<OpenAiToolSpec>>,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiToolSpec {
+    #[serde(rename = "type")]
+    tool_type: String,
+    function: OpenAiFunctionSpec,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiFunctionSpec {
+    name: String,
+    description: String,
+    parameters: serde_json::Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAiToolCall {
+    id: String,
+    #[serde(rename = "type")]
+    call_type: String,
+    function: OpenAiFunctionCall,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAiFunctionCall {
+    name: String,
+    arguments: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -153,11 +237,13 @@ struct OpenAiChatCompletionResponse {
 #[derive(Debug, Deserialize)]
 struct OpenAiChoice {
     message: OpenAiChoiceMessage,
+    finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct OpenAiChoiceMessage {
-    content: String,
+    content: Option<String>,
+    tool_calls: Option<Vec<OpenAiToolCall>>,
 }
 
 #[derive(Debug, Deserialize)]
