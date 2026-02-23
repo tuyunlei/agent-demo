@@ -64,7 +64,7 @@ id UUID PRIMARY KEY, session_id UUID FK, role TEXT, content TEXT, created_at TIM
 
 - 38 个测试（33 单元 + 5 集成），覆盖率 54%
 - 集成测试用 `#[sqlx::test]`，每个测试独立临时数据库
-- 验收测试：`scripts/acceptance-test.sh`（grpcurl e2e，6 个场景）
+- e2e 测试：`crates/agent-e2e`（Rust 原生 e2e，6 个核心场景，已替代旧 grpcurl shell 验收脚本）
 
 ## 本地开发
 

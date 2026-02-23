@@ -74,7 +74,7 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | QG7 | 集成测试 | ✅ | PR #6，sqlx::test + CI PG service + 5 集成测试 + sequence_num 排序修复 |
-| QG8 | 验收测试脚本化 | ✅ | PR #12，grpcurl 脚本 6 场景（注册→登录→发消息→拉历史→重复注册→无效 token） |
+| QG8 | 验收测试脚本化 | ✅ | PR #12，grpcurl 脚本 6 场景（注册→登录→发消息→拉历史→重复注册→无效 token，已被 agent-e2e crate 替代） |
 
 ### 质量深化
 
@@ -82,7 +82,7 @@
 |---|------|------|------|
 | QG9 | 覆盖率提升 | ✅ | PR #14，+16 测试覆盖边界 case |
 | QG10 | 认知复杂度门禁 | ✅ | PR #15，clippy.toml threshold=10 |
-| QG11 | 验收测试进 CI | ✅ | PR #15，CI job 起真实服务 + PG 跑 e2e |
+| QG11 | 验收测试进 CI | ✅ | PR #15，CI job 起真实服务 + PG 跑 e2e（已被 agent-e2e crate 替代） |
 | QG12 | Mutation testing | ✅ | PR #16，cargo-mutants 0 MISSED |
 | QG13 | Property testing + 棘轮 | ✅ | PR #17，proptest JWT 属性 + 覆盖率棘轮 65% |
 
@@ -92,11 +92,11 @@
 
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
-| E2E-1 | TestServer harness | 🔲 | 抽取 main.rs 启动逻辑为可复用的 `ServerBuilder`；支持注入 mock LLM；in-process 启动 + 随机端口 |
-| E2E-2 | Mock LLM provider | 🔲 | 实现 `MockLlmProvider`：可配置响应/延迟/错误；线程安全 + 调用记录 |
-| E2E-3 | e2e 测试 crate | 🔲 | `crates/agent-e2e/`：用 tonic client 调真实 gRPC；sqlx::test 隔离数据库；覆盖完整业务流程 |
-| E2E-4 | 核心场景覆盖 | 🔲 | 注册→登录→聊天→拉历史 full round-trip；重复注册冲突；无效 token 拒绝；LLM 错误降级 |
-| E2E-5 | CI 集成 + 清理旧脚本 | 🔲 | e2e 测试进 CI（替代 acceptance-test job）；删除 shell 脚本 + grpcurl 依赖 |
+| E2E-1 | TestServer harness | ✅ | PR #18，ServerBuilder + serve_with_shutdown |
+| E2E-2 | Mock LLM provider | ✅ | PR #18，MockLlmProvider 可配置响应/错误 + 调用记录 |
+| E2E-3 | e2e 测试 crate | ✅ | PR #19，agent-e2e crate，tonic client + sqlx::test 隔离 |
+| E2E-4 | 核心场景覆盖 | ✅ | PR #19，6 场景：注册/登录/重复注册/无效 token/聊天 round-trip/LLM 错误 |
+| E2E-5 | CI 集成 + 清理 | ✅ | PR #20，删除旧 acceptance-test job + shell 脚本 |
 
 ### 质量铁律
 

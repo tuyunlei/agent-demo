@@ -10,7 +10,7 @@ agent-demo/
 ├── server/                   # Rust 服务端（Cargo workspace，8 crate）
 │   ├── crates/               # 六边形架构：types → domain → app → channel/llm/storage → server
 │   ├── docs/design/          # 架构设计文档
-│   ├── scripts/              # CI 检查脚本 + 验收测试
+│   ├── scripts/              # CI 检查脚本
 │   └── migrations/           # 在 crates/agent-storage/migrations/
 ├── mobile/                   # iOS 客户端（Swift + SwiftUI）
 │   ├── AgentDemo/            # Xcode 项目
