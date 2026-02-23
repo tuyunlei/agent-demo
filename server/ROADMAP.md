@@ -1,174 +1,103 @@
 # agent-demo/server — ROADMAP
 
-> Phase 0 架构设计已完成。进入 Phase 1 Walking Skeleton 实现。
-> 详细设计文档见 `docs/design/`
+## 产品现状
+
+**已上线（公网可用）** `REDACTED_HOST:8443`
+
+✅ 注册账号（邮箱 + 密码）
+✅ 登录拿 token
+✅ 跟 AI 聊天（Kimi K2.5，整块回复，非流式）
+✅ 聊天记录持久化（关掉 app 再打开还在）
+✅ 拉取历史消息（分页）
+
+**还不能做**
+
+❌ 多个会话 — 一个用户只有一个聊天窗口，不能新建/切换对话
+❌ Token 刷新 — token 过期后只能重新登录
+❌ 友好错误提示 — 出错时返回信息不够有意义
+❌ AI 故障兜底 — LLM 不可用时直接报错，没有重试或备用模型
 
 ---
 
-## 架构认知基线
+## 📦 产品功能线
 
-- **Channel 是核心抽象**：gRPC 只是一个 Channel Adapter 实现
-- **六边形架构**：Domain 定义 Port，适配器实现，依赖只能由外向内
-- **8 crate workspace**：agent-types → agent-domain → agent-app → [...] → agent-server
+按优先级排序，每项完成后产品能力 +1：
 
----
+| 优先级 | 功能 | 用户感知 | 状态 |
+|--------|------|----------|------|
+| 1️⃣ | 多会话管理 | 能新建对话、切换对话、看到会话列表 | 🔲 |
+| 2️⃣ | Token 自动刷新 | 不会突然被踢出去重新登录 | 🔲 |
+| 3️⃣ | AI 故障兜底 | AI 偶尔出问题时自动重试，不会直接白屏 | 🔲 |
 
-## Phase 1：Walking Skeleton
-
-### Step 0：工程脚手架
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| T0.1 | Cargo workspace 初始化 | ✅ | 创建 8 个 crate，DAG 依赖，cargo check/test 通过 |
-| T0.2 | GitHub Actions CI | ✅ | Linux runner，cargo check + test，path filter，push/PR 触发 |
-
-### Step 1：Echo 闭环
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| T1.1 | Proto 编译 | ✅ | tonic-build，4 proto → Rust 代码生成 |
-| T1.2 | 最小 gRPC 服务 | ✅ | ChatService.SendMessage echo，[::1]:50051 |
-| T1.3 | grpcurl 端到端验证 | ✅ | Echo 通过，Step 1 完成 |
-
-### Step 2：真实认证
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| T2.1 | JWT 认证 | ✅ | AuthPort → AuthService → AuthHandler，六边形四层贯通 |
-| T2.2 | Auth 拦截器 | ✅ | tonic interceptor，ChatService 受保护 |
-| T2.3 | grpcurl 验证 | ✅ | 完整认证链路验证，Step 2 完成 |
-
-### Step 3：真实 AI 回复 + 部署
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| T3.1 | LlmProvider Port + 适配器 | ✅ | agent-domain LlmProvider trait + agent-llm OpenAI 兼容适配器 |
-| T3.2 | Agent Runtime 最小路径 | ✅ | SendMessage → AgentRuntime → LLM(Kimi K2.5) → 整块返回 AI 回复 |
-| T3.3 | Caddy + TLS 部署 | ✅ | REDACTED_HOST:8443，Caddy 反代 gRPC，Let's Encrypt DNS-01 |
-| T3.4 | 公网 e2e 验证 | ✅ | grpcurl 通过公网 TLS：登录 + 发消息 + AI 回复 |
+全部完成 = **服务端 MVP 功能齐全**，支撑完整的「注册 → 登录 → 多会话聊天」体验。
 
 ---
 
-## Quality Gate：质量保障体系
+## 🔧 技术改造线
 
-> 独立于功能 Step，按顺序逐步推进。每项完成后即在 CI 中强制执行，不可绕过。
+用户感知不到，但影响质量、可维护性、开发效率：
 
-### 代码质量（自动门禁）
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| QG1 | fmt + clippy | ✅ | 修复现有问题 + CI 加 `cargo fmt --check` + `cargo clippy -D warnings` |
-| QG2 | 架构依赖检查 | ✅ | 脚本自动验证 crate 依赖方向 + CI 硬门禁 |
-| QG3 | 文件大小 & 复杂度 | ✅ | 单文件 ≤300 行，单函数 ≤50 行；脚本检查 + CI 硬门禁 |
-
-### 功能质量（测试保障）
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| QG4 | 补齐现有测试缺口 | ✅ | 逐模块盘点 + 补充单测（13→25 个） |
-| QG5 | 测试分离 + 文件限制强化 | ✅ | PR #4，拆 *_tests.rs + 业务 300 行/测试 500 行双阈值 |
-| QG6 | 覆盖率工具 + CI 阈值 | ✅ | PR #5，cargo-tarpaulin + CI 覆盖率门禁（棘轮 54%） |
-
-### 长期防劣化
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| QG7 | 集成测试 | ✅ | PR #6，sqlx::test + CI PG service + 5 集成测试 + sequence_num 排序修复 |
-| QG8 | 验收测试脚本化 | ✅ | PR #12，grpcurl 脚本 6 场景（注册→登录→发消息→拉历史→重复注册→无效 token，已被 agent-e2e crate 替代） |
-
-### 质量深化
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| QG9 | 覆盖率提升 | ✅ | PR #14，+16 测试覆盖边界 case |
-| QG10 | 认知复杂度门禁 | ✅ | PR #15，clippy.toml threshold=10 |
-| QG11 | 验收测试进 CI | ✅ | PR #15，CI job 起真实服务 + PG 跑 e2e（已被 agent-e2e crate 替代） |
-| QG12 | Mutation testing | ✅ | PR #16，cargo-mutants 0 MISSED |
-| QG13 | Property testing + 棘轮 | ✅ | PR #17，proptest JWT 属性 + 覆盖率棘轮 65% |
-
-### 专业 e2e 测试体系
-
-> 替换 shell 脚本方案，用 Rust 原生 e2e 测试：类型安全 gRPC client + in-process server + mock LLM + 数据库隔离
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| E2E-1 | TestServer harness | ✅ | PR #18，ServerBuilder + serve_with_shutdown |
-| E2E-2 | Mock LLM provider | ✅ | PR #18，MockLlmProvider 可配置响应/错误 + 调用记录 |
-| E2E-3 | e2e 测试 crate | ✅ | PR #19，agent-e2e crate，tonic client + sqlx::test 隔离 |
-| E2E-4 | 核心场景覆盖 | ✅ | PR #19，6 场景：注册/登录/重复注册/无效 token/聊天 round-trip/LLM 错误 |
-| E2E-5 | CI 集成 + 清理 | ✅ | PR #20，删除旧 acceptance-test job + shell 脚本 |
-
-### 质量铁律
-
-- CI 红 = 不能 merge，没有例外
-- 新功能 PR 必须包含对应测试
-- 覆盖率只升不降（棘轮机制）
-- review sub-agent 对照验收标准逐项检查
+| 优先级 | 改造 | 为什么做 | 状态 |
+|--------|------|----------|------|
+| 1️⃣ | 统一错误处理 | 当前各 handler 各自映射错误码，分散且不一致；统一后客户端能拿到有意义的错误提示 | 🔲 |
+| 2️⃣ | 日志与观测 | 没有结构化日志，线上出问题无法排查 | 🔲 |
 
 ---
 
-## Phase 1（续）：功能开发
+## 🔮 更远的未来（MVP 之后）
 
-> QG1-3 完成后恢复功能开发，后续功能开发与 QG4-7 交替推进。
-
-### Step 4：持久化
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| T4.1 | PostgreSQL 接入 | ✅ | PR #1，sqlx + bcrypt + users 表 + migration |
-| T4.2 | 真实用户注册 | ✅ | PR #2，Register 端点 + AuthPort.create_user |
-| T4.3 | 消息持久化 | ✅ | PR #3，sessions + messages 表，历史 context 送 LLM |
-
-### Step 5：韧性
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| T5.1 | 错误处理 | 🔲 | 统一错误类型，gRPC status 映射 |
-| T5.2 | LLM 重试/降级 | 🔲 | provider 不可用时的 fallback 策略 |
-
-### Step 6：会话管理
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| T6.1 | ListSessionMessages | ✅ | PR #10，SessionServiceHandler + 分页查询 + 2 单测 |
-| T6.2 | 多会话隔离 | 🔲 | 不同会话独立上下文 |
+- 人设/性格系统（千人千面）
+- 多轮对话上下文压缩
+- 流式回复
+- 多 LLM 提供商切换
+- 主动推送（agent 主动找用户）
+- ...
 
 ---
 
-## Phase 0：架构设计（已完成）
+## 质量保障（已建成，持续执行）
+
+每个新功能 PR 自动经过：
+- 代码风格 + 复杂度检查（clippy：认知复杂度 ≤10，函数 ≤50 行）
+- 架构依赖方向验证（Rust 测试）
+- 72+ 自动化测试（单元 / 集成 / e2e / 属性测试）
+- 覆盖率 ≥65%（棘轮，只升不降）
+- 变异测试 catch rate 100%
 
 <details>
-<summary>展开查看</summary>
+<summary>质量体系建设历史（QG1-14 + E2E-1~5，PR #4~#21）</summary>
 
-### 轨道 A：可行性验证（Spikes）
+- QG1-3：fmt / clippy / 架构依赖脚本 / 文件限制脚本
+- QG4-7：测试补齐(13→38) / 测试分离 / 覆盖率门禁(54%) / 集成测试(sqlx::test)
+- QG8：验收测试脚本化
+- QG9-13：覆盖率深化 / 认知复杂度门禁 / mutation testing / proptest / 覆盖率棘轮(65%)
+- E2E-1~5：ServerBuilder / MockLlmProvider / agent-e2e crate / 6 e2e 场景 / CI 集成
+- QG14：shell 脚本 → Rust 架构测试 + Clippy too_many_lines
 
-| # | 任务 | 状态 | 位置 |
-|---|------|------|------|
-| S01 | async trait：dyn vs 泛型 | ✅ | `spikes/s01-async-trait/` |
-| S02 | ChannelAdapter dyn 兼容 | ✅ | `spikes/s02-channel-adapter-dyn/` |
-| S03 | Tokio actor/mailbox | ✅ | `spikes/s03-tokio-actor/` |
+</details>
 
-### 轨道 B：深化设计（Design Docs）
+<details>
+<summary>功能开发历史（Step 0-4 + 6.1，PR #1~#12）</summary>
 
-| # | 任务 | 状态 | 位置 |
-|---|------|------|------|
-| D01 | 架构原则文档更新 | ✅ | `docs/design/principles.md` |
-| D02 | Crate 划分设计 | ✅ | `docs/design/crate-structure.md` |
-| D03 | Channel Port trait 设计 | ✅ | `docs/design/channel-system/port.md` |
-| D04 | Agent Runtime 树形拆分 | ✅ | `docs/design/core/agent-runtime-detail.md` |
-| D05 | 核心 Port trait 精确定义 | ✅ | `docs/design/ports/` |
-| D06 | 错误类型体系设计 | ✅ | `docs/design/error-types.md` |
+- Step 0：8 crate workspace + GitHub Actions CI
+- Step 1：Proto → gRPC echo → grpcurl 验证
+- Step 2：JWT 认证 + Auth 拦截器
+- Step 3：LlmProvider(Kimi K2.5) + Caddy TLS + 公网 e2e
+- Step 4.1：PostgreSQL 接入（PR #1）
+- Step 4.2：用户注册（PR #2）
+- Step 4.3：消息持久化（PR #3）
+- Step 6.1：ListSessionMessages 分页查询（PR #10）
 
 </details>
 
 ---
 
-## 未来建设（待讨论）
+## 架构备忘
 
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| OBS-1 | 日志与观测体系 | 🔲 | 结构化日志、tracing、错误追踪。待涂涂讨论后细化 |
+- 六边形架构，9 crate workspace，依赖只能由外向内
+- gRPC 只是一个 Channel Adapter，核心抽象是 Channel
+- 设计文档：`docs/design/`
 
 ---
 
-*最后更新：2026-02-22*
+*最后更新：2026-02-23*
