@@ -7,6 +7,7 @@ target/
 .vscode/
 *.swp
 deploy/.env
+deploy/Caddyfile
 
 # macOS
 .DS_Store

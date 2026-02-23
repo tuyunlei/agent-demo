@@ -6,7 +6,7 @@
 
 ## 1) ZeroClaw（Rust）
 
-代码位置：`(internal reference)`
+代码位置：（内部参考，已删除）
 
 ## 1.1 整体架构哲学
 
@@ -69,7 +69,7 @@ zeroclaw/
 
 ## 2) OpenClaw（Node.js/TypeScript）
 
-代码位置：`(internal reference)`
+代码位置：（内部参考，已删除）
 
 ## 2.1 整体架构哲学
 

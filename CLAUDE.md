@@ -32,7 +32,6 @@ agent-demo/
 - **禁止直接提交 develop 或 main**
 - feature 分支创建后立即开 PR（触发 CI）
 - PR merge 后删除 feature 分支
-- GitHub 账号：`tuyunlei`
 
 ## 质量标准（不可妥协）
 
