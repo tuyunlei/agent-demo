@@ -32,12 +32,11 @@ agent-server     ← 组装入口（main.rs）
 
 1. `cargo fmt --all -- --check`
 2. `cargo clippy --workspace -- -D warnings`
-3. `bash scripts/check-arch-deps.sh`（架构依赖方向检查）
-4. `bash scripts/check-file-size.sh`（文件/函数大小检查）
-5. `cargo check --workspace`
-6. `cargo test --workspace`（需要 DATABASE_URL）
-7. cargo-tarpaulin 覆盖率 ≥54%（棘轮，只升不降）
-8. 集成测试：`sqlx::test` + CI PostgreSQL service container
+3. `cargo test --workspace --test arch`（`crates/agent-e2e/tests/arch.rs`：架构依赖方向 + 文件大小检查）
+4. `cargo check --workspace`
+5. `cargo test --workspace`（需要 DATABASE_URL）
+6. cargo-tarpaulin 覆盖率 ≥54%（棘轮，只升不降）
+7. 集成测试：`sqlx::test` + CI PostgreSQL service container
 
 ## 关键设计决策
 
@@ -82,8 +81,7 @@ cargo test --workspace
 # 质量检查
 cargo fmt --all -- --check
 cargo clippy --workspace -- -D warnings
-bash scripts/check-arch-deps.sh
-bash scripts/check-file-size.sh
+cargo test --workspace --test arch
 ```
 
 ## 设计文档

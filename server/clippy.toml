@@ -1,3 +1,7 @@
 # QG10: 认知复杂度阈值
 # 超过此值 clippy 会报 warning（配合 -D warnings 变为 error）
 cognitive-complexity-threshold = 10
+
+# QG14: 函数行数阈值（有效行，不含空行和注释）
+# 替代 check-file-size.sh 中的函数行数检查
+too-many-lines-threshold = 50
