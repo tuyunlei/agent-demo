@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: review-pending
+## Phase: dev-pending
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## 任务队列
 
-1. 🔲 工具调用链路 + get_current_time（PR #22）
+1. ✅ 工具调用链路 + get_current_time（PR #22 merged）
 2. 🔲 web_search 工具（PR #23）
 3. 🔲 上下文时间戳 + System Prompt 增强（PR #24）
 4. 🔲 多会话管理（PR #25）
@@ -23,7 +23,7 @@
 
 ## 当前执行中
 
-🔍 任务 1：工具调用链路 + get_current_time — PR #22 开好，review sub-agent + CI 并行中
+🔧 任务 2：web_search 工具 — sub-agent (gpt-5.3-codex) 开发中，branch `feature/web-search`
 
 ## 阻塞点
 
