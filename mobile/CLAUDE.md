@@ -26,6 +26,27 @@ AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
 - PR 目标分支：develop
 - 一个任务一个分支一个 PR
 
+## 本地构建与测试
+
+**不要用 `swift build` / `swift test`**——protoc 插件需要 `-skipPackagePluginValidation`，只有 xcodebuild 支持。
+
+```bash
+# 构建（先查可用模拟器：xcrun simctl list devices available | grep iPhone）
+xcodebuild build \
+  -project AgentDemo.xcodeproj -scheme AgentDemo \
+  -destination 'platform=iOS Simulator,name=<模拟器名>' \
+  -configuration Debug CODE_SIGNING_ALLOWED=NO -skipPackagePluginValidation
+
+# 测试
+xcodebuild test \
+  -project AgentDemo.xcodeproj -scheme AgentDemo \
+  -destination 'platform=iOS Simulator,name=<模拟器名>' \
+  -configuration Debug -skip-testing:AgentDemoUITests \
+  CODE_SIGNING_ALLOWED=NO -skipPackagePluginValidation
+```
+
+模拟器名称因机器而异（CI 用 `iPhone 16 Pro`，本地可能不同）。具体名称可写在 `CLAUDE.local.md` 里，不入仓库。
+
 ## 质量要求
 
 - **SwiftLint**：`--strict` 模式，警告视为错误
@@ -48,6 +69,7 @@ AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
 - **Proto 生成**：SPM Build Plugin（proto 变更零成本同步）
 - **测试**：Swift Testing 框架
 - **最低版本**：iOS 26.2
+- **依赖锁定**：`Package.resolved` 必须提交，保证可复现构建
 
 ## 注意事项
 

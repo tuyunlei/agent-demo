@@ -1,7 +1,7 @@
 import GRPCCore
 import GRPCProtobuf
 
-public struct SessionServiceClient: Sendable {
+public struct SessionServiceClient: SessionServiceProtocol {
     private let apiClient: APIClient
 
     public init(apiClient: APIClient = APIClient()) {
