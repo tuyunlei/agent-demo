@@ -76,9 +76,28 @@ impl AuthServiceTrait for AuthServiceHandler {
 
     async fn refresh_token(
         &self,
-        _request: Request<RefreshTokenRequest>,
+        request: Request<RefreshTokenRequest>,
     ) -> Result<Response<RefreshTokenResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+
+        let result = self
+            .auth_service
+            .refresh_token(&req.refresh_token)
+            .await
+            .map_err(map_error)?;
+
+        Ok(Response::new(RefreshTokenResponse {
+            token_pair: Some(TokenPair {
+                access_token: result.token_pair.access_token,
+                refresh_token: result.token_pair.refresh_token,
+                access_token_expires_at: Some(to_timestamp(
+                    result.token_pair.access_token_expires_at,
+                )),
+                refresh_token_expires_at: Some(to_timestamp(
+                    result.token_pair.refresh_token_expires_at,
+                )),
+            }),
+        }))
     }
 
     async fn logout(

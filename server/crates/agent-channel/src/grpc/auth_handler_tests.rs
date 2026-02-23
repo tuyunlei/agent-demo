@@ -111,3 +111,29 @@ async fn register_duplicate_email_returns_already_exists() {
     let err = handler.register(request).await.unwrap_err();
     assert_eq!(err.code(), tonic::Code::AlreadyExists);
 }
+
+#[tokio::test]
+async fn refresh_token_success_returns_new_token_pair() {
+    let auth_service = Arc::new(AuthService::new(
+        Arc::new(MockAuthPort),
+        "test-secret".to_string(),
+    ));
+    let handler = AuthServiceHandler::new(Arc::clone(&auth_service));
+
+    let login = auth_service
+        .login("test@example.com", "password123")
+        .await
+        .expect("login should succeed");
+
+    let request = Request::new(RefreshTokenRequest {
+        refresh_token: login.token_pair.refresh_token,
+    });
+
+    let response = handler.refresh_token(request).await.unwrap().into_inner();
+
+    let token_pair = response.token_pair.expect("token pair should exist");
+    assert!(!token_pair.access_token.is_empty());
+    assert!(!token_pair.refresh_token.is_empty());
+    assert!(token_pair.access_token_expires_at.is_some());
+    assert!(token_pair.refresh_token_expires_at.is_some());
+}

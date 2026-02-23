@@ -96,6 +96,26 @@ impl AuthService {
         })
     }
 
+    pub async fn refresh_token(
+        &self,
+        refresh_token: &str,
+    ) -> Result<LoginResult, AuthServiceError> {
+        let claims = self.validate_token(refresh_token)?;
+
+        if claims.token_type != "refresh" {
+            return Err(AuthServiceError::InvalidInput(
+                "not a refresh token".to_string(),
+            ));
+        }
+
+        let token_pair = self.create_token_pair(&claims.sub)?;
+
+        Ok(LoginResult {
+            user_id: claims.sub,
+            token_pair,
+        })
+    }
+
     pub fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
         let mut validation = Validation::new(Algorithm::HS256);
         validation.validate_exp = true;
@@ -175,3 +195,7 @@ mod tests;
 #[cfg(test)]
 #[path = "service_prop_tests.rs"]
 mod prop_tests;
+
+#[cfg(test)]
+#[path = "service_refresh_tests.rs"]
+mod refresh_tests;
