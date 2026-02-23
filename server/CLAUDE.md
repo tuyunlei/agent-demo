@@ -70,7 +70,7 @@ id UUID PRIMARY KEY, session_id UUID FK, role TEXT, content TEXT, created_at TIM
 ```bash
 # 环境变量
 export PATH="$HOME/.cargo/bin:$PATH"
-export DATABASE_URL="postgres://agentdemo:REDACTED_PASSWORD@127.0.0.1:5432/agentdemo"
+export DATABASE_URL="postgres://user:pass@127.0.0.1:5432/agentdemo"  # 实际凭证见 deploy/.env
 
 # 编译运行
 cd server && cargo build && cargo run

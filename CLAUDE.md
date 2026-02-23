@@ -48,9 +48,11 @@ agent-demo/
 
 ## 部署
 
-- VPS: `REDACTED_IP`，域名 `REDACTED_HOST:8443`
-- Caddy 反代 gRPC（TLS），后端 `127.0.0.1:50051`
-- 秘密在 `deploy/.env`（gitignored）：JWT_SECRET, ADMIN_PASSWORD, DATABASE_URL, LLM_API_KEY 等
+- 服务地址见 `deploy/.env`（gitignored）
+- Caddy 反代 gRPC（TLS）
+- 所有凭证走环境变量，不入仓库
+
+⚠️ **仓库是 public 的** — 禁止写入 IP 地址、密码、API key、内部域名等敏感信息。
 
 ## 当前进度
 

@@ -51,6 +51,7 @@ AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
 
 ## 注意事项
 
+- ⚠️ **仓库是 public 的** — 禁止写入 IP 地址、密码、API key、内部域名等敏感信息。凭证走环境变量，地址走配置文件（gitignored）
 - `tasks/` 只读——不创建、不修改、不删除其中的文件
 - 有问题或不确定的地方，写在 PR description 里，PM 会看到
 - 服务端 API 文档：`../server/docs/design/` + `../proto/`
