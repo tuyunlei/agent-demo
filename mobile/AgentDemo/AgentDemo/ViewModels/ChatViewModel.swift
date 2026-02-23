@@ -16,10 +16,14 @@ final class ChatViewModel: ObservableObject {
     }
 
     private let chatService: ChatServiceProtocol
-    private let sessionClient = SessionServiceClient()
+    private let sessionClient: SessionServiceProtocol
 
-    init(chatService: ChatServiceProtocol = ChatServiceClient()) {
+    init(
+        chatService: ChatServiceProtocol = ChatServiceClient(),
+        sessionClient: SessionServiceProtocol = SessionServiceClient()
+    ) {
         self.chatService = chatService
+        self.sessionClient = sessionClient
         sessionID = UserDefaults.standard.string(forKey: "lastSessionID") ?? ""
     }
 
