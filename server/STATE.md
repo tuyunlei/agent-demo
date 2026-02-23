@@ -4,7 +4,7 @@
 
 ---
 
-## Phase: idle
+## Phase: review-pending
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 当前执行中
 
-无。准备派第一个任务。
+🔍 任务 1：工具调用链路 + get_current_time — PR #22 开好，review sub-agent + CI 并行中
 
 ## 阻塞点
 
