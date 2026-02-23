@@ -1,0 +1,18 @@
+[package]
+name = "agent-e2e"
+version = "0.1.0"
+edition.workspace = true
+
+[[test]]
+name = "e2e"
+path = "tests/e2e.rs"
+
+[dev-dependencies]
+agent-server = { path = "../agent-server" }
+agent-domain = { path = "../agent-domain" }
+agent-llm = { path = "../agent-llm" }
+agent-storage = { path = "../agent-storage" }
+agent-proto = { path = "../agent-proto" }
+tokio = { version = "1", features = ["full"] }
+tonic = "0.12"
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "migrate"] }

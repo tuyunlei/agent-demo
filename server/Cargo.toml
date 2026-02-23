@@ -8,6 +8,7 @@ members = [
   "crates/agent-llm",
   "crates/agent-channel",
   "crates/agent-server",
+  "crates/agent-e2e",
 ]
 resolver = "2"
 
