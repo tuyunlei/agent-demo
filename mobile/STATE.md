@@ -10,15 +10,24 @@
 
 ## 当前阶段
 
-**TM-REG + TM5.1 完成。** 客户端已支持注册、登录、聊天、错误处理、登出。
+**协作模式切换完成。** 客户端开发转为涂涂本地 Mac + Claude Code 模式。PM 准备任务，涂涂执行。
 
-## 当前执行中
+## 协作模式
 
-无。
+- 涂涂在 Mac 上用 Claude Code 开发（读 CLAUDE.md + tasks/）
+- PM 在 VPS 上维护 tasks/、review PR、merge
+- tasks/ 只有 PM 写，Claude Code 不碰
+
+## 任务队列
+
+见 `tasks/` 目录：
+1. `1-mqg4-test-protocol/` — 测试补全 + Protocol 化
+2. `2-tm5.2-token-refresh/` — Token 自动刷新
+3. `3-tm4.1-grdb-sqlite/` — GRDB + SQLite 本地缓存
 
 ## 阻塞点
 
-暂无。
+无。
 
 ## 已完成
 
@@ -39,4 +48,4 @@
 
 ---
 
-*最后更新：2026-02-22*
+*最后更新：2026-02-24*

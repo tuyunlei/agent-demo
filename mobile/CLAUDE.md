@@ -1,93 +1,56 @@
-# mobile — iOS 客户端
+# CLAUDE.md — iOS 客户端开发指南
+
+## 项目概述
+
+AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
+
+- **代码**：当前目录（`mobile/`）
+- **服务端**：`../server/`（Rust，已部署 `REDACTED_HOST:8443`）
+- **Proto**：`../proto/`（SPM Build Plugin 自动生成 Swift 代码）
+- **设计文档**：`docs/design/`
+- **CI**：GitHub Actions macOS runner
+
+## 工作流
+
+1. 读 `tasks/` 目录，选文件名数字最小的任务目录
+2. 读该目录下的 `brief.md`（任务目标 + 验收标准）
+3. 如果有 `feedback.md`，先看——那是上次 CI/review 的问题
+4. 创建 `feature/*` 分支
+5. 编码 + 本地测试
+6. commit + push + `gh pr create --base develop`
+7. **不要修改 `tasks/` 下的任何文件**——tasks 由 PM 管理
+
+## 分支规则
+
+- 在 `feature/*` 分支开发，禁止直接提交 develop
+- PR 目标分支：develop
+- 一个任务一个分支一个 PR
+
+## 质量要求
+
+- **SwiftLint**：`--strict` 模式，警告视为错误
+- **SwiftFormat**：`--lint` 模式
+- **测试**：新功能必须有对应的 Swift Testing 单元测试
+- **文件大小**：单文件 ≤300 行（业务代码），单函数 ≤50 行
+- **CI 必须绿**：PR 不过 CI 不会被 merge
+
+## 架构约束
+
+- 分层架构：详见 `docs/design/principles.md`
+- ViewModel 通过 Protocol 注入依赖，方便测试
+- Service 层抽象为 Protocol（如 ChatServiceProtocol、SessionServiceProtocol）
+- 现有模式参考：`ChatViewModel` + `ChatServiceProtocol` 的做法
 
 ## 技术栈
 
-- iOS 26.2 / Swift 5.0 / SwiftUI
-- Xcode 26.2
-- gRPC: grpc-swift v2（grpc-swift-protobuf + grpc-swift-nio-transport）
-- 服务端地址: `REDACTED_HOST:8443`（gRPC over TLS）
+- **UI**：SwiftUI
+- **gRPC**：grpc-swift v2（grpc-swift-protobuf + grpc-swift-nio-transport）
+- **Proto 生成**：SPM Build Plugin（proto 变更零成本同步）
+- **测试**：Swift Testing 框架
+- **最低版本**：iOS 26.2
 
-## 项目结构
+## 注意事项
 
-```
-mobile/
-├── AgentDemo/
-│   ├── AgentDemo/           # 主 App target
-│   │   ├── Views/           # SwiftUI 视图（LoginView, ChatView）
-│   │   ├── ViewModels/      # ViewModel + Model（ChatViewModel, ChatMessage）
-│   │   ├── Protocols/       # 协议定义（SessionServiceProtocol）
-│   │   ├── Services/        # 服务适配器（SessionServiceAdapter）
-│   │   ├── Utilities/       # 工具（KeychainHelper）
-│   │   ├── AppState.swift   # 全局状态（token Keychain 持久化）
-│   │   └── ContentView.swift
-│   ├── Sources/GRPCClient/  # gRPC 客户端（独立 SPM module）
-│   │   ├── APIClient.swift  # gRPC 连接管理
-│   │   ├── AuthServiceClient.swift
-│   │   ├── ChatServiceClient.swift
-│   │   ├── ChatServiceProtocol.swift
-│   │   └── SessionServiceClient.swift
-│   └── AgentDemoTests/      # 单元测试（Swift Testing framework）
-├── docs/design/             # 架构设计文档
-├── scripts/
-│   └── check-file-size.sh   # 文件大小检查
-├── .swiftformat             # SwiftFormat 配置
-└── .swiftlint.yml           # SwiftLint 配置
-```
-
-## 架构要点
-
-- **GRPCClient 是独立 SPM module**：Proto 生成的代码和客户端封装在 `Sources/GRPCClient/`
-- **协议注入**：ChatServiceProtocol、SessionServiceProtocol 用于依赖注入和测试
-- **Proto 由 SPM Build Plugin 自动生成**：grpc-swift v2 plugin，config key `generatedSource.accessLevel: "Public"`
-- **四层架构**：应用集成層 → 業務層 → サービス層 → 基礎層
-
-## 当前功能
-
-- ✅ 注册 / 登录（AuthService Login + Register）
-- ✅ 聊天（ChatService SendMessage，AI 整块返回）
-- ✅ Token 持久化（Keychain）+ Session ID 持久化（UserDefaults）
-- ✅ 聊天历史加载（SessionService ListSessionMessages）
-- ✅ 网络错误友好提示 + 失败回滚 + Sign Out
-
-## CI 门禁（全部强制）
-
-1. **SwiftLint** `--strict`（warnings = errors）
-2. **SwiftFormat** `--lint`（配置见 `.swiftformat`）
-3. **文件大小**：业务 ≤300 行 / 测试 ≤500 行 / 函数 ≤50 行
-4. **xcodebuild test**（iPhone 16 Pro Simulator）
-
-## 代码规范
-
-- **SwiftFormat `andOperator` 规则**：`if/guard/while` 条件用逗号 `,` 不用 `&&`
-- **`blankLinesBetweenScopes`**：不同 scope（class/struct/func/property）之间必须有空行
-- **`redundantThrows` 已禁用**：`@objc` override 的 `throws` 不能删
-- **Swift 并发**：`@MainActor` 用于 ViewModel 和 View 相关类型；protocol 不要加 `@MainActor`（会导致默认参数初始化问题）
-- **import 不能删**：`import Combine` 是 `ObservableObject` + `@Published` 必须的
-
-## 测试规范
-
-- 使用 **Swift Testing** 框架（`import Testing`，`@Test func`，`#expect`）
-- Mock 用 `@MainActor final class`（不要用 `actor`，避免跨 isolation 问题）
-- 所有测试 init 中清理 `UserDefaults.standard.removeObject(forKey: "lastSessionID")`
-- **测试中必须注入 mock service**，不要让默认参数创建真实的 APIClient（会在测试环境 crash）
-
-## 已知问题 / 待修
-
-- MQG4 PR #13 CI 修复中（mock actor → @MainActor class 改造）
-- TM5.2 Token 自动刷新：被阻塞，服务端 RefreshToken 还没实现
-- TM4.1 GRDB 本地缓存：待定
-
-## 设计文档
-
-详细架构设计见 `docs/design/`：
-- `principles.md` — 架构原则 + 分层规范
-- `tech-stack.md` — 技术选型 + 约束
-- `foundation.md` — 基础层设计
-- `services.md` — 服务层设计
-- `business-modules.md` — 业务模块划分
-- `app-integration.md` — 应用集成层设计
-
-## 进度追踪
-
-- `ROADMAP.md` — 完整任务列表和状态
-- `STATE.md` — 当前 phase 和活跃任务
+- `tasks/` 只读——不创建、不修改、不删除其中的文件
+- 有问题或不确定的地方，写在 PR description 里，PM 会看到
+- 服务端 API 文档：`../server/docs/design/` + `../proto/`
