@@ -9,6 +9,9 @@ target/
 deploy/.env
 deploy/Caddyfile
 
+# Claude Code local config
+CLAUDE.local.md
+
 # macOS
 .DS_Store
 
