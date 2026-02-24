@@ -37,7 +37,7 @@
   - 设计文档：`capabilities/tool-system.md`
   - 验收：现有工具测试迁移 + ToolRuntime 单元测试
 
-- [ ] **R-04：agent-llm 重构**
+- [x] **R-04：agent-llm 重构** (PR #8)
   - LlmProvider trait 对齐 `capabilities/llm-provider.md`（complete + stream）
   - 统一 LlmRequest / LlmResponse / LlmError 类型
   - MockLlmProvider 更新
