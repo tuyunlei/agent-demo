@@ -1,18 +1,17 @@
 use std::sync::Arc;
 
-use agent_domain::{ChatMessage, MessageStore, StoreError, ToolCall, ToolSpec};
+use agent_domain::{ChatMessage, MessageStore, StoreError};
 use agent_llm::LlmProvider;
 use agent_llm::types::{
     FinishReason, LlmRequest, LlmRequestConfig, LlmRequestMetadata, LlmResponse,
 };
 use agent_memory::CompactionService;
-use agent_tools::{ToolError, ToolRuntime};
-use chrono::{DateTime, TimeZone, Utc};
-use chrono_tz::Tz;
+use agent_tools::ToolRuntime;
 
 use crate::turn_compat::{
-    chat_message_to_model_message, domain_tool_spec_to_llm_spec, llm_tool_call_to_tool_input,
-    tool_output_to_chat_message,
+    build_system_prompt, chat_message_to_model_message, domain_tool_spec_to_llm_spec,
+    format_message_content, llm_tool_call_to_tool_input, parse_timezone, to_domain_call,
+    tool_error_json, tool_output_to_chat_message, tool_specs_to_domain_specs,
 };
 use crate::turn_types::{TurnError, TurnExecutorConfig, TurnFinishReason, TurnInput, TurnOutput};
 
@@ -170,6 +169,7 @@ impl TurnExecutor {
                         .save_message(&session_id, "assistant", &response.content)
                         .await
                         .map_err(store_err)?;
+                    let _ = self.compaction.compact_if_needed(&session_id).await;
                     return Ok(TurnOutput {
                         session_id,
                         assistant_text: response.content,
@@ -249,67 +249,6 @@ impl TurnExecutor {
 
 fn store_err(error: StoreError) -> TurnError {
     TurnError::SessionError(format!("{error:?}"))
-}
-
-fn to_domain_call(call: agent_llm::types::ToolCall) -> ToolCall {
-    ToolCall {
-        call_id: call.call_id,
-        name: call.name,
-        arguments: call.arguments,
-    }
-}
-
-fn tool_specs_to_domain_specs(specs: &[agent_tools::ToolSpec]) -> Vec<ToolSpec> {
-    specs
-        .iter()
-        .map(|spec| ToolSpec {
-            name: spec.name.clone(),
-            description: spec.description.clone(),
-            parameters: spec.parameters_schema.clone(),
-        })
-        .collect()
-}
-
-fn tool_error_json(err: &ToolError) -> String {
-    serde_json::json!({ "error": err.to_string() }).to_string()
-}
-
-fn parse_timezone(name: &str) -> Tz {
-    name.parse().unwrap_or(chrono_tz::UTC)
-}
-
-fn format_message_content(role: &str, content: &str, created_at: i64, timezone: Tz) -> String {
-    if role != "user" && role != "assistant" {
-        return content.to_string();
-    }
-    match Utc.timestamp_opt(created_at, 0).single() {
-        Some(timestamp) => format!("[{}] {content}", format_timestamp(timestamp, timezone)),
-        None => content.to_string(),
-    }
-}
-
-fn format_timestamp(timestamp: DateTime<Utc>, timezone: Tz) -> String {
-    timestamp
-        .with_timezone(&timezone)
-        .format("%Y-%m-%d %H:%M")
-        .to_string()
-}
-
-fn build_system_prompt(tool_specs: &[ToolSpec], timezone: Tz) -> String {
-    let now = format_timestamp(Utc::now(), timezone);
-    let tools = if tool_specs.is_empty() {
-        "- (none)".to_string()
-    } else {
-        tool_specs
-            .iter()
-            .map(|tool| format!("- {}: {}", tool.name, tool.description))
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
-
-    format!(
-        "You are a helpful AI assistant.\n\nCurrent time: {now} ({timezone})\n\nYou have access to the following tools:\n{tools}\n\nWhen the user asks about current events, time, or facts you're unsure about, use the appropriate tool.\nBe concise and helpful. Respond in the same language the user uses."
-    )
 }
 
 #[cfg(test)]
