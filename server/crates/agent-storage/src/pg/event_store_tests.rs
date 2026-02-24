@@ -1,5 +1,5 @@
-use agent_domain::{CreateSessionParams, EventRange, EventStore, NewEvent, SessionListFilter};
 use agent_domain::events::{EventPayload, SystemActor, SystemEvent, SystemEventKind};
+use agent_domain::{CreateSessionParams, EventRange, EventStore, NewEvent, SessionListFilter};
 use sqlx::PgPool;
 use uuid::Uuid;
 
