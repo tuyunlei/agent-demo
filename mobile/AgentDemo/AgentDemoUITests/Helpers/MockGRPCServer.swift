@@ -9,10 +9,10 @@ final class MockGRPCServer: Sendable {
 
     var port: Int {
         get throws {
-            guard let p = _port.withLock({ $0 }) else {
+            guard let port = _port.withLock({ $0 }) else {
                 throw MockServerError.notStarted
             }
-            return p
+            return port
         }
     }
 
@@ -45,9 +45,9 @@ final class MockGRPCServer: Sendable {
     }
 
     func stop() {
-        task.withLock { t in
-            t?.cancel()
-            t = nil
+        task.withLock { current in
+            current?.cancel()
+            current = nil
         }
     }
 }
