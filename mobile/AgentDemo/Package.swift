@@ -28,5 +28,14 @@ let package = Package(
                 .plugin(name: "GRPCProtobufGenerator", package: "grpc-swift-protobuf"),
             ]
         ),
+        .target(
+            name: "GRPCTestSupport",
+            dependencies: [
+                "GRPCClient",
+                .product(name: "GRPCCore", package: "grpc-swift"),
+                .product(name: "GRPCNIOTransportHTTP2", package: "grpc-swift-nio-transport"),
+            ],
+            path: "Sources/GRPCTestSupport"
+        ),
     ]
 )
