@@ -1,66 +1,52 @@
-# agent-demo/server — 当前状态
+# agent-demo/server — 状态
 
-每次唤醒时首先读这个文件。
+## Phase: design
 
----
+架构重新设计中。不写代码，只产出设计文档。
 
-## Phase: idle
+## 当前进度
 
----
-
-## 当前阶段
-
-**Phase 1 + Phase 2 全部完成！** 6 个任务一夜通关，从 00:13 到 00:51，共 38 分钟。
-
-## 任务队列
-
-1. ✅ 工具调用链路 + get_current_time（PR #22 merged）
-2. ✅ web_search 工具（PR #23 merged）
-3. ✅ 上下文时间戳 + System Prompt 增强（PR #24 merged）
-4. ✅ 多会话管理（PR #25 merged）
-5. ✅ Token 自动刷新（PR #26 merged）
-6. ✅ 统一错误处理（PR #27 merged）
-
-## 当前执行中
-
-无。等待涂涂下一步指示。
-
-## 下一步建议
-
-- 部署更新后的 server，用真实 LLM 端到端验证 tool calling + web_search
-- develop → main 合并（需涂涂确认）
-- iOS 客户端适配新 API（CreateSession、RefreshToken）
+- [x] 框架分层架构源码调研（docs/research/framework-architecture-comparison.md）
+- [x] 涂涂确认架构方向（4 层 + trait 按域分布 + ContextBuilder 独立 + 事件流）
+- [x] 自动推进机制重新设计（system prompt / STATE / WORKFLOW / ticker）
+- [ ] 旧设计文档清理（删/更新/归档）
+- [ ] 新架构设计文档（见 ROADMAP.md）
 
 ## 阻塞点
 
 无。
 
-## 已完成
+---
 
-- ✅ T0.1~T0.2 工程脚手架
-- ✅ T1.1~T1.3 Echo 闭环
-- ✅ T2.1~T2.3 真实认证
-- ✅ T3.1~T3.4 真实 AI 回复 + 部署
-- ✅ 安全加固
-- ✅ QG1-14 质量体系
-- ✅ E2E-1~5 专业 e2e 测试体系
-- ✅ T4.1~T4.3 持久化
-- ✅ T6.1 ListSessionMessages
-- ✅ Phase 1: Agent 核心能力（tool calling + web_search + context timestamps）
-- ✅ Phase 2: MVP 产品功能（multi-session + token refresh + unified errors）
+## 已完成的里程碑
 
-## 已知待修
+<details>
+<summary>Phase 1 + Phase 2（6 tasks，38 min，PR #22-27）</summary>
 
-- user_message_id 返回固定 "msg-001"，应返回真实 message_id
+- ✅ 工具调用链路 + get_current_time（PR #22）
+- ✅ web_search 工具（PR #23）
+- ✅ 上下文时间戳 + System Prompt 增强（PR #24）
+- ✅ 多会话管理（PR #25）
+- ✅ Token 自动刷新（PR #26）
+- ✅ 统一错误处理（PR #27）
+</details>
+
+<details>
+<summary>Walking Skeleton + 质量体系（PR #1-21）</summary>
+
+- ✅ 工程脚手架 + CI
+- ✅ Echo 闭环 + 真实认证 + AI 回复 + 部署
+- ✅ PostgreSQL 持久化 + 分页查询
+- ✅ QG1-14 质量门禁 + E2E-1~5 端到端测试
+- 91 个测试，覆盖率 65%+，mutation catch rate 100%
+</details>
 
 ## 基础设施
 
-- PostgreSQL 16.11：users + sessions + messages 表（含 sequence_num BIGSERIAL）
-- 仓库 public，CI 免费
-- 测试：91 个（单元 + 集成 + e2e + proptest + arch），覆盖率 65%+
-- Mutation catch rate：100%
-- CI 门禁：fmt + clippy(cognitive ≤10, too_many_lines ≤50) + Rust arch tests + tests + coverage ≥65%
+- PostgreSQL 16.11：users + sessions + messages
+- 仓库 public，CI 免费（macOS runner 可用）
+- CI 门禁：fmt + clippy + arch tests + tests + coverage ≥65%
 
 ---
 
-*最后更新：2026-02-24 00:52 CST*
+*最后更新：2026-02-24*

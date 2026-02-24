@@ -1,99 +1,126 @@
 # agent-demo/server — ROADMAP
 
-## 产品现状
-
-**已上线（公网可用）** 地址见 `deploy/.env`
-
-✅ 注册账号（邮箱 + 密码）
-✅ 登录拿 token
-✅ 跟 AI 聊天（Kimi K2.5，整块回复，非流式）
-✅ 聊天记录持久化（关掉 app 再打开还在）
-✅ 拉取历史消息（分页）
-
-**还不能做**
-
-❌ 人设/性格定制 — 所有用户对着同一个 agent，没有"千人千面"
-❌ 流式回复 — AI 回复要等全部生成完才能看到
-❌ 多 LLM 提供商 — 只能用 Kimi K2.5，不能切换/容灾
-❌ 主动推送 — agent 不会主动找用户
-❌ 上下文压缩 — 聊多了 token 会爆
+当前阶段：**架构设计**（Phase: design）
 
 ---
 
-## ✅ 已完成：Agent 核心能力
+## 第一步：旧设计文档清理
 
-| 功能 | 用户感知 | PR |
-|------|----------|-----|
-| 工具调用链路 + get_current_time | 问"现在几点"，agent 能调工具回答 | #22 |
-| web_search 工具 | 问"帮我搜 XXX"，agent 能搜索并总结 | #23 |
-| 上下文时间戳 + System Prompt 增强 | agent 知道每条消息的时间，能说"你 2 小时前提到过" | #24 |
+在写新设计之前，先盘点现有 40+ 个设计文档，逐个判断保留/更新/归档/删除。
 
-## ✅ 已完成：MVP 产品补齐
+- [ ] **D-CLEAN：设计文档审计与清理**
+  - 列出所有现有设计文档，逐个标注处置方式（keep / update / archive / delete）
+  - 仍然有效的（如 ADR-001 单体架构、ADR-002 PostgreSQL）标记 keep
+  - 需要大幅修改的归档到 `docs/design/archive/`，新版在后续任务中重写
+  - 完全过时的删除
+  - 产出：`docs/design/archive/` 目录 + 清理后的 `docs/design/` 目录
 
-| 功能 | 用户感知 | PR |
-|------|----------|-----|
-| 多会话管理 | 能新建对话、切换对话、看到会话列表 | #25 |
-| Token 自动刷新 | 不会突然被踢出去重新登录 | #26 |
-| 统一错误处理 | 出错时能看到有意义的提示 | #27 |
+## 第二步：宏观架构（自顶向下）
 
-**服务端 MVP 功能齐全。** 真实 LLM 端到端验证通过（2026-02-24）。
+- [ ] **D-ARCH-01：整体分层架构**
+  - 定义 4 层：接入层 / 编排层 / 能力层 / 基础设施层
+  - 每层的职责一句话说清
+  - 层间依赖方向（只能由外向内）
+  - 与 ZeroClaw/PicoClaw/OpenClaw 的对比论证
+  - crate 结构映射（每层对应哪些 crate）
+  - 产出：`docs/design/architecture.md`
+
+- [ ] **D-ARCH-02：事件流数据模型**
+  - 定义 append-only 事件流核心概念
+  - 事件类型枚举（UserMessage / AssistantMessage / ToolCallStart / ToolResult / SystemEvent / ConfigChange 等）
+  - 与现有 messages 表的差异
+  - System Prompt 稳定性原则：首轮构建后不变，变更通过 ConfigChange 事件追加
+  - 哪些场景需要"重置"事件流，如何设计
+  - 产出：`docs/design/core/event-model.md`
+
+## 第三步：能力层设计（各域独立）
+
+- [ ] **D-CAP-01：LLM Provider 抽象**
+  - Provider trait 定义（chat / stream_chat）
+  - 请求/响应类型（含 tool_calls、finish_reason）
+  - 多 provider 切换 + fallback 策略
+  - 参考 ZeroClaw `providers/traits.rs`
+  - 产出：`docs/design/capabilities/llm-provider.md`
+
+- [ ] **D-CAP-02：工具系统**
+  - Tool trait 定义（spec / execute）
+  - 工具注册与发现
+  - 内置工具 vs 扩展工具
+  - 工具失败处理（错误封装回 LLM）
+  - 参考 ZeroClaw `tools/traits.rs`
+  - 产出：`docs/design/capabilities/tool-system.md`
+
+- [ ] **D-CAP-03：上下文编排（ContextBuilder）**
+  - ContextBuilder 接口设计
+  - PromptSection trait（可插拔 section）
+  - System Prompt 构建（参考 ZeroClaw `agent/prompt.rs`）
+  - 历史消息窗口选取（从事件流中）
+  - Token 预算管理
+  - 产出：`docs/design/capabilities/context-builder.md`
+
+- [ ] **D-CAP-04：会话生命周期**
+  - Session 创建 / 读取 / 更新 / 压缩 / 归档
+  - 事件流持久化（EventStore trait）
+  - 压缩策略（摘要替代历史事件）
+  - 参考 OpenClaw session store + PicoClaw SessionManager
+  - 产出：`docs/design/capabilities/session-lifecycle.md`
+
+## 第四步：编排层设计
+
+- [ ] **D-ORCH-01：TurnExecutor 详细设计**
+  - 单次 turn 的完整流程（接收消息 → 上下文组装 → LLM 调用 → 工具循环 → 持久化 → 返回）
+  - TurnExecutor 依赖哪些能力层模块（ContextBuilder、LlmProvider、ToolRuntime、EventStore）
+  - 工具循环终止条件
+  - 错误处理（各环节失败如何处理）
+  - 参考 ZeroClaw `Agent::turn()` + PicoClaw `runAgentLoop()`
+  - 产出：`docs/design/orchestration/turn-executor.md`
+
+## 第五步：接入层 + 基础设施层
+
+- [ ] **D-INFRA-01：gRPC 接口与接入层**
+  - gRPC handler 职责边界（只做协议转换，不含业务逻辑）
+  - Proto 定义与代码的映射
+  - 认证拦截器
+  - 产出：`docs/design/infrastructure/grpc-layer.md`
+
+- [ ] **D-INFRA-02：PostgreSQL 适配器**
+  - EventStore 的 PostgreSQL 实现
+  - 数据库 schema（events 表设计）
+  - 迁移策略（从现有 messages 表到 events 表）
+  - 产出：`docs/design/infrastructure/postgres-adapter.md`
+
+## 第六步：收尾
+
+- [ ] **D-ADR：更新 ADR（架构决策记录）**
+  - 审查现有 6 个 ADR，更新或新增
+  - 新增 ADR-007：事件流数据模型
+  - 新增 ADR-008：ContextBuilder 可插拔 Section
+  - 产出：`docs/design/decisions/` 下更新/新增
 
 ---
 
-## 🔮 下一阶段（待涂涂确认优先级）
-
-- 人设/性格系统（千人千面）
-- 多轮对话上下文压缩
-- 流式回复
-- 多 LLM 提供商切换
-- 主动推送（agent 主动找用户）
-- AI 故障兜底（重试 + 备用模型）
-- 日志与观测
-
----
-
-## 质量保障（已建成，持续执行）
-
-每个新功能 PR 自动经过：
-- 代码风格 + 复杂度检查（clippy：认知复杂度 ≤10，函数 ≤50 行）
-- 架构依赖方向验证（Rust 测试）
-- 72+ 自动化测试（单元 / 集成 / e2e / 属性测试）
-- 覆盖率 ≥65%（棘轮，只升不降）
-- 变异测试 catch rate 100%
+## 已完成
 
 <details>
-<summary>质量体系建设历史（QG1-14 + E2E-1~5，PR #4~#21）</summary>
+<summary>Phase 1 + Phase 2（功能开发，PR #22-27）</summary>
 
-- QG1-3：fmt / clippy / 架构依赖脚本 / 文件限制脚本
-- QG4-7：测试补齐(13→38) / 测试分离 / 覆盖率门禁(54%) / 集成测试(sqlx::test)
-- QG8：验收测试脚本化
-- QG9-13：覆盖率深化 / 认知复杂度门禁 / mutation testing / proptest / 覆盖率棘轮(65%)
-- E2E-1~5：ServerBuilder / MockLlmProvider / agent-e2e crate / 6 e2e 场景 / CI 集成
-- QG14：shell 脚本 → Rust 架构测试 + Clippy too_many_lines
+| 功能 | PR |
+|------|-----|
+| 工具调用链路 + get_current_time | #22 |
+| web_search 工具 | #23 |
+| 上下文时间戳 + System Prompt 增强 | #24 |
+| 多会话管理 | #25 |
+| Token 自动刷新 | #26 |
+| 统一错误处理 | #27 |
 
 </details>
 
 <details>
-<summary>功能开发历史（Step 0-4 + 6.1，PR #1~#12）</summary>
+<summary>Walking Skeleton + 质量体系（PR #1-21）</summary>
 
-- Step 0：8 crate workspace + GitHub Actions CI
-- Step 1：Proto → gRPC echo → grpcurl 验证
-- Step 2：JWT 认证 + Auth 拦截器
-- Step 3：LlmProvider(Kimi K2.5) + Caddy TLS + 公网 e2e
-- Step 4.1：PostgreSQL 接入（PR #1）
-- Step 4.2：用户注册（PR #2）
-- Step 4.3：消息持久化（PR #3）
-- Step 6.1：ListSessionMessages 分页查询（PR #10）
+工程脚手架、Echo、认证、AI 回复、部署、持久化、QG1-14、E2E-1~5
 
 </details>
-
----
-
-## 架构备忘
-
-- 六边形架构，9 crate workspace，依赖只能由外向内
-- gRPC 只是一个 Channel Adapter，核心抽象是 Channel
-- 设计文档：`docs/design/`
 
 ---
 
