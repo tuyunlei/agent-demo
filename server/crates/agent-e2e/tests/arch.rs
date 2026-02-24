@@ -14,7 +14,7 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
         (
             "agent-types",
             HashSet::from([
-                "agent-app",
+                "agent-orchestrator",
                 "agent-channel",
                 "agent-server",
                 "agent-storage",
@@ -26,7 +26,7 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
         (
             "agent-domain",
             HashSet::from([
-                "agent-app",
+                "agent-orchestrator",
                 "agent-channel",
                 "agent-server",
                 "agent-storage",
@@ -35,7 +35,7 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
             ]),
         ),
         (
-            "agent-app",
+            "agent-orchestrator",
             HashSet::from([
                 "agent-channel",
                 "agent-server",
@@ -48,7 +48,7 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
             "agent-proto",
             HashSet::from([
                 "agent-domain",
-                "agent-app",
+                "agent-orchestrator",
                 "agent-channel",
                 "agent-server",
                 "agent-storage",
@@ -58,7 +58,7 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
         (
             "agent-storage",
             HashSet::from([
-                "agent-app",
+                "agent-orchestrator",
                 "agent-channel",
                 "agent-server",
                 "agent-llm",
@@ -68,7 +68,7 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
         (
             "agent-llm",
             HashSet::from([
-                "agent-app",
+                "agent-orchestrator",
                 "agent-channel",
                 "agent-server",
                 "agent-storage",

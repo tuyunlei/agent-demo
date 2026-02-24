@@ -1,5 +1,5 @@
 [package]
-name = "agent-app"
+name = "agent-orchestrator"
 version = "0.1.0"
 edition.workspace = true
 

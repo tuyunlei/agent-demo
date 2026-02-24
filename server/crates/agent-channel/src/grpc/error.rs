@@ -1,5 +1,5 @@
-use agent_app::AuthServiceError;
 use agent_domain::{AgentError, LlmError, StoreError};
+use agent_orchestrator::AuthServiceError;
 use tonic::Status;
 
 pub trait IntoGrpcStatus {

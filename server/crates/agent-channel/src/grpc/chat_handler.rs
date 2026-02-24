@@ -2,7 +2,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use super::UserId;
-use agent_app::AgentRuntime;
+use agent_orchestrator::AgentRuntime;
 use agent_proto::chat_service_server::ChatService;
 use agent_proto::{
     ChatEvent, SendMessageRequest, SendMessageResponse, SubmitToolResultRequest,

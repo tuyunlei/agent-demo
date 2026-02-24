@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use agent_app::AuthService;
+use agent_orchestrator::AuthService;
 use agent_proto::auth_service_server::AuthService as AuthServiceTrait;
 use agent_proto::{
     LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest,

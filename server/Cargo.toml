@@ -4,7 +4,7 @@ members = [
   "crates/agent-context",
   "crates/agent-memory",
   "crates/agent-tools",
-  "crates/agent-app",
+  "crates/agent-orchestrator",
   "crates/agent-proto",
   "crates/agent-storage",
   "crates/agent-llm",
