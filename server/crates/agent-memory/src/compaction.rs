@@ -7,8 +7,10 @@ use crate::types::{CompactionOutcome, CompactionPolicy};
 #[async_trait::async_trait]
 pub trait CompactionService: Send + Sync {
     /// 检查并执行压缩（如果需要）
-    async fn compact_if_needed(&self, session_id: &str)
-        -> Result<CompactionOutcome, CompactionError>;
+    async fn compact_if_needed(
+        &self,
+        session_id: &str,
+    ) -> Result<CompactionOutcome, CompactionError>;
 
     /// 获取当前压缩策略配置
     fn policy(&self) -> &CompactionPolicy;
