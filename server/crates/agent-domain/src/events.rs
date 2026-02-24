@@ -7,11 +7,24 @@ pub struct EventEnvelope {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct EventMeta {
     pub event_id: String,
-    pub session_id: String,
-    pub sequence_number: u64,
-    pub timestamp: i64,
     pub tenant_id: String,
     pub user_id: String,
+    pub agent_id: String,
+    pub session_id: String,
+    pub sequence_number: u64,
+    pub timestamp_ms: i64,
+    pub causation_id: Option<String>,
+    pub correlation_id: Option<String>,
+    pub producer: EventProducer,
+    pub schema_version: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum EventProducer {
+    TurnExecutor,
+    SessionLifecycle,
+    ToolRuntimeBridge,
+    SystemAdmin,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -187,11 +200,16 @@ mod tests {
         let event = EventEnvelope {
             meta: EventMeta {
                 event_id: "evt-1".to_string(),
-                session_id: "s-1".to_string(),
-                sequence_number: 1,
-                timestamp: 1_700_000_000,
                 tenant_id: "t-1".to_string(),
                 user_id: "u-1".to_string(),
+                agent_id: "a-1".to_string(),
+                session_id: "s-1".to_string(),
+                sequence_number: 1,
+                timestamp_ms: 1_700_000_000_000,
+                causation_id: None,
+                correlation_id: Some("corr-1".to_string()),
+                producer: EventProducer::TurnExecutor,
+                schema_version: 1,
             },
             payload: EventPayload::UserMessage(UserMessageEvent {
                 message_id: "m-1".to_string(),
