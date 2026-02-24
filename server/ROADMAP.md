@@ -58,7 +58,7 @@
   - Token 预算管理
   - 产出：`docs/design/capabilities/context-builder.md`
 
-- [ ] **D-CAP-04：会话生命周期**
+- [x] **D-CAP-04：会话生命周期**
   - Session 创建 / 读取 / 更新 / 压缩 / 归档
   - 事件流持久化（EventStore trait）
   - 压缩策略（摘要替代历史事件）
