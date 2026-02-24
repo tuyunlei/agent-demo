@@ -35,7 +35,7 @@
 
 ## 第三步：能力层设计（各域独立）
 
-- [ ] **D-CAP-01：LLM Provider 抽象**
+- [x] **D-CAP-01：LLM Provider 抽象**
   - Provider trait 定义（chat / stream_chat）
   - 请求/响应类型（含 tool_calls、finish_reason）
   - 多 provider 切换 + fallback 策略
