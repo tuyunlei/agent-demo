@@ -1,8 +1,7 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use agent_domain::{AuthError, AuthPort};
-use agent_types::types::TokenPair;
+use agent_domain::{AuthError, AuthPort, TokenPair};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 

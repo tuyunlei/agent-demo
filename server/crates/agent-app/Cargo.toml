@@ -5,7 +5,6 @@ edition.workspace = true
 
 [dependencies]
 agent-domain = { path = "../agent-domain" }
-agent-types = { path = "../agent-types" }
 async-trait = "0.1"
 chrono = "0.4"
 chrono-tz = "0.10"
