@@ -21,6 +21,12 @@ final class AppState: ObservableObject {
     }
 
     init() {
+        if ProcessInfo.processInfo.arguments.contains("--reset-state") {
+            KeychainHelper.delete(key: "accessToken")
+            UserDefaults.standard.removeObject(forKey: "lastSessionID")
+            accessToken = nil
+            return
+        }
         accessToken = KeychainHelper.load(key: "accessToken")
     }
 

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2B391FA12F48E72B00FE90A6 /* GRPCClient in Frameworks */ = {isa = PBXBuildFile; productRef = 2B391FA02F48E72B00FE90A6 /* GRPCClient */; };
+		A1B2C3D42F5A000000000001 /* GRPCClient in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D42F5A000000000002 /* GRPCClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D42F5A000000000001 /* GRPCClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +166,7 @@
 			);
 			name = AgentDemoUITests;
 			packageProductDependencies = (
+				A1B2C3D42F5A000000000002 /* GRPCClient */,
 			);
 			productName = AgentDemoUITests;
 			productReference = 2B391F852F48B49500FE90A6 /* AgentDemoUITests.xctest */;
@@ -601,6 +604,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		2B391FA02F48E72B00FE90A6 /* GRPCClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GRPCClient;
+		};
+		A1B2C3D42F5A000000000002 /* GRPCClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GRPCClient;
 		};
