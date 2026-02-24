@@ -83,7 +83,7 @@
   - 认证拦截器
   - 产出：`docs/design/infrastructure/grpc-layer.md`
 
-- [ ] **D-INFRA-02：PostgreSQL 适配器**
+- [x] **D-INFRA-02：PostgreSQL 适配器**
   - EventStore 的 PostgreSQL 实现
   - 数据库 schema（events 表设计）
   - 迁移策略（从现有 messages 表到 events 表）
