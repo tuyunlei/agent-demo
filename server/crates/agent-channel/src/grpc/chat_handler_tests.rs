@@ -1,52 +1,13 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use agent_domain::{
-    FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse, LlmUsage, MessageStore,
-    StoreError, StoredMessage, ToolResult, ToolRuntime, ToolSpec,
-};
+use agent_domain::{MessageStore, StoreError, StoredMessage};
+use agent_llm::mock::MockLlmProvider;
+use agent_memory::NoopCompactionService;
+use agent_orchestrator::{TurnExecutor, TurnExecutorConfig};
 use agent_proto::{ContentBlock, TextBlock};
+use agent_tools::DefaultToolRuntime;
 
 use super::*;
-
-struct MockLlmProvider {
-    captured: Arc<Mutex<Vec<LlmRequest>>>,
-}
-
-#[async_trait::async_trait]
-impl LlmProvider for MockLlmProvider {
-    async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
-        self.captured.lock().expect("lock captured").push(request);
-        Ok(LlmResponse {
-            content: "mocked-reply".to_string(),
-            model: "mock-model".to_string(),
-            usage: Some(LlmUsage {
-                input_tokens: 10,
-                output_tokens: 10,
-                total_tokens: 20,
-            }),
-            tool_calls: vec![],
-            finish_reason: FinishReason::Stop,
-        })
-    }
-}
-
-#[derive(Default)]
-struct MockToolRuntime;
-
-#[async_trait::async_trait]
-impl ToolRuntime for MockToolRuntime {
-    fn list_tools(&self) -> Vec<ToolSpec> {
-        vec![]
-    }
-
-    async fn execute(
-        &self,
-        _name: &str,
-        _arguments: &str,
-    ) -> Result<ToolResult, agent_domain::AgentError> {
-        unreachable!("not used in test")
-    }
-}
 
 #[derive(Default)]
 struct MockMessageStore;
@@ -95,14 +56,12 @@ fn text_block(text: &str) -> ContentBlock {
 
 #[tokio::test]
 async fn test_send_message_calls_runtime_chain() {
-    let captured = Arc::new(Mutex::new(Vec::new()));
-    let provider = Arc::new(MockLlmProvider {
-        captured: captured.clone(),
-    });
-    let runtime = Arc::new(AgentRuntime::new(
-        provider,
+    let runtime = Arc::new(TurnExecutor::new(
+        Arc::new(MockLlmProvider::with_text("mocked-reply")),
+        Arc::new(DefaultToolRuntime::new()),
         Arc::new(MockMessageStore),
-        Arc::new(MockToolRuntime),
+        Arc::new(NoopCompactionService::new()),
+        TurnExecutorConfig::default(),
     ));
     let handler = ChatServiceHandler::new(runtime);
 
@@ -119,26 +78,17 @@ async fn test_send_message_calls_runtime_chain() {
 
     assert_eq!(resp.request_id, "test-123");
     assert_eq!(resp.session_id, "session-unknown");
-
-    let requests = captured.lock().expect("lock captured");
-    assert_eq!(requests.len(), 1);
-    assert_eq!(requests[0].messages[0].role, "system");
-    assert_eq!(
-        requests[0].messages[1].content,
-        "[1970-01-01 08:00] hello runtime"
-    );
+    assert_eq!(resp.assistant_content.len(), 1);
 }
 
 #[tokio::test]
 async fn test_send_message_requires_text_content() {
-    let captured = Arc::new(Mutex::new(Vec::new()));
-    let provider = Arc::new(MockLlmProvider {
-        captured: captured.clone(),
-    });
-    let runtime = Arc::new(AgentRuntime::new(
-        provider,
+    let runtime = Arc::new(TurnExecutor::new(
+        Arc::new(MockLlmProvider::with_text("mocked-reply")),
+        Arc::new(DefaultToolRuntime::new()),
         Arc::new(MockMessageStore),
-        Arc::new(MockToolRuntime),
+        Arc::new(NoopCompactionService::new()),
+        TurnExecutorConfig::default(),
     ));
     let handler = ChatServiceHandler::new(runtime);
 

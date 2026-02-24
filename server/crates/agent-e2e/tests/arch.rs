@@ -34,13 +34,15 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
                 "agent-proto",
             ]),
         ),
+        // Layer 2 (Orchestration) depends on Layer 3 (Capability) traits:
+        // agent-llm, agent-tools, agent-memory, agent-context are allowed.
+        // Must NOT depend on Layer 1 (channel/server) or Layer 4 (storage).
         (
             "agent-orchestrator",
             HashSet::from([
                 "agent-channel",
                 "agent-server",
                 "agent-storage",
-                "agent-llm",
                 "agent-proto",
             ]),
         ),
