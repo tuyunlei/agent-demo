@@ -1,0 +1,15 @@
+-- Add event-stream fields to sessions table
+ALTER TABLE sessions
+    ADD COLUMN IF NOT EXISTS tenant_id UUID,
+    ADD COLUMN IF NOT EXISTS agent_id TEXT NOT NULL DEFAULT 'default',
+    ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active',
+    ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS event_count BIGINT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS last_sequence BIGINT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS estimated_prompt_tokens INTEGER,
+    ADD COLUMN IF NOT EXISTS compacted_until_sequence BIGINT,
+    ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE sessions SET tenant_id = user_id WHERE tenant_id IS NULL;
+ALTER TABLE sessions ALTER COLUMN tenant_id SET NOT NULL;
