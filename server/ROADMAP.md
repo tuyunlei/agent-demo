@@ -25,7 +25,7 @@
   - crate 结构映射（每层对应哪些 crate）
   - 产出：`docs/design/architecture.md`
 
-- [ ] **D-ARCH-02：事件流数据模型**
+- [x] **D-ARCH-02：事件流数据模型**
   - 定义 append-only 事件流核心概念
   - 事件类型枚举（UserMessage / AssistantMessage / ToolCallStart / ToolResult / SystemEvent / ConfigChange 等）
   - 与现有 messages 表的差异
