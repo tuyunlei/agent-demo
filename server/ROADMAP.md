@@ -52,7 +52,7 @@
 
 ### 第三步：编排层重构
 
-- [ ] **R-06：agent-app → agent-orchestrator 重命名 + 重构**
+- [x] **R-06：agent-app → agent-orchestrator 重命名 + 重构** (PR #10 rename, PR #11 TurnExecutor)
   - 重命名 crate
   - 实现 TurnExecutor（对齐 turn-executor.md）
   - 实现 SessionLifecycle
