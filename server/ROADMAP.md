@@ -23,7 +23,7 @@
 
 ### 第二步：能力层 crate 创建
 
-- [ ] **R-02：新建 agent-context crate**
+- [x] **R-02：新建 agent-context crate** (PR #6)
   - 定义 PromptSection trait + ContextBuilder trait
   - 实现内置 section（Identity / Safety / Tools / DateTime / Runtime）
   - 实现默认 ContextBuilder
