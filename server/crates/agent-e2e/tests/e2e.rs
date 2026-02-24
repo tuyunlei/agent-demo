@@ -1,6 +1,6 @@
 mod common;
 
-use agent_domain::LlmError;
+use agent_llm::error::LlmError;
 use agent_proto::content_block::Kind;
 use agent_proto::{
     ContentBlock, ListSessionMessagesRequest, LoginRequest, RegisterRequest, SendMessageRequest,
@@ -190,7 +190,7 @@ async fn full_chat_roundtrip(pool: PgPool) {
 async fn llm_error_returns_internal(pool: PgPool) {
     let env = TestEnv::start(pool).await;
     env.mock_llm
-        .set_response(Err(LlmError::ProviderError("mock provider error".into())));
+        .set_response(Err(LlmError::Internal("mock provider error".into())));
 
     let token = register_and_get_access_token(&env, "err@e2e.local", "Err User").await;
 

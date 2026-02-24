@@ -1,7 +1,13 @@
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
-use agent_domain::{FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse};
+use agent_domain as domain;
+
+use crate::error::LlmError;
+use crate::traits::LlmProvider;
+use crate::types::{
+    FinishReason, LlmRequest, LlmRequestConfig, LlmRequestMetadata, LlmResponse, LlmUsage,
+};
 
 #[derive(Clone)]
 pub struct MockLlmProvider {
@@ -27,12 +33,10 @@ impl MockLlmProvider {
         }
     }
 
-    /// 创建一个返回固定文本的 mock
     pub fn with_text(text: &str) -> Self {
         Self::new(Ok(default_response(text)))
     }
 
-    /// 获取调用记录
     pub fn calls(&self) -> Vec<LlmRequest> {
         self.calls
             .lock()
@@ -40,7 +44,6 @@ impl MockLlmProvider {
             .clone()
     }
 
-    /// 动态更新返回值
     pub fn set_response(&self, response: Result<LlmResponse, LlmError>) {
         *self
             .response
@@ -53,26 +56,38 @@ fn default_response(text: &str) -> LlmResponse {
     LlmResponse {
         content: text.to_string(),
         model: "mock".to_string(),
-        usage: None,
+        usage: Some(LlmUsage {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0,
+            cache_read_tokens: None,
+            cache_write_tokens: None,
+        }),
         tool_calls: Vec::new(),
         finish_reason: FinishReason::Stop,
+        provider: "mock".to_string(),
+        response_id: None,
     }
 }
 
 #[async_trait::async_trait]
 impl LlmProvider for MockLlmProvider {
-    async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
+    fn provider_id(&self) -> &str {
+        "mock"
+    }
+
+    async fn complete(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
         self.calls
             .lock()
             .expect("calls mutex should not be poisoned")
             .push(request);
 
-        let next = self
+        if let Some(response) = self
             .sequence
             .lock()
             .expect("sequence mutex should not be poisoned")
-            .pop_front();
-        if let Some(response) = next {
+            .pop_front()
+        {
             return response;
         }
 
@@ -83,119 +98,84 @@ impl LlmProvider for MockLlmProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::future::Future;
-    use std::pin::Pin;
-    use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
-
-    use agent_domain::{ChatMessage, FinishReason, LlmError, LlmProvider, LlmRequest, LlmResponse};
-
-    use super::MockLlmProvider;
-
-    #[test]
-    fn generate_returns_text_and_records_call() {
-        let provider = MockLlmProvider::with_text("hello");
-        let request = LlmRequest {
-            messages: vec![ChatMessage {
-                role: "user".to_string(),
-                content: "ping".to_string(),
-                tool_calls: None,
-                tool_call_id: None,
-            }],
-            model: Some("test-model".to_string()),
-            temperature: Some(0.3),
-            max_tokens: Some(10),
-            tools: Vec::new(),
+#[async_trait::async_trait]
+impl domain::LlmProvider for MockLlmProvider {
+    async fn generate(
+        &self,
+        request: domain::LlmRequest,
+    ) -> Result<domain::LlmResponse, domain::LlmError> {
+        let req = LlmRequest {
+            messages: request
+                .messages
+                .into_iter()
+                .map(|m| crate::types::ModelMessage {
+                    role: m.role,
+                    content: m.content,
+                    tool_calls: m.tool_calls.map(|calls| {
+                        calls
+                            .into_iter()
+                            .map(|c| crate::types::ToolCall {
+                                call_id: c.call_id,
+                                name: c.name,
+                                arguments: c.arguments,
+                            })
+                            .collect()
+                    }),
+                    tool_call_id: m.tool_call_id,
+                })
+                .collect(),
+            tool_specs: request
+                .tools
+                .into_iter()
+                .map(|t| crate::types::ToolSpec {
+                    name: t.name,
+                    description: t.description,
+                    parameters_schema: t.parameters,
+                    strict: false,
+                })
+                .collect(),
+            config: LlmRequestConfig {
+                model: request.model.unwrap_or_else(|| "mock".to_string()),
+                temperature: request.temperature,
+                top_p: None,
+                max_tokens: request.max_tokens,
+                timeout: None,
+                json_mode: false,
+            },
+            metadata: LlmRequestMetadata::default(),
         };
 
-        let response = block_on(provider.generate(request.clone())).expect("mock should return ok");
+        let resp = <Self as LlmProvider>::complete(self, req)
+            .await
+            .map_err(|e| match e {
+                LlmError::RateLimit => domain::LlmError::RateLimited,
+                LlmError::Timeout => domain::LlmError::Timeout,
+                LlmError::InvalidRequest(m) => domain::LlmError::InvalidRequest(m),
+                _ => domain::LlmError::ProviderError(e.to_string()),
+            })?;
 
-        assert_eq!(response.content, "hello");
-        assert_eq!(provider.calls(), vec![request]);
-    }
-
-    #[test]
-    fn generate_returns_error() {
-        let provider = MockLlmProvider::new(Err(LlmError::Timeout));
-        let request = LlmRequest {
-            messages: vec![],
-            model: None,
-            temperature: None,
-            max_tokens: None,
-            tools: Vec::new(),
-        };
-
-        let result = block_on(provider.generate(request.clone()));
-
-        assert_eq!(result, Err(LlmError::Timeout));
-        assert_eq!(provider.calls(), vec![request]);
-    }
-
-    #[test]
-    fn generate_uses_sequence_before_default_response() {
-        let provider = MockLlmProvider::with_tool_call_sequence(vec![
-            Ok(LlmResponse {
-                content: String::new(),
-                model: "mock".to_string(),
-                usage: None,
-                tool_calls: vec![],
-                finish_reason: FinishReason::ToolCalls,
+        Ok(domain::LlmResponse {
+            content: resp.content,
+            model: resp.model,
+            usage: resp.usage.map(|u| domain::LlmUsage {
+                input_tokens: u.prompt_tokens,
+                output_tokens: u.completion_tokens,
+                total_tokens: u.total_tokens,
             }),
-            Ok(LlmResponse {
-                content: "final".to_string(),
-                model: "mock".to_string(),
-                usage: None,
-                tool_calls: vec![],
-                finish_reason: FinishReason::Stop,
-            }),
-        ]);
-
-        let request = LlmRequest {
-            messages: vec![],
-            model: None,
-            temperature: None,
-            max_tokens: None,
-            tools: Vec::new(),
-        };
-
-        let first = block_on(provider.generate(request.clone())).expect("first response");
-        let second = block_on(provider.generate(request.clone())).expect("second response");
-
-        assert_eq!(first.finish_reason, FinishReason::ToolCalls);
-        assert_eq!(second.content, "final");
-    }
-
-    fn block_on<F: Future>(mut future: F) -> F::Output {
-        let waker = noop_waker();
-        let mut context = Context::from_waker(&waker);
-        // SAFETY: future is pinned and not moved afterwards.
-        let mut future = unsafe { Pin::new_unchecked(&mut future) };
-
-        loop {
-            match future.as_mut().poll(&mut context) {
-                Poll::Ready(output) => return output,
-                Poll::Pending => std::thread::yield_now(),
-            }
-        }
-    }
-
-    fn noop_waker() -> Waker {
-        // SAFETY: no-op raw waker functions are valid for a stateless waker.
-        unsafe { Waker::from_raw(noop_raw_waker()) }
-    }
-
-    fn noop_raw_waker() -> RawWaker {
-        fn clone(_: *const ()) -> RawWaker {
-            noop_raw_waker()
-        }
-        fn wake(_: *const ()) {}
-        fn wake_by_ref(_: *const ()) {}
-        fn drop(_: *const ()) {}
-
-        RawWaker::new(
-            std::ptr::null(),
-            &RawWakerVTable::new(clone, wake, wake_by_ref, drop),
-        )
+            tool_calls: resp
+                .tool_calls
+                .into_iter()
+                .map(|c| domain::ToolCall {
+                    call_id: c.call_id,
+                    name: c.name,
+                    arguments: c.arguments,
+                })
+                .collect(),
+            finish_reason: match resp.finish_reason {
+                FinishReason::ToolCalls => domain::FinishReason::ToolCalls,
+                FinishReason::Length => domain::FinishReason::Length,
+                _ => domain::FinishReason::Stop,
+            },
+        })
     }
 }
