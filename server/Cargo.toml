@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "crates/agent-domain",
+  "crates/agent-context",
   "crates/agent-app",
   "crates/agent-proto",
   "crates/agent-storage",

@@ -1,0 +1,13 @@
+[package]
+name = "agent-context"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+agent-domain = { path = "../agent-domain" }
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["clock"] }
+thiserror = "2"
+
+[dev-dependencies]
+futures = "0.3"
