@@ -9,7 +9,7 @@
 - [x] 框架分层架构源码调研（docs/research/framework-architecture-comparison.md）
 - [x] 涂涂确认架构方向（4 层 + trait 按域分布 + ContextBuilder 独立 + 事件流）
 - [x] 自动推进机制重新设计（system prompt / STATE / WORKFLOW / ticker）
-- [ ] 旧设计文档清理（删/更新/归档）
+- [x] 旧设计文档清理（AUDIT.md + 18 archived + 11 deleted）
 - [ ] 新架构设计文档（见 ROADMAP.md）
 
 ## 阻塞点

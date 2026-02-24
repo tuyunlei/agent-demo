@@ -8,7 +8,7 @@
 
 在写新设计之前，先盘点现有 40+ 个设计文档，逐个判断保留/更新/归档/删除。
 
-- [ ] **D-CLEAN：设计文档审计与清理**
+- [x] **D-CLEAN：设计文档审计与清理**
   - 列出所有现有设计文档，逐个标注处置方式（keep / update / archive / delete）
   - 仍然有效的（如 ADR-001 单体架构、ADR-002 PostgreSQL）标记 keep
   - 需要大幅修改的归档到 `docs/design/archive/`，新版在后续任务中重写
