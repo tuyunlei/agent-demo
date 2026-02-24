@@ -20,6 +20,18 @@ AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
 6. commit + push + `gh pr create --base develop`
 7. **不要修改 `tasks/` 下的任何文件**——tasks 由 PM 管理
 
+## 任务完成后
+
+PR 提交后，PM 会负责 review + CI + merge + 归档。你不需要关心后续。
+
+**当涂涂让你继续下一个任务时：**
+
+1. `git checkout develop && git pull origin develop`
+2. 如果旧的 feature 分支还在本地，可以删掉（远程分支 PM 已删）
+3. 重新走工作流第 1 步（读 `tasks/` → 选下一个 → 开新分支）
+
+**怎么知道上个任务完成了**：`tasks/` 里如果那个目录消失了（被归档到 `tasks/done/`），说明已 merge。
+
 ## 分支规则
 
 - 在 `feature/*` 分支开发，禁止直接提交 develop
