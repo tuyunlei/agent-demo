@@ -1,10 +1,18 @@
+import GRPCClient
 import SwiftUI
 
 struct ChatView: View {
     @EnvironmentObject private var appState: AppState
 
-    @StateObject private var viewModel = ChatViewModel()
-    @State private var inputText = ""
+    @StateObject private var viewModel: ChatViewModel
+
+    init(tokenStore: TokenStore) {
+        let apiClient = APIClient(tokenStore: tokenStore)
+        _viewModel = StateObject(wrappedValue: ChatViewModel(
+            chatService: ChatServiceClient(apiClient: apiClient),
+            sessionClient: SessionServiceClient(apiClient: apiClient)
+        ))
+    }
 
     var body: some View {
         NavigationStack {
@@ -44,7 +52,10 @@ struct ChatView: View {
                             Text(message.text)
                         }
                         .padding(10)
-                        .background(message.role == .user ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+                        .background(
+                            message.role == .user
+                                ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: 10))
 
                         if message.role == .user { Spacer(minLength: 40) }
@@ -58,7 +69,8 @@ struct ChatView: View {
                         .textFieldStyle(.roundedBorder)
                         .lineLimit(1 ... 4)
 
-                    let isInputEmpty = inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    let isInputEmpty = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .isEmpty
                     Button("Send", action: sendMessage)
                         .disabled(viewModel.isSending || isInputEmpty)
                 }
@@ -73,21 +85,21 @@ struct ChatView: View {
                 }
             }
             .task {
-                if let token = appState.accessToken {
-                    await viewModel.loadHistory(token: token)
-                }
+                await viewModel.loadHistory()
             }
         }
     }
 
+    @State private var inputText = ""
+
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, let token = appState.accessToken else { return }
+        guard !text.isEmpty else { return }
 
         inputText = ""
 
         Task {
-            await viewModel.sendMessage(text: text, token: token)
+            await viewModel.sendMessage(text: text)
         }
     }
 }

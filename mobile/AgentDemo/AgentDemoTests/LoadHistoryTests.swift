@@ -18,7 +18,7 @@ struct LoadHistoryTests {
 
         let viewModel = makeChatViewModel(sessionClient: mockSession, sessionID: "s-1")
 
-        await viewModel.loadHistory(token: "token")
+        await viewModel.loadHistory()
 
         #expect(viewModel.messages.count == 2)
         #expect(viewModel.messages[0].role == .user)
@@ -31,7 +31,7 @@ struct LoadHistoryTests {
         let mockSession = MockSessionService()
         let viewModel = makeChatViewModel(sessionClient: mockSession, sessionID: "")
 
-        await viewModel.loadHistory(token: "token")
+        await viewModel.loadHistory()
 
         #expect(viewModel.messages.isEmpty)
         #expect(!viewModel.isLoadingHistory)
@@ -45,11 +45,11 @@ struct LoadHistoryTests {
         let viewModel = makeChatViewModel(sessionClient: mockSession, sessionID: "s-1")
 
         // First call loads history
-        await viewModel.loadHistory(token: "token")
+        await viewModel.loadHistory()
         #expect(viewModel.messages.count == 1)
 
         // Second call should skip because messages are not empty
-        await viewModel.loadHistory(token: "token")
+        await viewModel.loadHistory()
         #expect(await mockSession.callCount == 1)
     }
 
@@ -58,7 +58,7 @@ struct LoadHistoryTests {
         await mockSession.setShouldFail(true)
         let viewModel = makeChatViewModel(sessionClient: mockSession, sessionID: "s-1")
 
-        await viewModel.loadHistory(token: "token")
+        await viewModel.loadHistory()
 
         #expect(viewModel.messages.isEmpty)
         #expect(viewModel.errorMessage == nil)
@@ -114,7 +114,6 @@ private actor MockSessionService: SessionServiceProtocol {
     }
 
     func listMessages(
-        token _: String,
         sessionID _: String,
         pageSize _: Int32
     ) async throws -> Ai_Agent_Platform_V1_ListSessionMessagesResponse {
@@ -135,7 +134,6 @@ private actor MockSessionService: SessionServiceProtocol {
 /// Minimal chat service stub that never gets called in loadHistory tests.
 private actor StubChatService: ChatServiceProtocol {
     func sendMessage(
-        token _: String,
         requestID _: String,
         text _: String,
         sessionID _: String,

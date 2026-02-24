@@ -1,12 +1,18 @@
 import GRPCClient
 import GRPCCore
+import Synchronization
 
-struct MockAuthServiceImpl: Ai_Agent_Platform_V1_AuthService.SimpleServiceProtocol {
+final class MockAuthServiceImpl: Ai_Agent_Platform_V1_AuthService.SimpleServiceProtocol, Sendable {
     let accessToken: String
     let refreshToken: String
     let userID: String
     let loginShouldFail: Bool
     let refreshShouldFail: Bool
+    private let _refreshCallCount = Mutex<Int>(0)
+
+    var refreshCallCount: Int {
+        _refreshCallCount.withLock { $0 }
+    }
 
     init(
         accessToken: String = "mock-access-token",
@@ -57,6 +63,8 @@ struct MockAuthServiceImpl: Ai_Agent_Platform_V1_AuthService.SimpleServiceProtoc
         request _: Ai_Agent_Platform_V1_RefreshTokenRequest,
         context _: ServerContext
     ) async throws -> Ai_Agent_Platform_V1_RefreshTokenResponse {
+        _refreshCallCount.withLock { $0 += 1 }
+
         if refreshShouldFail {
             throw RPCError(code: .unauthenticated, message: "Refresh token expired")
         }

@@ -27,7 +27,7 @@ final class ChatViewModel: ObservableObject {
         sessionID = UserDefaults.standard.string(forKey: "lastSessionID") ?? ""
     }
 
-    func sendMessage(text: String, token: String) async {
+    func sendMessage(text: String) async {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty else { return }
 
@@ -37,7 +37,6 @@ final class ChatViewModel: ObservableObject {
 
         do {
             let response = try await chatService.sendMessage(
-                token: token,
                 requestID: UUID().uuidString,
                 text: trimmedText,
                 sessionID: sessionID,
@@ -55,7 +54,7 @@ final class ChatViewModel: ObservableObject {
         isSending = false
     }
 
-    func loadHistory(token: String) async {
+    func loadHistory() async {
         guard !sessionID.isEmpty else { return }
         guard messages.isEmpty else { return }
 
@@ -63,10 +62,7 @@ final class ChatViewModel: ObservableObject {
         defer { isLoadingHistory = false }
 
         do {
-            let response = try await sessionClient.listMessages(
-                token: token,
-                sessionID: sessionID
-            )
+            let response = try await sessionClient.listMessages(sessionID: sessionID)
 
             messages = response.messages.map { protoMsg in
                 let role: ChatMessage.Role = protoMsg.role == "user" ? .user : .assistant
@@ -95,10 +91,6 @@ final class ChatViewModel: ObservableObject {
 
         if isNetworkError {
             return "Unable to connect to server. Please check your network and try again."
-        }
-
-        if description.contains("unauthenticated") || description.contains("401") {
-            return "Your session has expired. Please sign in again."
         }
 
         return "Something went wrong: \(error.localizedDescription)"

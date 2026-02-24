@@ -40,15 +40,19 @@ struct IntegrationTests {
         try await server.start()
         defer { server.stop() }
 
+        let tokenStore = TokenStore(
+            accessToken: "mock-token",
+            refreshHandler: { _ in throw TokenRefreshError.noRefreshToken }
+        )
         let apiClient = try APIClient(
             host: "127.0.0.1",
             port: server.port,
-            usePlaintext: true
+            usePlaintext: true,
+            tokenStore: tokenStore
         )
         let chatClient = ChatServiceClient(apiClient: apiClient)
 
         let response = try await chatClient.sendMessage(
-            token: "mock-token",
             requestID: "req-1",
             text: "Hello",
             sessionID: "",
@@ -61,55 +65,39 @@ struct IntegrationTests {
     }
 
     @Test func fullFlowLoginThenChatThenHistory() async throws {
-        // Build history messages for mock session service
-        var userMsg = Ai_Agent_Platform_V1_ChatMessage()
-        userMsg.role = "user"
-        userMsg.blocks = [makeTextContentBlock("Hello")]
-
-        var assistantMsg = Ai_Agent_Platform_V1_ChatMessage()
-        assistantMsg.role = "assistant"
-        assistantMsg.blocks = [makeTextContentBlock("Hi there!")]
-
         let mockAuth = MockAuthServiceImpl()
-        let mockChat = MockChatServiceImpl(
-            sessionID: "session-full",
-            assistantText: "Hi there!"
-        )
-        let mockSession = MockSessionServiceImpl(messages: [userMsg, assistantMsg])
+        let mockChat = MockChatServiceImpl(sessionID: "session-full", assistantText: "Hi there!")
+        let mockSession = MockSessionServiceImpl(messages: [
+            makeChatMessage(role: "user", text: "Hello"),
+            makeChatMessage(role: "assistant", text: "Hi there!"),
+        ])
 
         let server = MockGRPCServer(services: [mockAuth, mockChat, mockSession])
         try await server.start()
         defer { server.stop() }
 
-        let apiClient = try APIClient(
-            host: "127.0.0.1",
-            port: server.port,
-            usePlaintext: true
-        )
+        let baseClient = try APIClient(host: "127.0.0.1", port: server.port, usePlaintext: true)
 
         // 1. Login
-        let authClient = AuthServiceClient(apiClient: apiClient)
-        let loginResponse = try await authClient.login(
-            email: "test@example.com",
-            password: "pass"
-        )
+        let authClient = AuthServiceClient(apiClient: baseClient)
+        let loginResponse = try await authClient.login(email: "test@example.com", password: "pass")
         #expect(!loginResponse.tokenPair.accessToken.isEmpty)
 
-        // 2. Send message
-        let chatClient = ChatServiceClient(apiClient: apiClient)
+        // 2. Create authenticated client with tokens
+        let authedClient = try makeAuthenticatedClient(
+            baseClient: baseClient, tokenPair: loginResponse.tokenPair
+        )
+
+        // 3. Send message
+        let chatClient = ChatServiceClient(apiClient: authedClient)
         let chatResponse = try await chatClient.sendMessage(
-            token: loginResponse.tokenPair.accessToken,
-            requestID: "req-1",
-            text: "Hello",
-            sessionID: "",
-            agentID: ""
+            requestID: "req-1", text: "Hello", sessionID: "", agentID: ""
         )
         #expect(chatResponse.sessionID == "session-full")
 
-        // 3. Load history
-        let sessionClient = SessionServiceClient(apiClient: apiClient)
+        // 4. Load history
+        let sessionClient = SessionServiceClient(apiClient: authedClient)
         let historyResponse = try await sessionClient.listMessages(
-            token: loginResponse.tokenPair.accessToken,
             sessionID: chatResponse.sessionID
         )
         #expect(historyResponse.messages.count == 2)
@@ -138,12 +126,35 @@ struct IntegrationTests {
         }
     }
 
-    private func makeTextContentBlock(_ text: String) -> Ai_Agent_Platform_V1_ContentBlock {
+    private func makeAuthenticatedClient(
+        baseClient: APIClient,
+        tokenPair: Ai_Agent_Platform_V1_TokenPair
+    ) throws -> APIClient {
+        let tokenStore = TokenStore(
+            accessToken: tokenPair.accessToken,
+            refreshToken: tokenPair.refreshToken,
+            refreshHandler: { refreshToken in
+                let authClient = AuthServiceClient(apiClient: baseClient)
+                let response = try await authClient.refreshToken(token: refreshToken)
+                return (response.tokenPair.accessToken, response.tokenPair.refreshToken)
+            }
+        )
+        return APIClient(
+            host: baseClient.host,
+            port: baseClient.port,
+            usePlaintext: baseClient.usePlaintext,
+            tokenStore: tokenStore
+        )
+    }
+
+    private func makeChatMessage(role: String, text: String) -> Ai_Agent_Platform_V1_ChatMessage {
         var textBlock = Ai_Agent_Platform_V1_TextBlock()
         textBlock.text = text
-
         var contentBlock = Ai_Agent_Platform_V1_ContentBlock()
         contentBlock.text = textBlock
-        return contentBlock
+        var msg = Ai_Agent_Platform_V1_ChatMessage()
+        msg.role = role
+        msg.blocks = [contentBlock]
+        return msg
     }
 }

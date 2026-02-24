@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import GRPCClient
 import Security
 import SwiftUI
 
@@ -15,23 +16,66 @@ final class AppState: ObservableObject {
         }
     }
 
+    @Published var refreshToken: String? {
+        didSet {
+            if let refreshToken {
+                KeychainHelper.save(key: "refreshToken", value: refreshToken)
+            } else {
+                KeychainHelper.delete(key: "refreshToken")
+            }
+        }
+    }
+
+    let tokenStore: TokenStore
+
     var isLoggedIn: Bool {
         guard let accessToken else { return false }
         return !accessToken.isEmpty
     }
 
     init() {
-        if ProcessInfo.processInfo.arguments.contains("--reset-state") {
+        let isResetState = ProcessInfo.processInfo.arguments.contains("--reset-state")
+
+        if isResetState {
             KeychainHelper.delete(key: "accessToken")
+            KeychainHelper.delete(key: "refreshToken")
             UserDefaults.standard.removeObject(forKey: "lastSessionID")
-            accessToken = nil
-            return
         }
-        accessToken = KeychainHelper.load(key: "accessToken")
+
+        let loadedAccess = isResetState ? nil : KeychainHelper.load(key: "accessToken")
+        let loadedRefresh = isResetState ? nil : KeychainHelper.load(key: "refreshToken")
+
+        let baseClient = APIClient()
+        let store = TokenStore(
+            accessToken: loadedAccess,
+            refreshToken: loadedRefresh,
+            refreshHandler: { refreshToken in
+                let authClient = AuthServiceClient(apiClient: baseClient)
+                let response = try await authClient.refreshToken(token: refreshToken)
+                return (response.tokenPair.accessToken, response.tokenPair.refreshToken)
+            }
+        )
+        tokenStore = store
+        accessToken = loadedAccess
+        refreshToken = loadedRefresh
+
+        store.onTokensUpdated = { [weak self] access, refresh in
+            Task { @MainActor [weak self] in
+                self?.accessToken = access
+                self?.refreshToken = refresh
+            }
+        }
+        store.onAuthExpired = { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.logout()
+            }
+        }
     }
 
     func logout() {
         accessToken = nil
+        refreshToken = nil
         UserDefaults.standard.removeObject(forKey: "lastSessionID")
+        Task { await tokenStore.clear() }
     }
 }
