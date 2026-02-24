@@ -67,7 +67,7 @@
 
 ## 第四步：编排层设计
 
-- [ ] **D-ORCH-01：TurnExecutor 详细设计**
+- [x] **D-ORCH-01：TurnExecutor 详细设计**
   - 单次 turn 的完整流程（接收消息 → 上下文组装 → LLM 调用 → 工具循环 → 持久化 → 返回）
   - TurnExecutor 依赖哪些能力层模块（ContextBuilder、LlmProvider、ToolRuntime、EventStore）
   - 工具循环终止条件
