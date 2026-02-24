@@ -62,7 +62,7 @@
 
 ### 第四步：基础设施层重构
 
-- [ ] **R-07：agent-storage 重构（EventStore 实现）**
+- [x] **R-07：agent-storage 重构（EventStore 实现）** (PR #12)
   - 实现 EventStore trait 的 PostgreSQL 适配器
   - 新建 events 表（migration）
   - 保留现有 messages 表兼容
