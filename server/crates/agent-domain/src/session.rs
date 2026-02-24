@@ -23,6 +23,8 @@ pub struct Session {
     pub compacted_until_sequence: Option<u64>,
     pub version: u64,
     pub archived_at: Option<i64>,
+    pub last_message_at: Option<i64>,
+    pub archived: bool,
 }
 
 #[cfg(test)]
@@ -48,6 +50,8 @@ mod tests {
             compacted_until_sequence: None,
             version: 1,
             archived_at: None,
+            last_message_at: None,
+            archived: false,
         };
 
         let json = serde_json::to_string(&session).expect("serialize session");

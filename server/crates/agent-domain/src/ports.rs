@@ -102,6 +102,92 @@ pub trait ToolRuntime: Send + Sync {
     async fn execute(&self, name: &str, arguments: &str) -> Result<ToolResult, AgentError>;
 }
 
+#[derive(Debug, Clone)]
+pub struct NewEvent {
+    pub event_id: String,
+    pub event_type: String,
+    pub payload: serde_json::Value,
+    pub tenant_id: String,
+    pub user_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppendResult {
+    pub last_sequence: u64,
+    pub session_event_count: u64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct EventRange {
+    pub start_inclusive: Option<u64>,
+    pub end_inclusive: Option<u64>,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum EventStoreError {
+    #[error("session not found: {0}")]
+    SessionNotFound(String),
+    #[error("session already exists: {0}")]
+    SessionAlreadyExists(String),
+    #[error("sequence conflict")]
+    SequenceConflict,
+    #[error("database error: {0}")]
+    Database(String),
+}
+
+#[derive(Debug, Clone)]
+pub struct CreateSessionParams {
+    pub tenant_id: String,
+    pub user_id: String,
+    pub agent_id: String,
+    pub title: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SessionListFilter {
+    pub user_id: String,
+    pub tenant_id: String,
+    pub include_archived: bool,
+    pub limit: u32,
+    pub offset: u32,
+}
+
+#[async_trait::async_trait]
+pub trait EventStore: Send + Sync {
+    async fn append_events(
+        &self,
+        session_id: &str,
+        events: Vec<NewEvent>,
+    ) -> Result<AppendResult, EventStoreError>;
+
+    async fn read_events(
+        &self,
+        session_id: &str,
+        range: EventRange,
+    ) -> Result<Vec<crate::events::EventEnvelope>, EventStoreError>;
+
+    async fn read_recent_events(
+        &self,
+        session_id: &str,
+        limit: usize,
+    ) -> Result<Vec<crate::events::EventEnvelope>, EventStoreError>;
+
+    async fn get_session(
+        &self,
+        session_id: &str,
+    ) -> Result<Option<crate::session::Session>, EventStoreError>;
+
+    async fn create_session(
+        &self,
+        params: CreateSessionParams,
+    ) -> Result<crate::session::Session, EventStoreError>;
+
+    async fn list_sessions(
+        &self,
+        filter: SessionListFilter,
+    ) -> Result<Vec<crate::session::Session>, EventStoreError>;
+}
+
 #[async_trait::async_trait]
 pub trait MessageStore: Send + Sync {
     async fn create_session(&self, user_id: &str, agent_id: &str) -> Result<String, StoreError>;
