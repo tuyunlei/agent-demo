@@ -9,7 +9,6 @@ public struct ChatServiceClient: ChatServiceProtocol {
     }
 
     public func sendMessage(
-        token: String,
         requestID: String,
         text: String,
         sessionID: String = "",
@@ -21,17 +20,18 @@ public struct ChatServiceClient: ChatServiceProtocol {
         var contentBlock = Ai_Agent_Platform_V1_ContentBlock()
         contentBlock.text = textBlock
 
-        var request = Ai_Agent_Platform_V1_SendMessageRequest()
-        request.requestID = requestID
-        request.sessionID = sessionID
-        request.agentID = agentID
-        request.content = [contentBlock]
+        var msg = Ai_Agent_Platform_V1_SendMessageRequest()
+        msg.requestID = requestID
+        msg.sessionID = sessionID
+        msg.agentID = agentID
+        msg.content = [contentBlock]
+        let request = msg
 
-        var metadata = Metadata()
-        metadata.addString("Bearer \(token)", forKey: "authorization")
+        return try await apiClient.withAuthenticatedClient { client, token in
+            var metadata = Metadata()
+            metadata.addString("Bearer \(token)", forKey: "authorization")
 
-        return try await apiClient.withClient { client in
-            try await client.unary(
+            return try await client.unary(
                 request: ClientRequest(message: request, metadata: metadata),
                 descriptor: MethodDescriptor(
                     fullyQualifiedService: "ai.agent.platform.v1.ChatService",

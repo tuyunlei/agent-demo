@@ -14,7 +14,7 @@ struct ChatViewModelTests {
         await mockService.enqueue(result: .success(makeResponse(texts: ["Hello from AI"])))
         let viewModel = ChatViewModel(chatService: mockService)
 
-        await viewModel.sendMessage(text: "Hi", token: "token")
+        await viewModel.sendMessage(text: "Hi")
 
         #expect(viewModel.messages.count == 2)
         #expect(viewModel.messages[0].role == .user)
@@ -28,7 +28,7 @@ struct ChatViewModelTests {
         await mockService.enqueue(result: .success(makeResponse(texts: [])))
         let viewModel = ChatViewModel(chatService: mockService)
 
-        await viewModel.sendMessage(text: "Hi", token: "token")
+        await viewModel.sendMessage(text: "Hi")
 
         #expect(viewModel.messages.count == 2)
         #expect(viewModel.messages[1].text == "(no response)")
@@ -39,7 +39,7 @@ struct ChatViewModelTests {
         await mockService.setShouldFail(true)
         let viewModel = ChatViewModel(chatService: mockService)
 
-        await viewModel.sendMessage(text: "Hi", token: "token")
+        await viewModel.sendMessage(text: "Hi")
 
         #expect(viewModel.errorMessage == "Unable to connect to server. Please check your network and try again.")
         #expect(viewModel.messages.isEmpty)
@@ -50,7 +50,7 @@ struct ChatViewModelTests {
         await mockService.setShouldFail(true)
         let viewModel = ChatViewModel(chatService: mockService)
 
-        await viewModel.sendMessage(text: "hello", token: "token")
+        await viewModel.sendMessage(text: "hello")
 
         #expect(viewModel.messages.isEmpty)
         #expect(viewModel.errorMessage != nil)
@@ -62,7 +62,7 @@ struct ChatViewModelTests {
         let viewModel = ChatViewModel(chatService: mockService)
 
         let task = Task {
-            await viewModel.sendMessage(text: "Hi", token: "token")
+            await viewModel.sendMessage(text: "Hi")
         }
 
         try await Task.sleep(nanoseconds: 30_000_000)
@@ -77,7 +77,7 @@ struct ChatViewModelTests {
         await mockService.enqueue(result: .success(makeResponse(texts: ["OK"], sessionID: "session-123")))
         let viewModel = ChatViewModel(chatService: mockService)
 
-        await viewModel.sendMessage(text: "Hi", token: "token")
+        await viewModel.sendMessage(text: "Hi")
 
         #expect(viewModel.sessionID == "session-123")
     }
@@ -113,7 +113,6 @@ private actor MockChatService: ChatServiceProtocol {
     }
 
     func sendMessage(
-        token _: String,
         requestID _: String,
         text _: String,
         sessionID _: String,

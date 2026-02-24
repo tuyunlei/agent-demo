@@ -2,7 +2,6 @@ import GRPCProtobuf
 
 public protocol ChatServiceProtocol: Sendable {
     func sendMessage(
-        token: String,
         requestID: String,
         text: String,
         sessionID: String,

@@ -68,12 +68,17 @@ struct LoginView: View {
             defer { isLoading = false }
             do {
                 let response = try await authClient.login(email: email, password: password)
-                let token = response.tokenPair.accessToken
-                guard !token.isEmpty else {
+                let pair = response.tokenPair
+                guard !pair.accessToken.isEmpty else {
                     errorMessage = "Login succeeded but access token is empty."
                     return
                 }
-                appState.accessToken = token
+                appState.accessToken = pair.accessToken
+                appState.refreshToken = pair.refreshToken
+                await appState.tokenStore.setTokens(
+                    access: pair.accessToken,
+                    refresh: pair.refreshToken
+                )
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -92,12 +97,17 @@ struct LoginView: View {
                     password: password,
                     displayName: displayName
                 )
-                let token = response.tokenPair.accessToken
-                guard !token.isEmpty else {
+                let pair = response.tokenPair
+                guard !pair.accessToken.isEmpty else {
                     errorMessage = "Sign up succeeded but access token is empty."
                     return
                 }
-                appState.accessToken = token
+                appState.accessToken = pair.accessToken
+                appState.refreshToken = pair.refreshToken
+                await appState.tokenStore.setTokens(
+                    access: pair.accessToken,
+                    refresh: pair.refreshToken
+                )
             } catch {
                 let localizedDescription = error.localizedDescription.lowercased()
                 if localizedDescription.contains("email"), localizedDescription.contains("exist") {

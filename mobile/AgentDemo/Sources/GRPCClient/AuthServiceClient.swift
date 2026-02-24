@@ -57,4 +57,25 @@ public struct AuthServiceClient: Sendable {
             )
         }
     }
+
+    public func refreshToken(
+        token: String
+    ) async throws -> Ai_Agent_Platform_V1_RefreshTokenResponse {
+        var request = Ai_Agent_Platform_V1_RefreshTokenRequest()
+        request.refreshToken = token
+
+        return try await apiClient.withClient { client in
+            try await client.unary(
+                request: ClientRequest(message: request),
+                descriptor: MethodDescriptor(
+                    fullyQualifiedService: "ai.agent.platform.v1.AuthService",
+                    method: "RefreshToken"
+                ),
+                serializer: ProtobufSerializer<Ai_Agent_Platform_V1_RefreshTokenRequest>(),
+                deserializer: ProtobufDeserializer<Ai_Agent_Platform_V1_RefreshTokenResponse>(),
+                options: .defaults,
+                onResponse: { try $0.message }
+            )
+        }
+    }
 }

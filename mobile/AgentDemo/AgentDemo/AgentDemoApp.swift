@@ -15,7 +15,7 @@ struct AgentDemoApp: App {
         WindowGroup {
             Group {
                 if appState.isLoggedIn {
-                    ChatView()
+                    ChatView(tokenStore: appState.tokenStore)
                 } else {
                     LoginView()
                 }

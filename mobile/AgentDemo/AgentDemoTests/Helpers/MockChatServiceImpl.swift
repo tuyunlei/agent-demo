@@ -1,22 +1,40 @@
 import GRPCClient
 import GRPCCore
+import Synchronization
 
-struct MockChatServiceImpl: Ai_Agent_Platform_V1_ChatService.SimpleServiceProtocol {
+final class MockChatServiceImpl: Ai_Agent_Platform_V1_ChatService.SimpleServiceProtocol, Sendable {
     let sessionID: String
     let assistantText: String
+    let failUntilCall: Int
+    private let _callCount = Mutex<Int>(0)
+
+    var callCount: Int {
+        _callCount.withLock { $0 }
+    }
 
     init(
         sessionID: String = "mock-session-id",
-        assistantText: String = "Hello from mock assistant"
+        assistantText: String = "Hello from mock assistant",
+        failUntilCall: Int = 0
     ) {
         self.sessionID = sessionID
         self.assistantText = assistantText
+        self.failUntilCall = failUntilCall
     }
 
     func sendMessage(
         request _: Ai_Agent_Platform_V1_SendMessageRequest,
         context _: ServerContext
     ) async throws -> Ai_Agent_Platform_V1_SendMessageResponse {
+        let currentCall = _callCount.withLock { count in
+            count += 1
+            return count
+        }
+
+        if failUntilCall > 0, currentCall <= failUntilCall {
+            throw RPCError(code: .unauthenticated, message: "Token expired")
+        }
+
         var textBlock = Ai_Agent_Platform_V1_TextBlock()
         textBlock.text = assistantText
 
@@ -34,7 +52,7 @@ struct MockChatServiceImpl: Ai_Agent_Platform_V1_ChatService.SimpleServiceProtoc
         response _: RPCWriter<Ai_Agent_Platform_V1_ChatEvent>,
         context _: ServerContext
     ) async throws {
-        // Empty stream — return immediately
+        // Empty stream
     }
 
     func submitToolResult(
