@@ -30,7 +30,7 @@
   - 设计文档：`capabilities/context-builder.md`
   - 验收：单元测试覆盖所有内置 section + builder
 
-- [ ] **R-03：新建 agent-tools crate**
+- [x] **R-03：新建 agent-tools crate** (PR #7)
   - 定义 Tool trait + ToolRuntime trait
   - 从 agent-app 迁移现有工具代码（get_current_time、web_search）
   - 实现 DefaultToolRuntime
