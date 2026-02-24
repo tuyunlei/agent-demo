@@ -117,6 +117,27 @@ struct IntegrationTests {
         #expect(historyResponse.messages[1].role == "assistant")
     }
 
+    @Test func loginFailureReturnsError() async throws {
+        let mockAuth = MockAuthServiceImpl(loginShouldFail: true)
+        let server = MockGRPCServer(services: [mockAuth])
+        try await server.start()
+        defer { server.stop() }
+
+        let apiClient = try APIClient(
+            host: "127.0.0.1",
+            port: server.port,
+            usePlaintext: true
+        )
+        let authClient = AuthServiceClient(apiClient: apiClient)
+
+        await #expect(throws: (any Error).self) {
+            _ = try await authClient.login(
+                email: "wrong@example.com",
+                password: "bad-password"
+            )
+        }
+    }
+
     private func makeTextContentBlock(_ text: String) -> Ai_Agent_Platform_V1_ContentBlock {
         var textBlock = Ai_Agent_Platform_V1_TextBlock()
         textBlock.text = text

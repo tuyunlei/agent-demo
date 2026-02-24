@@ -2,9 +2,14 @@ import GRPCClient
 import GRPCCore
 
 struct MockSessionServiceImpl: Ai_Agent_Platform_V1_SessionService.SimpleServiceProtocol {
+    let sessions: [Ai_Agent_Platform_V1_Session]
     let messages: [Ai_Agent_Platform_V1_ChatMessage]
 
-    init(messages: [Ai_Agent_Platform_V1_ChatMessage] = []) {
+    init(
+        sessions: [Ai_Agent_Platform_V1_Session] = [],
+        messages: [Ai_Agent_Platform_V1_ChatMessage] = []
+    ) {
+        self.sessions = sessions
         self.messages = messages
     }
 
@@ -26,7 +31,9 @@ struct MockSessionServiceImpl: Ai_Agent_Platform_V1_SessionService.SimpleService
         request _: Ai_Agent_Platform_V1_ListSessionsRequest,
         context _: ServerContext
     ) async throws -> Ai_Agent_Platform_V1_ListSessionsResponse {
-        Ai_Agent_Platform_V1_ListSessionsResponse()
+        var response = Ai_Agent_Platform_V1_ListSessionsResponse()
+        response.sessions = sessions
+        return response
     }
 
     func listSessionMessages(

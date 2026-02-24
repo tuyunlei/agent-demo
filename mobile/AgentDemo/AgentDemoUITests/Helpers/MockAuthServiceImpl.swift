@@ -5,21 +5,30 @@ struct MockAuthServiceImpl: Ai_Agent_Platform_V1_AuthService.SimpleServiceProtoc
     let accessToken: String
     let refreshToken: String
     let userID: String
+    let loginShouldFail: Bool
+    let refreshShouldFail: Bool
 
     init(
         accessToken: String = "mock-access-token",
         refreshToken: String = "mock-refresh-token",
-        userID: String = "mock-user-id"
+        userID: String = "mock-user-id",
+        loginShouldFail: Bool = false,
+        refreshShouldFail: Bool = false
     ) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.userID = userID
+        self.loginShouldFail = loginShouldFail
+        self.refreshShouldFail = refreshShouldFail
     }
 
     func login(
         request _: Ai_Agent_Platform_V1_LoginRequest,
         context _: ServerContext
     ) async throws -> Ai_Agent_Platform_V1_LoginResponse {
+        if loginShouldFail {
+            throw RPCError(code: .unauthenticated, message: "Invalid credentials")
+        }
         var tokenPair = Ai_Agent_Platform_V1_TokenPair()
         tokenPair.accessToken = accessToken
         tokenPair.refreshToken = refreshToken
@@ -48,6 +57,9 @@ struct MockAuthServiceImpl: Ai_Agent_Platform_V1_AuthService.SimpleServiceProtoc
         request _: Ai_Agent_Platform_V1_RefreshTokenRequest,
         context _: ServerContext
     ) async throws -> Ai_Agent_Platform_V1_RefreshTokenResponse {
+        if refreshShouldFail {
+            throw RPCError(code: .unauthenticated, message: "Refresh token expired")
+        }
         var tokenPair = Ai_Agent_Platform_V1_TokenPair()
         tokenPair.accessToken = "refreshed-access-token"
         tokenPair.refreshToken = "refreshed-refresh-token"
