@@ -5,11 +5,13 @@ edition.workspace = true
 
 [dependencies]
 agent-domain = { path = "../agent-domain" }
+agent-llm = { path = "../agent-llm" }
+agent-tools = { path = "../agent-tools" }
+agent-memory = { path = "../agent-memory" }
 async-trait = "0.1"
 chrono = "0.4"
 chrono-tz = "0.10"
 jsonwebtoken = "9"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

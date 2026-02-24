@@ -1,5 +1,5 @@
-use agent_domain::{AgentError, LlmError, StoreError};
-use agent_orchestrator::AuthServiceError;
+use agent_domain::StoreError;
+use agent_orchestrator::{AuthServiceError, TurnError};
 use tonic::Status;
 
 pub trait IntoGrpcStatus {
@@ -27,23 +27,16 @@ impl IntoGrpcStatus for AuthServiceError {
     }
 }
 
-impl IntoGrpcStatus for AgentError {
+impl IntoGrpcStatus for TurnError {
     fn into_status(self) -> Status {
         match self {
-            AgentError::InvalidInput(msg) => Status::invalid_argument(msg),
-            AgentError::Llm(llm_err) => llm_err.into_status(),
-            AgentError::Store(store_err) => store_err.into_status(),
-        }
-    }
-}
-
-impl IntoGrpcStatus for LlmError {
-    fn into_status(self) -> Status {
-        match self {
-            LlmError::RateLimited => Status::resource_exhausted("rate limited"),
-            LlmError::Timeout => Status::deadline_exceeded("request timeout"),
-            LlmError::ProviderError(_) => Status::internal("AI service error"),
-            LlmError::InvalidRequest(msg) => Status::invalid_argument(msg),
+            TurnError::InvalidInput(msg) => Status::invalid_argument(msg),
+            TurnError::SessionError(msg) => Status::internal(msg),
+            TurnError::LlmError(_) => Status::internal("AI service error"),
+            TurnError::ToolLoopExceeded { max } => {
+                Status::failed_precondition(format!("tool loop exceeded max iterations: {max}"))
+            }
+            TurnError::Internal(msg) => Status::internal(msg),
         }
     }
 }
@@ -59,7 +52,7 @@ impl IntoGrpcStatus for StoreError {
 
 #[cfg(test)]
 mod tests {
-    use agent_domain::{AgentError, LlmError, StoreError};
+    use agent_orchestrator::{AuthServiceError, TurnError};
     use tonic::Code;
 
     use super::*;
@@ -76,98 +69,24 @@ mod tests {
             Code::AlreadyExists,
             "email already in use",
         );
-        assert_status(
-            AuthServiceError::InvalidInput("bad input".to_string()),
-            Code::InvalidArgument,
-            "bad input",
-        );
-        assert_status(
-            AuthServiceError::TokenCreation,
-            Code::Internal,
-            "authentication error",
-        );
-        assert_status(
-            AuthServiceError::TokenValidation,
-            Code::Internal,
-            "authentication error",
-        );
-        assert_status(
-            AuthServiceError::Internal("boom".to_string()),
-            Code::Internal,
-            "boom",
-        );
     }
 
     #[test]
-    fn llm_errors_map_to_expected_status() {
+    fn turn_errors_map_to_expected_status() {
         assert_status(
-            LlmError::RateLimited,
-            Code::ResourceExhausted,
-            "rate limited",
-        );
-        assert_status(LlmError::Timeout, Code::DeadlineExceeded, "request timeout");
-        assert_status(
-            LlmError::ProviderError("provider down".to_string()),
-            Code::Internal,
-            "AI service error",
-        );
-        assert_status(
-            LlmError::InvalidRequest("invalid prompt".to_string()),
-            Code::InvalidArgument,
-            "invalid prompt",
-        );
-    }
-
-    #[test]
-    fn store_errors_map_to_expected_status() {
-        assert_status(
-            StoreError::NotFound("session not found".to_string()),
-            Code::NotFound,
-            "session not found",
-        );
-        assert_status(
-            StoreError::Internal("db error".to_string()),
-            Code::Internal,
-            "db error",
-        );
-    }
-
-    #[test]
-    fn agent_errors_map_to_expected_status() {
-        assert_status(
-            AgentError::InvalidInput("bad request".to_string()),
+            TurnError::InvalidInput("bad request".to_string()),
             Code::InvalidArgument,
             "bad request",
         );
         assert_status(
-            AgentError::Llm(LlmError::RateLimited),
-            Code::ResourceExhausted,
-            "rate limited",
-        );
-        assert_status(
-            AgentError::Llm(LlmError::Timeout),
-            Code::DeadlineExceeded,
-            "request timeout",
-        );
-        assert_status(
-            AgentError::Llm(LlmError::ProviderError("provider down".to_string())),
+            TurnError::LlmError("provider down".to_string()),
             Code::Internal,
             "AI service error",
         );
         assert_status(
-            AgentError::Llm(LlmError::InvalidRequest("invalid tool input".to_string())),
-            Code::InvalidArgument,
-            "invalid tool input",
-        );
-        assert_status(
-            AgentError::Store(StoreError::NotFound("session not found".to_string())),
-            Code::NotFound,
-            "session not found",
-        );
-        assert_status(
-            AgentError::Store(StoreError::Internal("db error".to_string())),
-            Code::Internal,
-            "db error",
+            TurnError::ToolLoopExceeded { max: 2 },
+            Code::FailedPrecondition,
+            "tool loop exceeded max iterations: 2",
         );
     }
 

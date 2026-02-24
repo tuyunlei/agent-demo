@@ -2,7 +2,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use super::UserId;
-use agent_orchestrator::AgentRuntime;
+use agent_orchestrator::{TurnExecutor, TurnInput};
 use agent_proto::chat_service_server::ChatService;
 use agent_proto::{
     ChatEvent, SendMessageRequest, SendMessageResponse, SubmitToolResultRequest,
@@ -13,11 +13,11 @@ use tonic::{Request, Response, Status};
 use super::error::into_status;
 
 pub struct ChatServiceHandler {
-    runtime: Arc<AgentRuntime>,
+    runtime: Arc<TurnExecutor>,
 }
 
 impl ChatServiceHandler {
-    pub fn new(runtime: Arc<AgentRuntime>) -> Self {
+    pub fn new(runtime: Arc<TurnExecutor>) -> Self {
         Self { runtime }
     }
 }
@@ -34,15 +34,15 @@ impl ChatService for ChatServiceHandler {
             .map(|id| id.0.clone())
             .unwrap_or_else(|| "unknown".to_string());
         let req = request.into_inner();
-        println!(
-            "Received SendMessage: request_id={}, user_id={}",
-            req.request_id, user_id
-        );
 
         let user_text = extract_text(&req)?;
         let result = self
             .runtime
-            .handle_message(&user_id, non_empty(&req.session_id), &user_text)
+            .run_turn(TurnInput {
+                user_id,
+                session_id: non_empty(&req.session_id).map(ToString::to_string),
+                user_message: user_text,
+            })
             .await
             .map_err(into_status)?;
 
@@ -55,7 +55,9 @@ impl ChatService for ChatServiceHandler {
             session_id: result.session_id,
             user_message_id: "msg-001".to_string(),
             assistant_content: vec![ContentBlock {
-                kind: Some(Kind::Text(TextBlock { text: result.reply })),
+                kind: Some(Kind::Text(TextBlock {
+                    text: result.assistant_text,
+                })),
             }],
         }))
     }

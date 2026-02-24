@@ -5,11 +5,15 @@ use std::sync::Arc;
 use agent_channel::{
     AuthServiceHandler, ChatServiceHandler, SessionServiceHandler, auth_interceptor,
 };
-use agent_domain::{AuthPort, LlmProvider, MessageStore};
-use agent_orchestrator::{AgentRuntime, AuthService, BuiltinToolRuntime};
+use agent_domain::{AuthPort, MessageStore};
+use agent_llm::LlmProvider;
+use agent_memory::NoopCompactionService;
+use agent_orchestrator::{AuthService, TurnExecutor, TurnExecutorConfig};
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
 use agent_proto::session_service_server::SessionServiceServer;
+use agent_tools::builtin::{GetCurrentTimeTool, WebSearchTool};
+use agent_tools::{DefaultToolRuntime, ToolRuntime};
 use tonic::transport::Server;
 
 pub struct ServerBuilder {
@@ -46,10 +50,16 @@ impl ServerBuilder {
         signal: impl Future<Output = ()>,
     ) -> Result<(), tonic::transport::Error> {
         let auth_service = Arc::new(AuthService::new(self.auth_port, self.jwt_secret));
-        let runtime = Arc::new(AgentRuntime::new(
+        let mut tools = DefaultToolRuntime::new();
+        tools.register(Box::new(GetCurrentTimeTool));
+        tools.register(Box::new(WebSearchTool::from_env()));
+
+        let runtime = Arc::new(TurnExecutor::new(
             self.llm_provider,
+            Arc::new(tools),
             self.message_store.clone(),
-            Arc::new(BuiltinToolRuntime::new()),
+            Arc::new(NoopCompactionService::new()),
+            TurnExecutorConfig::default(),
         ));
 
         let chat_service = ChatServiceServer::with_interceptor(
