@@ -10,7 +10,6 @@ agent-channel = { path = "../agent-channel" }
 agent-storage = { path = "../agent-storage" }
 agent-llm = { path = "../agent-llm" }
 agent-domain = { path = "../agent-domain" }
-agent-types = { path = "../agent-types" }
 tokio = { version = "1", features = ["full"] }
 tonic = "0.12"
 async-trait = "0.1"

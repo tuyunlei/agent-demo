@@ -6,7 +6,6 @@ edition.workspace = true
 [dependencies]
 agent-app = { path = "../agent-app" }
 agent-domain = { path = "../agent-domain" }
-agent-types = { path = "../agent-types" }
 agent-proto = { path = "../agent-proto" }
 tonic = "0.12"
 tokio-stream = "0.1"
