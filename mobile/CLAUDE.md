@@ -17,7 +17,11 @@ AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
 3. 如果有 `feedback.md`，先看——那是上次 CI/review 的问题
 4. 创建 `feature/*` 分支
 5. 编码 + 本地测试
-6. commit + push + `gh pr create --base develop`
+6. commit + push + 开 PR：
+   ```bash
+   git push origin feature/<分支名>
+   gh pr create --base develop --fill
+   ```
 7. **不要修改 `tasks/` 下的任何文件**——tasks 由 PM 管理
 
 ## 任务完成后
