@@ -28,7 +28,7 @@ agent-demo/
 
 ## Git 分支策略
 
-- `feature/*` → `develop`（PR + CI，squash merge）→ `main`（需要人工确认）
+- `feature/*` → `develop`（PR + CI，merge commit，不要 squash）→ `main`（需要人工确认）
 - **禁止直接提交 develop 或 main**
 - feature 分支创建后立即开 PR（触发 CI）
 - PR merge 后删除 feature 分支
