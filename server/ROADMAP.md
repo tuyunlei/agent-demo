@@ -91,7 +91,7 @@
 
 ## 第六步：收尾
 
-- [ ] **D-ADR：更新 ADR（架构决策记录）**
+- [x] **D-ADR：更新 ADR（架构决策记录）**
   - 审查现有 6 个 ADR，更新或新增
   - 新增 ADR-007：事件流数据模型
   - 新增 ADR-008：ContextBuilder 可插拔 Section
