@@ -12,8 +12,8 @@ AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
 
 ## 工作流
 
-1. 读 `tasks/` 目录，选文件名数字最小的任务目录
-2. 读该目录下的 `brief.md`（任务目标 + 验收标准）
+1. 读 `tasks/QUEUE.md`，取第一个任务名
+2. 进入 `tasks/<任务名>/`，读 `brief.md`（任务目标 + 验收标准）
 3. 如果有 `feedback.md`，先看——那是上次 CI/review 的问题
 4. 创建 `feature/*` 分支
 5. 编码 + 本地测试
