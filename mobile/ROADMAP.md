@@ -69,7 +69,7 @@
 | # | Task | 状态 | 内容 |
 |---|------|------|------|
 | MQG3 | ViewModel 重构 + 单元测试 | ✅ | ChatViewModel + ChatServiceProtocol + 5 个 Swift Testing 单测 |
-| MQG4 | 测试补全 + Protocol 化 | 🔲 | SessionServiceClient → protocol，loadHistory 可测；AppState 测试；补边界 case |
+| MQG4 | 测试补全 + Protocol 化 | ✅ | PR #1，SessionServiceProtocol + loadHistory 4 测试 + AppState 3 测试 |
 
 ### 质量铁律
 
@@ -118,6 +118,33 @@
 
 ---
 
+## 测试体系建设
+
+> 利用完整 Mac 环境（本地 + CI macOS runner），建立多层测试保障。
+
+### XCUITest（UI 自动化）
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| TUI-1 | XCUITest 基础设施 | 🔲 | Mock 网络层 + LaunchArgument 注入 + 测试 helper |
+| TUI-2 | 登录流程测试 | 🔲 | 注册 → 登录 → 进入聊天页；错误提示验证 |
+| TUI-3 | 聊天流程测试 | 🔲 | 发消息 → 收到回复 → 历史加载 |
+
+### 集成测试
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| TINT-1 | Mock gRPC Server | 🔲 | 本地轻量 gRPC server，验证完整网络链路 |
+| TINT-2 | 核心场景集成验证 | 🔲 | 注册/登录/聊天/Token 刷新 端到端 mock 验证 |
+
+### E2E（全链路，低频）
+
+| # | Task | 状态 | 内容 |
+|---|------|------|------|
+| TE2E-1 | 真实服务端 E2E | 🔲 | App → 真实服务端 → Mock LLM，手动或 CI 低频触发 |
+
+---
+
 ## 未来建设（待讨论）
 
 | # | Task | 状态 | 内容 |
@@ -126,5 +153,5 @@
 
 ---
 
-*最后更新：2026-02-22*
+*最后更新：2026-02-24*
 
