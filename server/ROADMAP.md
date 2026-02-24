@@ -50,7 +50,7 @@
   - 参考 ZeroClaw `tools/traits.rs`
   - 产出：`docs/design/capabilities/tool-system.md`
 
-- [ ] **D-CAP-03：上下文编排（ContextBuilder）**
+- [x] **D-CAP-03：上下文编排（ContextBuilder）**
   - ContextBuilder 接口设计
   - PromptSection trait（可插拔 section）
   - System Prompt 构建（参考 ZeroClaw `agent/prompt.rs`）
