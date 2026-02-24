@@ -3,7 +3,7 @@ members = [
   "crates/agent-domain",
   "crates/agent-context",
   "crates/agent-tools",
-  "crates/agent-app",
+  "crates/agent-orchestrator",
   "crates/agent-proto",
   "crates/agent-storage",
   "crates/agent-llm",

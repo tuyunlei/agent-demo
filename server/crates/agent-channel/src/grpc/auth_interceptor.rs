@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use agent_app::AuthService;
+use agent_orchestrator::AuthService;
 use tonic::{Request, Status};
 
 #[derive(Debug, Clone)]

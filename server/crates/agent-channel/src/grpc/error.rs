@@ -1,4 +1,4 @@
-use agent_app::AuthServiceError;
+use agent_orchestrator::AuthServiceError;
 use agent_domain::{AgentError, LlmError, StoreError};
 use tonic::Status;
 
