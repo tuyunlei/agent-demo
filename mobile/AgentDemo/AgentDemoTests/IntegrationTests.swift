@@ -14,9 +14,9 @@ struct IntegrationTests {
         try await server.start()
         defer { server.stop() }
 
-        let apiClient = APIClient(
+        let apiClient = try APIClient(
             host: "127.0.0.1",
-            port: try server.port,
+            port: server.port,
             usePlaintext: true
         )
         let authClient = AuthServiceClient(apiClient: apiClient)
@@ -40,9 +40,9 @@ struct IntegrationTests {
         try await server.start()
         defer { server.stop() }
 
-        let apiClient = APIClient(
+        let apiClient = try APIClient(
             host: "127.0.0.1",
-            port: try server.port,
+            port: server.port,
             usePlaintext: true
         )
         let chatClient = ChatServiceClient(apiClient: apiClient)
@@ -81,9 +81,9 @@ struct IntegrationTests {
         try await server.start()
         defer { server.stop() }
 
-        let apiClient = APIClient(
+        let apiClient = try APIClient(
             host: "127.0.0.1",
-            port: try server.port,
+            port: server.port,
             usePlaintext: true
         )
 
