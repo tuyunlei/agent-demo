@@ -12,7 +12,7 @@
 
 ### 第一步：基础类型整理
 
-- [ ] **R-01：agent-domain 重构 + agent-types 合并**
+- [x] **R-01：agent-domain 重构 + agent-types 合并** (PR #5)
   - 将 agent-types 的内容合并到 agent-domain
   - 定义 EventEnvelope / EventMeta / EventPayload 等事件类型（对齐 event-model.md）
   - 定义 Session / SessionStatus 等类型（对齐 session-lifecycle.md）
