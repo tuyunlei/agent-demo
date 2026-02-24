@@ -44,6 +44,7 @@ public actor TokenStore {
         }
 
         guard let currentRefreshToken = refreshToken else {
+            onAuthExpired?()
             throw TokenRefreshError.noRefreshToken
         }
 
