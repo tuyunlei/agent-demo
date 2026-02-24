@@ -96,7 +96,7 @@ impl EventStore for PostgresEventStore {
     ) -> Result<Vec<EventEnvelope>, EventStoreError> {
         let rows = sqlx::query(
             "SELECT event_id, session_id, sequence_number, event_type, payload, tenant_id, user_id,
-                    EXTRACT(EPOCH FROM created_at) * 1000 AS timestamp_ms
+                    (EXTRACT(EPOCH FROM created_at) * 1000)::FLOAT8 AS timestamp_ms
              FROM events
              WHERE session_id = $1
                AND ($2::BIGINT IS NULL OR sequence_number >= $2)
@@ -120,7 +120,7 @@ impl EventStore for PostgresEventStore {
     ) -> Result<Vec<EventEnvelope>, EventStoreError> {
         let mut rows = sqlx::query(
             "SELECT event_id, session_id, sequence_number, event_type, payload, tenant_id, user_id,
-                    EXTRACT(EPOCH FROM created_at) * 1000 AS timestamp_ms
+                    (EXTRACT(EPOCH FROM created_at) * 1000)::FLOAT8 AS timestamp_ms
              FROM events
              WHERE session_id = $1
              ORDER BY sequence_number DESC LIMIT $2",
