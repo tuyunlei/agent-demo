@@ -44,7 +44,7 @@
   - 设计文档：`capabilities/llm-provider.md`
   - 验收：现有 LLM 测试 + 新 trait 测试
 
-- [ ] **R-05：新建 agent-memory crate（最小骨架）**
+- [x] **R-05：新建 agent-memory crate（最小骨架）** (PR #9)
   - 定义 MemoryProvider trait
   - 提供 NoopMemoryProvider 默认实现
   - 设计文档：`capabilities/session-lifecycle.md`（记忆部分）
