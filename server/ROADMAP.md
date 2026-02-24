@@ -42,7 +42,7 @@
   - 参考 ZeroClaw `providers/traits.rs`
   - 产出：`docs/design/capabilities/llm-provider.md`
 
-- [ ] **D-CAP-02：工具系统**
+- [x] **D-CAP-02：工具系统**
   - Tool trait 定义（spec / execute）
   - 工具注册与发现
   - 内置工具 vs 扩展工具
