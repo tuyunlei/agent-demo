@@ -1,124 +1,125 @@
 # agent-demo/server — ROADMAP
 
-当前阶段：**架构设计**（Phase: design）
+当前阶段：**代码重构**（Phase: refactor）
+
+目标：代码完全对齐架构设计文档（`docs/design/`）。
 
 ---
 
-## 第一步：旧设计文档清理
+## 重构任务
 
-在写新设计之前，先盘点现有 40+ 个设计文档，逐个判断保留/更新/归档/删除。
+按自底向上顺序：先稳定基础类型，再构建能力层，最后重构编排层和接入层。
 
-- [x] **D-CLEAN：设计文档审计与清理**
-  - 列出所有现有设计文档，逐个标注处置方式（keep / update / archive / delete）
-  - 仍然有效的（如 ADR-001 单体架构、ADR-002 PostgreSQL）标记 keep
-  - 需要大幅修改的归档到 `docs/design/archive/`，新版在后续任务中重写
-  - 完全过时的删除
-  - 产出：`docs/design/archive/` 目录 + 清理后的 `docs/design/` 目录
+### 第一步：基础类型整理
 
-## 第二步：宏观架构（自顶向下）
+- [ ] **R-01：agent-domain 重构 + agent-types 合并**
+  - 将 agent-types 的内容合并到 agent-domain
+  - 定义 EventEnvelope / EventMeta / EventPayload 等事件类型（对齐 event-model.md）
+  - 定义 Session / SessionStatus 等类型（对齐 session-lifecycle.md）
+  - 更新所有 crate 的依赖从 agent-types → agent-domain
+  - 删除 agent-types crate
+  - 设计文档：`core/event-model.md`、`capabilities/session-lifecycle.md`
+  - 验收：编译通过 + 现有测试全绿
 
-- [x] **D-ARCH-01：整体分层架构**
-  - 定义 4 层：接入层 / 编排层 / 能力层 / 基础设施层
-  - 每层的职责一句话说清
-  - 层间依赖方向（只能由外向内）
-  - 与 ZeroClaw/PicoClaw/OpenClaw 的对比论证
-  - crate 结构映射（每层对应哪些 crate）
-  - 产出：`docs/design/architecture.md`
+### 第二步：能力层 crate 创建
 
-- [x] **D-ARCH-02：事件流数据模型**
-  - 定义 append-only 事件流核心概念
-  - 事件类型枚举（UserMessage / AssistantMessage / ToolCallStart / ToolResult / SystemEvent / ConfigChange 等）
-  - 与现有 messages 表的差异
-  - System Prompt 稳定性原则：首轮构建后不变，变更通过 ConfigChange 事件追加
-  - 哪些场景需要"重置"事件流，如何设计
-  - 产出：`docs/design/core/event-model.md`
+- [ ] **R-02：新建 agent-context crate**
+  - 定义 PromptSection trait + ContextBuilder trait
+  - 实现内置 section（Identity / Safety / Tools / DateTime / Runtime）
+  - 实现默认 ContextBuilder
+  - 设计文档：`capabilities/context-builder.md`
+  - 验收：单元测试覆盖所有内置 section + builder
 
-## 第三步：能力层设计（各域独立）
+- [ ] **R-03：新建 agent-tools crate**
+  - 定义 Tool trait + ToolRuntime trait
+  - 从 agent-app 迁移现有工具代码（get_current_time、web_search）
+  - 实现 DefaultToolRuntime
+  - 设计文档：`capabilities/tool-system.md`
+  - 验收：现有工具测试迁移 + ToolRuntime 单元测试
 
-- [x] **D-CAP-01：LLM Provider 抽象**
-  - Provider trait 定义（chat / stream_chat）
-  - 请求/响应类型（含 tool_calls、finish_reason）
-  - 多 provider 切换 + fallback 策略
-  - 参考 ZeroClaw `providers/traits.rs`
-  - 产出：`docs/design/capabilities/llm-provider.md`
+- [ ] **R-04：agent-llm 重构**
+  - LlmProvider trait 对齐 `capabilities/llm-provider.md`（complete + stream）
+  - 统一 LlmRequest / LlmResponse / LlmError 类型
+  - MockLlmProvider 更新
+  - 设计文档：`capabilities/llm-provider.md`
+  - 验收：现有 LLM 测试 + 新 trait 测试
 
-- [x] **D-CAP-02：工具系统**
-  - Tool trait 定义（spec / execute）
-  - 工具注册与发现
-  - 内置工具 vs 扩展工具
-  - 工具失败处理（错误封装回 LLM）
-  - 参考 ZeroClaw `tools/traits.rs`
-  - 产出：`docs/design/capabilities/tool-system.md`
+- [ ] **R-05：新建 agent-memory crate（最小骨架）**
+  - 定义 MemoryProvider trait
+  - 提供 NoopMemoryProvider 默认实现
+  - 设计文档：`capabilities/session-lifecycle.md`（记忆部分）
+  - 验收：trait 定义 + noop 实现 + 编译通过
 
-- [x] **D-CAP-03：上下文编排（ContextBuilder）**
-  - ContextBuilder 接口设计
-  - PromptSection trait（可插拔 section）
-  - System Prompt 构建（参考 ZeroClaw `agent/prompt.rs`）
-  - 历史消息窗口选取（从事件流中）
-  - Token 预算管理
-  - 产出：`docs/design/capabilities/context-builder.md`
+### 第三步：编排层重构
 
-- [x] **D-CAP-04：会话生命周期**
-  - Session 创建 / 读取 / 更新 / 压缩 / 归档
-  - 事件流持久化（EventStore trait）
-  - 压缩策略（摘要替代历史事件）
-  - 参考 OpenClaw session store + PicoClaw SessionManager
-  - 产出：`docs/design/capabilities/session-lifecycle.md`
+- [ ] **R-06：agent-app → agent-orchestrator 重命名 + 重构**
+  - 重命名 crate
+  - 实现 TurnExecutor（对齐 turn-executor.md）
+  - 实现 SessionLifecycle
+  - 依赖能力层 trait，不依赖具体实现
+  - 设计文档：`orchestration/turn-executor.md`
+  - 验收：TurnExecutor 单元测试（mock 所有 trait）+ 工具循环测试
 
-## 第四步：编排层设计
+### 第四步：基础设施层重构
 
-- [x] **D-ORCH-01：TurnExecutor 详细设计**
-  - 单次 turn 的完整流程（接收消息 → 上下文组装 → LLM 调用 → 工具循环 → 持久化 → 返回）
-  - TurnExecutor 依赖哪些能力层模块（ContextBuilder、LlmProvider、ToolRuntime、EventStore）
-  - 工具循环终止条件
-  - 错误处理（各环节失败如何处理）
-  - 参考 ZeroClaw `Agent::turn()` + PicoClaw `runAgentLoop()`
-  - 产出：`docs/design/orchestration/turn-executor.md`
+- [ ] **R-07：agent-storage 重构（EventStore 实现）**
+  - 实现 EventStore trait 的 PostgreSQL 适配器
+  - 新建 events 表（migration）
+  - 保留现有 messages 表兼容
+  - 设计文档：`infrastructure/postgres-adapter.md`
+  - 验收：EventStore 集成测试（sqlx::test）
 
-## 第五步：接入层 + 基础设施层
+### 第五步：接入层 + DI 重构
 
-- [x] **D-INFRA-01：gRPC 接口与接入层**
-  - gRPC handler 职责边界（只做协议转换，不含业务逻辑）
-  - Proto 定义与代码的映射
-  - 认证拦截器
-  - 产出：`docs/design/infrastructure/grpc-layer.md`
+- [ ] **R-08：agent-channel + agent-server 重构**
+  - Channel handler 只做协议转换（对齐 grpc-layer.md）
+  - agent-server 作为 Composition Root 做 DI 组装
+  - 错误码映射对齐设计
+  - 设计文档：`infrastructure/grpc-layer.md`
+  - 验收：e2e 测试全绿 + 新的 DI 组装测试
 
-- [x] **D-INFRA-02：PostgreSQL 适配器**
-  - EventStore 的 PostgreSQL 实现
-  - 数据库 schema（events 表设计）
-  - 迁移策略（从现有 messages 表到 events 表）
-  - 产出：`docs/design/infrastructure/postgres-adapter.md`
+### 第六步：收尾
 
-## 第六步：收尾
-
-- [x] **D-ADR：更新 ADR（架构决策记录）**
-  - 审查现有 6 个 ADR，更新或新增
-  - 新增 ADR-007：事件流数据模型
-  - 新增 ADR-008：ContextBuilder 可插拔 Section
-  - 产出：`docs/design/decisions/` 下更新/新增
+- [ ] **R-09：arch 测试更新 + 覆盖率修复**
+  - 更新 arch.rs 中的 crate 依赖方向测试
+  - 确保新 crate 的依赖方向符合设计
+  - 覆盖率 ≥65%
+  - 验收：CI 全绿
 
 ---
 
-## 已完成
+## ✅ 已完成：架构设计
 
 <details>
-<summary>Phase 1 + Phase 2（功能开发，PR #22-27）</summary>
+<summary>11 个设计文档（~9500 行）</summary>
 
-| 功能 | PR |
-|------|-----|
-| 工具调用链路 + get_current_time | #22 |
-| web_search 工具 | #23 |
-| 上下文时间戳 + System Prompt 增强 | #24 |
-| 多会话管理 | #25 |
-| Token 自动刷新 | #26 |
-| 统一错误处理 | #27 |
+| 任务 | 产出 |
+|------|------|
+| D-CLEAN | 旧文档清理（18 archived + 11 deleted） |
+| D-ARCH-01 | architecture.md（853 行） |
+| D-ARCH-02 | core/event-model.md（1040 行） |
+| D-CAP-01 | capabilities/llm-provider.md（928 行） |
+| D-CAP-02 | capabilities/tool-system.md（809 行） |
+| D-CAP-03 | capabilities/context-builder.md（1274 行） |
+| D-CAP-04 | capabilities/session-lifecycle.md（1269 行） |
+| D-ORCH-01 | orchestration/turn-executor.md（1358 行） |
+| D-INFRA-01 | infrastructure/grpc-layer.md（995 行） |
+| D-INFRA-02 | infrastructure/postgres-adapter.md（1005 行） |
+| D-ADR | ADR 004-008 更新/新增 |
+
+</details>
+
+<details>
+<summary>Phase 1 + Phase 2 功能开发（PR #22-27）</summary>
+
+工具调用 + web_search + 上下文时间戳 + 多会话 + Token 刷新 + 统一错误
 
 </details>
 
 <details>
 <summary>Walking Skeleton + 质量体系（PR #1-21）</summary>
 
-工程脚手架、Echo、认证、AI 回复、部署、持久化、QG1-14、E2E-1~5
+91 个测试，覆盖率 65%+，mutation catch rate 100%
 
 </details>
 
