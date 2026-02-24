@@ -2,11 +2,11 @@ use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use agent_orchestrator::{AgentRuntime, AuthService, BuiltinToolRuntime};
 use agent_channel::{
     AuthServiceHandler, ChatServiceHandler, SessionServiceHandler, auth_interceptor,
 };
 use agent_domain::{AuthPort, LlmProvider, MessageStore};
+use agent_orchestrator::{AgentRuntime, AuthService, BuiltinToolRuntime};
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
 use agent_proto::session_service_server::SessionServiceServer;
