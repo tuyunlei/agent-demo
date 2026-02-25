@@ -61,7 +61,9 @@ impl ServerConfig {
         let user = percent_encode(&user);
         let password = percent_encode(&password);
 
-        Ok(format!("postgres://{user}:{password}@{host}:{port}/{database}"))
+        Ok(format!(
+            "postgres://{user}:{password}@{host}:{port}/{database}"
+        ))
     }
 }
 
