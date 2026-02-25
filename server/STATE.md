@@ -1,8 +1,8 @@
 # agent-demo/server — 状态
 
-## Phase: refactor
+## Phase: idle
 
-代码重构中。目标：代码完全对齐新架构设计文档。
+代码重构完成。代码已对齐新架构设计文档。等待涂涂确认下一步方向。
 
 ## 当前进度
 
@@ -11,15 +11,33 @@
 - [x] 自动推进机制重新设计
 - [x] 旧设计文档清理
 - [x] 新架构设计文档（11 个任务全部完成）
-- [ ] 代码重构对齐设计（见 ROADMAP.md）
+- [x] 代码重构对齐设计（R-01 ~ R-09 全部完成）
 
 ## 阻塞点
 
-无。
+- develop → main merge 需要涂涂确认
 
 ---
 
 ## 已完成的里程碑
+
+<details>
+<summary>代码重构阶段（R-01 ~ R-09，PR #5-14）</summary>
+
+- R-01: agent-domain 重构 + agent-types 合并 (PR #5)
+- R-02: agent-context crate (PR #6)
+- R-03: agent-tools crate (PR #7)
+- R-04: agent-llm 重构 (PR #8)
+- R-05: agent-memory crate (PR #9)
+- R-06a: agent-orchestrator rename (PR #10)
+- R-06b: TurnExecutor 实现 (PR #11)
+- R-07: EventStore 实现 (PR #12)
+- R-08: agent-channel + agent-server 重构 (PR #13)
+- R-09: arch 测试更新 + 覆盖率修复 (PR #14)
+
+最终架构：4 层 13 crate，93+ 测试，CI 全绿
+</summary>
+</details>
 
 <details>
 <summary>架构设计阶段（11 个设计文档，~9500 行）</summary>
@@ -47,10 +65,10 @@
 
 ## 基础设施
 
-- PostgreSQL 16.11：users + sessions + messages
+- PostgreSQL 16.11：users + sessions + messages + events
 - 仓库 public，CI 免费
 - CI 门禁：fmt + clippy + arch tests + tests + coverage ≥65%
 
 ---
 
-*最后更新：2026-02-24*
+*最后更新：2026-02-25*
