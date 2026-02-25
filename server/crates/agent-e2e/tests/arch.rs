@@ -11,18 +11,7 @@ fn server_root() -> PathBuf {
 
 fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
     HashMap::from([
-        (
-            "agent-types",
-            HashSet::from([
-                "agent-orchestrator",
-                "agent-channel",
-                "agent-server",
-                "agent-storage",
-                "agent-llm",
-                "agent-proto",
-                "agent-domain",
-            ]),
-        ),
+        // agent-domain: foundation, depends on nothing
         (
             "agent-domain",
             HashSet::from([
@@ -31,32 +20,27 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
                 "agent-server",
                 "agent-storage",
                 "agent-llm",
+                "agent-tools",
+                "agent-context",
+                "agent-memory",
                 "agent-proto",
             ]),
         ),
-        // Layer 2 (Orchestration) depends on Layer 3 (Capability) traits:
-        // agent-llm, agent-tools, agent-memory, agent-context are allowed.
-        // Must NOT depend on Layer 1 (channel/server) or Layer 4 (storage).
-        (
-            "agent-orchestrator",
-            HashSet::from([
-                "agent-channel",
-                "agent-server",
-                "agent-storage",
-                "agent-proto",
-            ]),
-        ),
+        // agent-proto: only depends on agent-domain (if at all)
         (
             "agent-proto",
             HashSet::from([
-                "agent-domain",
                 "agent-orchestrator",
                 "agent-channel",
                 "agent-server",
                 "agent-storage",
                 "agent-llm",
+                "agent-tools",
+                "agent-context",
+                "agent-memory",
             ]),
         ),
+        // Layer 4: only depends on agent-domain
         (
             "agent-storage",
             HashSet::from([
@@ -64,9 +48,13 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
                 "agent-channel",
                 "agent-server",
                 "agent-llm",
+                "agent-tools",
+                "agent-context",
+                "agent-memory",
                 "agent-proto",
             ]),
         ),
+        // Layer 3: depends on agent-domain only, not L1/L2/L4
         (
             "agent-llm",
             HashSet::from([
@@ -77,6 +65,48 @@ fn forbidden_deps() -> HashMap<&'static str, HashSet<&'static str>> {
                 "agent-proto",
             ]),
         ),
+        (
+            "agent-tools",
+            HashSet::from([
+                "agent-orchestrator",
+                "agent-channel",
+                "agent-server",
+                "agent-storage",
+                "agent-proto",
+            ]),
+        ),
+        (
+            "agent-context",
+            HashSet::from([
+                "agent-orchestrator",
+                "agent-channel",
+                "agent-server",
+                "agent-storage",
+                "agent-proto",
+            ]),
+        ),
+        (
+            "agent-memory",
+            HashSet::from([
+                "agent-orchestrator",
+                "agent-channel",
+                "agent-server",
+                "agent-storage",
+                "agent-proto",
+            ]),
+        ),
+        // Layer 2: depends on L3 + agent-domain, not L1/L4
+        (
+            "agent-orchestrator",
+            HashSet::from([
+                "agent-channel",
+                "agent-server",
+                "agent-storage",
+                "agent-proto",
+            ]),
+        ),
+        // Layer 1: can depend on everything below.
+        // agent-channel and agent-server have no forbidden deps among agent-* crates.
     ])
 }
 

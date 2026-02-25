@@ -82,7 +82,7 @@ jobs:
       - name: Coverage check
         run: |
           OUTPUT=$(cargo tarpaulin --workspace \
-            --exclude-files '*/build.rs' '*/src/main.rs' '*_tests.rs' '*.pb.rs' \
+            --exclude-files '*/build.rs' '*/src/main.rs' '*_tests.rs' '*.pb.rs' 'spikes/*' \
             --skip-clean 2>&1)
           echo "$OUTPUT" | tail -5
           COVERAGE=$(echo "$OUTPUT" | grep -oP '[\d.]+% coverage' | grep -oP '[\d.]+')
