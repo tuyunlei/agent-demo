@@ -82,12 +82,12 @@ jobs:
       - name: Coverage check
         run: |
           OUTPUT=$(cargo tarpaulin --workspace \
-            --exclude-files '*/build.rs' '*/src/main.rs' '*_tests.rs' '*.pb.rs' 'spikes/*' \
+            --exclude-files '*/build.rs' '*/src/main.rs' '*_tests.rs' '*.pb.rs' 'spikes/*' 'crates/agent-server/src/lib.rs' \
             --skip-clean 2>&1)
           echo "$OUTPUT" | tail -5
           COVERAGE=$(echo "$OUTPUT" | grep -oP '[\d.]+% coverage' | grep -oP '[\d.]+')
           echo "Coverage: ${COVERAGE}%"
-          THRESHOLD=65
+          THRESHOLD=77
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
             echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
             exit 1
