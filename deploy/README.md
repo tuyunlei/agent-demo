@@ -3,48 +3,63 @@
 ## Architecture
 
 ```
-Internet → :443 TLS → Caddy (host network) → localhost:50051 h2c → server container → postgres container
+server container (gRPC h2c) ← postgres container
+       ↑
+  localhost:${SERVER_PORT}
+       ↑
+your reverse proxy (TLS termination)
+       ↑
+    Internet
 ```
 
-- **Caddy**: TLS termination + reverse proxy, runs in host network mode
-- **Server**: gRPC backend, port 50051 mapped to localhost only
-- **PostgreSQL**: containerized, internal Docker network only
+The server exposes plain gRPC (h2c) on a localhost port. TLS termination is handled externally by whatever reverse proxy you prefer (Caddy, Nginx, Traefik, etc.).
 
-## Environments
-
-| Environment | Domain | Compose file |
-|---|---|---|
-| Preview | `preview-agent.xclz.org` | `.env.preview` |
-| Production | `agent.xclz.org` | `.env.prod` |
-
-Both share port 443 — Caddy routes by SNI (domain name in TLS handshake).
-
-## Commands
+## Quick Start
 
 ```bash
 cd deploy/
+cp .env.example .env.prod
+# Edit .env.prod with your values
 
-# Preview
-sg docker -c "docker compose --env-file .env.preview up -d"
-sg docker -c "docker compose --env-file .env.preview logs -f"
-sg docker -c "docker compose --env-file .env.preview down"
-
-# Production
-sg docker -c "docker compose --env-file .env.prod up -d"
+sg docker -c "docker compose -p agent-prod --env-file .env.prod up -d"
+sg docker -c "docker compose -p agent-prod --env-file .env.prod logs -f"
+sg docker -c "docker compose -p agent-prod --env-file .env.prod down"
 
 # Rebuild after code changes
-sg docker -c "docker compose --env-file .env.preview up -d --build"
+sg docker -c "docker compose -p agent-prod --env-file .env.prod up -d --build"
 ```
 
-Note: `sg docker -c "..."` is needed because the `openclaw` user accesses Docker via group membership.
+Note: `sg docker -c "..."` may be needed depending on your Docker group setup.
 
-## TLS Certificates
+## Multiple Environments
 
-Managed automatically by Caddy via Let's Encrypt. Stored in Docker volume `caddy_data`.
+Run multiple environments on the same host by using different project names and ports:
+
+```bash
+# Preview on port 50051
+docker compose -p agent-preview --env-file .env.preview up -d
+
+# Production on port 50052
+docker compose -p agent-prod --env-file .env.prod up -d
+```
+
+Each project gets its own isolated postgres and data volume.
+
+## Reverse Proxy Example (Caddy)
+
+```
+agent.example.com {
+    reverse_proxy localhost:50052 {
+        transport http {
+            versions h2c
+        }
+    }
+}
+```
 
 ## Docker Build
 
-Build context is the repo root (not `server/`), because `proto/` is at repo root:
+Build context is the repo root (not `server/`), because `proto/` lives at repo root:
 
 ```bash
 docker build -f server/Dockerfile .

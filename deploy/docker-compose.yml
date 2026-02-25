@@ -32,20 +32,7 @@ services:
       LISTEN_ADDR: ${LISTEN_ADDR:-0.0.0.0:50051}
       RUST_LOG: ${RUST_LOG:-info}
     ports:
-      - "127.0.0.1:50051:50051"
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on:
-      - server
-    network_mode: host
-    volumes:
-      - ${CADDYFILE:?CADDYFILE must be set}:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - "127.0.0.1:${SERVER_PORT:-50051}:50051"
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
