@@ -206,9 +206,49 @@ mod tests {
     }
 
     #[test]
+    fn parse_web_search_rejects_empty_query() {
+        let error =
+            parse_web_search_args(r#"{"query":"   "}"#).expect_err("empty query should fail");
+        assert!(matches!(error, ToolError::InvalidArguments(_)));
+        assert!(error.to_string().contains("query cannot be empty"));
+    }
+
+    #[test]
     fn parse_web_search_defaults_count() {
         let args = parse_web_search_args(r#"{"query":"rust"}"#).expect("valid args");
         assert_eq!(args.count, DEFAULT_SEARCH_COUNT);
+    }
+
+    #[test]
+    fn tool_spec_exposes_expected_schema() {
+        let spec = WebSearchTool::new(Some("key".to_string())).spec();
+        assert_eq!(spec.name, "web_search");
+        assert_eq!(
+            spec.parameters_schema["required"],
+            serde_json::json!(["query"])
+        );
+        assert_eq!(
+            spec.parameters_schema["properties"]["count"]["type"],
+            "integer"
+        );
+    }
+
+    #[test]
+    fn format_web_search_results_for_empty_and_non_empty_payloads() {
+        let empty = format_web_search_results("rust", &[]);
+        assert!(empty.contains("No results found"));
+
+        let filled = format_web_search_results(
+            "rust",
+            &[BraveWebResult {
+                title: "Rust Language".to_string(),
+                url: "https://www.rust-lang.org".to_string(),
+                description: "Official site".to_string(),
+            }],
+        );
+        assert!(filled.contains("1. Rust Language"));
+        assert!(filled.contains("URL: https://www.rust-lang.org"));
+        assert!(filled.contains("Official site"));
     }
 
     #[tokio::test]

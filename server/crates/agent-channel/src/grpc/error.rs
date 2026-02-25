@@ -52,6 +52,7 @@ impl IntoGrpcStatus for StoreError {
 
 #[cfg(test)]
 mod tests {
+    use agent_domain::StoreError;
     use agent_orchestrator::{AuthServiceError, TurnError};
     use tonic::Code;
 
@@ -88,6 +89,46 @@ mod tests {
             Code::ResourceExhausted,
             "tool loop exceeded max iterations: 2",
         );
+    }
+
+    #[test]
+    fn auth_internal_error_mappings() {
+        assert_status(
+            AuthServiceError::TokenCreation,
+            Code::Internal,
+            "authentication error",
+        );
+        assert_status(
+            AuthServiceError::TokenValidation,
+            Code::Internal,
+            "authentication error",
+        );
+        assert_status(
+            AuthServiceError::Internal("db failed".to_string()),
+            Code::Internal,
+            "db failed",
+        );
+    }
+
+    #[test]
+    fn store_errors_map_to_expected_status() {
+        assert_status(
+            StoreError::NotFound("missing".to_string()),
+            Code::NotFound,
+            "missing",
+        );
+        assert_status(
+            StoreError::Internal("db failed".to_string()),
+            Code::Internal,
+            "db failed",
+        );
+    }
+
+    #[test]
+    fn into_status_function_delegates_trait() {
+        let status = super::into_status(StoreError::NotFound("x".to_string()));
+        assert_eq!(status.code(), Code::NotFound);
+        assert_eq!(status.message(), "x");
     }
 
     fn assert_status<E>(err: E, expected_code: Code, expected_message: &str)

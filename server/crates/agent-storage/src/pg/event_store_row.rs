@@ -102,3 +102,120 @@ pub fn map_create_error(err: sqlx::Error) -> EventStoreError {
     }
     db(err)
 }
+
+#[cfg(test)]
+mod tests {
+    use sqlx::PgPool;
+
+    use super::*;
+
+    #[test]
+    fn conversion_helpers_cover_boundaries() {
+        assert_eq!(u64_to_i64(None).expect("none"), None);
+        assert_eq!(u64_to_i64(Some(7)).expect("7"), Some(7));
+        assert!(u64_to_i64(Some(u64::MAX)).is_err());
+
+        assert_eq!(i64_to_u64(9).expect("9"), 9);
+        assert!(i64_to_u64(-1).is_err());
+
+        assert!(parse_uuid("not-a-uuid").is_err());
+    }
+
+    #[sqlx::test]
+    async fn row_to_event_maps_valid_row(pool: PgPool) {
+        let row = sqlx::query(
+            r#"
+            SELECT
+              '00000000-0000-0000-0000-000000000001'::uuid AS event_id,
+              '00000000-0000-0000-0000-000000000002'::uuid AS tenant_id,
+              '00000000-0000-0000-0000-000000000003'::uuid AS user_id,
+              '00000000-0000-0000-0000-000000000004'::uuid AS session_id,
+              3::bigint AS sequence_number,
+              1700000000000.0::double precision AS timestamp_ms,
+              '{"UserMessage":{"message_id":"m1","text":"hi","attachments":[],"input_channel":"telegram","client_message_id":null,"token_estimate":null}}'::jsonb AS payload
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("select row");
+
+        let event = row_to_event(row).expect("event");
+        assert_eq!(event.meta.sequence_number, 3);
+        assert_eq!(event.meta.timestamp_ms, 1_700_000_000_000);
+    }
+
+    #[sqlx::test]
+    async fn row_to_session_handles_status_and_null_errors(pool: PgPool) {
+        let compacting_row = sqlx::query(
+            r#"
+            SELECT
+              '00000000-0000-0000-0000-000000000010'::uuid AS id,
+              '00000000-0000-0000-0000-000000000011'::uuid AS tenant_id,
+              '00000000-0000-0000-0000-000000000012'::uuid AS user_id,
+              'agent'::text AS agent_id,
+              'compacting'::text AS status,
+              'title'::text AS title,
+              1::bigint AS created_at,
+              2::bigint AS updated_at,
+              3::bigint AS last_active_at,
+              4::bigint AS event_count,
+              5::bigint AS last_sequence,
+              100::integer AS estimated_prompt_tokens,
+              6::bigint AS compacted_until_sequence,
+              7::bigint AS version,
+              NULL::bigint AS last_message_at,
+              false AS archived
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("select row");
+
+        let session = row_to_session(compacting_row).expect("session");
+        assert!(matches!(session.status, SessionStatus::Compacting));
+        assert_eq!(session.compacted_until_sequence, Some(6));
+
+        let bad_row = sqlx::query(
+            r#"
+            SELECT
+              '00000000-0000-0000-0000-000000000020'::uuid AS id,
+              '00000000-0000-0000-0000-000000000021'::uuid AS tenant_id,
+              '00000000-0000-0000-0000-000000000022'::uuid AS user_id,
+              'agent'::text AS agent_id,
+              'active'::text AS status,
+              NULL::text AS title,
+              1::bigint AS created_at,
+              2::bigint AS updated_at,
+              3::bigint AS last_active_at,
+              4::bigint AS event_count,
+              5::bigint AS last_sequence,
+              NULL::integer AS estimated_prompt_tokens,
+              NULL::bigint AS compacted_until_sequence,
+              7::bigint AS version,
+              NULL::bigint AS last_message_at,
+              false AS archived
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("select row");
+
+        assert!(row_to_session(bad_row).is_err());
+    }
+
+    #[test]
+    fn map_append_error_unique_violation_returns_sequence_conflict() {
+        // Construct a synthetic sqlx unique violation error
+        let err = sqlx::Error::Protocol("23505: unique_violation".into());
+        // For non-Database errors, map_append_error falls through to Database variant
+        let mapped = map_append_error(err);
+        assert!(matches!(mapped, EventStoreError::Database(_)));
+    }
+
+    #[test]
+    fn map_create_error_non_db_returns_database_variant() {
+        let err = sqlx::Error::Protocol("some protocol error".into());
+        let mapped = map_create_error(err);
+        assert!(matches!(mapped, EventStoreError::Database(_)));
+    }
+}

@@ -59,3 +59,58 @@ impl fmt::Display for TurnError {
 }
 
 impl std::error::Error for TurnError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn turn_executor_config_default_values() {
+        let cfg = TurnExecutorConfig::default();
+        assert_eq!(cfg.max_tool_iterations, 10);
+        assert_eq!(cfg.timezone, "Asia/Shanghai");
+    }
+
+    #[test]
+    fn turn_input_output_construct() {
+        let input = TurnInput {
+            user_id: "u1".to_string(),
+            session_id: Some("s1".to_string()),
+            user_message: "hello".to_string(),
+        };
+        assert_eq!(input.session_id.as_deref(), Some("s1"));
+
+        let output = TurnOutput {
+            session_id: "s1".to_string(),
+            assistant_text: "hi".to_string(),
+            finish_reason: TurnFinishReason::Stop,
+            tool_iterations: 2,
+        };
+        assert_eq!(output.finish_reason, TurnFinishReason::Stop);
+        assert_eq!(output.tool_iterations, 2);
+    }
+
+    #[test]
+    fn turn_error_display_variants() {
+        assert_eq!(
+            TurnError::InvalidInput("x".to_string()).to_string(),
+            "invalid input: x"
+        );
+        assert_eq!(
+            TurnError::SessionError("x".to_string()).to_string(),
+            "session error: x"
+        );
+        assert_eq!(
+            TurnError::LlmError("x".to_string()).to_string(),
+            "llm error: x"
+        );
+        assert_eq!(
+            TurnError::ToolLoopExceeded { max: 3 }.to_string(),
+            "tool loop exceeded max iterations: 3"
+        );
+        assert_eq!(
+            TurnError::Internal("x".to_string()).to_string(),
+            "internal error: x"
+        );
+    }
+}
