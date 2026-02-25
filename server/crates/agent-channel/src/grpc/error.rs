@@ -34,7 +34,7 @@ impl IntoGrpcStatus for TurnError {
             TurnError::SessionError(msg) => Status::internal(msg),
             TurnError::LlmError(_) => Status::internal("AI service error"),
             TurnError::ToolLoopExceeded { max } => {
-                Status::failed_precondition(format!("tool loop exceeded max iterations: {max}"))
+                Status::resource_exhausted(format!("tool loop exceeded max iterations: {max}"))
             }
             TurnError::Internal(msg) => Status::internal(msg),
         }
@@ -85,7 +85,7 @@ mod tests {
         );
         assert_status(
             TurnError::ToolLoopExceeded { max: 2 },
-            Code::FailedPrecondition,
+            Code::ResourceExhausted,
             "tool loop exceeded max iterations: 2",
         );
     }
