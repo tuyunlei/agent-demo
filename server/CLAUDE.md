@@ -2,97 +2,133 @@
 
 ## 技术栈
 
-- Rust（stable）/ Tokio / Tonic（gRPC）
+- Rust 2024 edition（stable）/ Tokio / Tonic（gRPC）
 - PostgreSQL 16 + sqlx（compile-time checked queries）
-- 六边形架构（Ports & Adapters）
+- 四层架构（Channel → Orchestration → Capability → Infrastructure）
 
-## Crate 结构（严格 DAG）
+## Crate 结构（四层 13 crate，严格 DAG）
 
 ```
-agent-types      ← 共享类型（error, config）
-agent-proto      ← tonic-build 生成的 gRPC 代码
-agent-domain     ← 核心领域（Port trait 定义，业务逻辑）
-agent-app        ← 应用服务（编排层）
-agent-channel    ← gRPC 适配器（AuthHandler, ChatHandler, SessionHandler）
-agent-llm        ← LLM 适配器（OpenAI 兼容）
-agent-storage    ← PostgreSQL 适配器（sqlx）
-agent-server     ← 组装入口（main.rs）
+Layer 1 (Channel):        agent-channel, agent-server
+Layer 2 (Orchestration):  agent-orchestrator
+Layer 3 (Capability):     agent-llm, agent-tools, agent-context, agent-memory
+Layer 4 (Infrastructure): agent-storage
+Cross-cutting:            agent-domain (所有层可依赖), agent-proto (L1 可依赖)
+Testing:                  agent-e2e
 ```
 
-**依赖方向**：只能由外向内。`agent-channel` 可以依赖 `agent-domain`，反过来不行。
+**依赖方向**：只能上层依赖下层，不可反向。`arch.rs` 自动检测违规。
 
 ## 架构约束（不可妥协）
 
-- Domain 定义 Port trait，适配器实现；依赖只能由外向内
-- `async trait`：`dyn Trait + async-trait`，`Arc<dyn Port + Send + Sync>`
+- Domain 定义 Port trait，适配器实现；依赖只能由上向下
+- Trait 按域分布：每个 capability crate 定义自己的 trait
+- `async trait`：`dyn Trait + async-trait`，`Arc<dyn Trait + Send + Sync>`
 - 显式错误处理，显式依赖注入
 - 单文件 ≤300 行（业务）/ ≤500 行（测试），单函数 ≤50 行
+- agent-server 是 Composition Root：4 层 DI 组装
 
-## CI 门禁（全部强制）
+## CI 门禁（全部强制，红 = 不能 merge）
 
 1. `cargo fmt --all -- --check`
-2. `cargo clippy --workspace -- -D warnings`
-3. `cargo test --workspace --test arch`（`crates/agent-e2e/tests/arch.rs`：架构依赖方向 + 文件大小检查）
+2. `cargo clippy --workspace --exclude agent-e2e -- -D warnings`
+3. `cargo test --workspace --test arch`（架构依赖方向 + 文件大小检查）
 4. `cargo check --workspace`
-5. `cargo test --workspace`（需要 DATABASE_URL）
-6. cargo-tarpaulin 覆盖率 ≥54%（棘轮，只升不降）
+5. `cargo test --workspace`（需要 DATABASE_URL，CI 用 PostgreSQL service container）
+6. cargo-tarpaulin 覆盖率门槛（见下方测试策略）
 7. 集成测试：`sqlx::test` + CI PostgreSQL service container
+
+## 测试策略（不可妥协）
+
+### 核心原则
+
+- **所有预期内的生产功能 feature 都必须有测试**，没有例外
+- 边界 case 优先级可以低一些，但核心链路 feature 全部要测到
+- 新功能必须有对应测试
+- 单元测试 + 集成测试（sqlx::test）共同计算覆盖率
+
+### 覆盖率目标
+
+- **长期目标：90%**（棘轮，只升不降）
+- 当前门槛：见 `.github/workflows/server-ci.yml` 中 THRESHOLD 值
+
+### 覆盖率白名单
+
+确实无法单测的文件可以排除在覆盖率计算之外。**白名单变更需要涂涂审批。**
+
+当前已审批白名单：
+
+| 文件 | 行数 | 理由 | 审批时间 |
+|------|------|------|---------|
+| `agent-server/src/lib.rs` | 92 | Composition Root：DI 组装 + DB migration + admin seed，纯启动胶水代码 | 2026-02-25 |
+| `*/src/main.rs` | ~8 | 入口文件 | 2026-02-25 |
+| `*/build.rs` | - | 构建脚本 | 2026-02-25 |
+| `*.pb.rs` | - | protobuf 生成代码 | 2026-02-25 |
+
+**不允许加白名单的**：有业务逻辑的文件（provider、handler、store 等）。这些必须通过 mock/stub 方式测试。
+
+### 测试分层
+
+- **单元测试**：每个 crate 内 `*_tests.rs`，测试纯逻辑
+- **集成测试**：`agent-storage` 内 `sqlx::test`，测试 DB 交互（本地 + CI 都要跑）
+- **e2e 测试**：`agent-e2e`，测试完整 gRPC 链路（需要 DATABASE_URL）
+- **架构测试**：`agent-e2e/tests/arch.rs`，自动检测依赖方向违规 + 文件大小
 
 ## 关键设计决策
 
-- **Port trait 注入**：`Arc<dyn PortTrait + Send + Sync>` 构造注入
-- **消息排序**：用 `sequence_num BIGSERIAL`（不用 `created_at`，秒级精度不够）
-- **JWT**：access_token + refresh_token（refresh 暂未实现）
-- **LLM**：OpenAI-compatible API，当前接 Kimi K2.5
-- **Migration 路径**：`crates/agent-storage/migrations/`，sqlx::test 用 `"./migrations"` 相对路径
+- **ADR-001**: 单二进制 + 模块（trait 边界支持未来拆分）
+- **ADR-002**: PostgreSQL only（结构化 + JSONB + 未来 pgvector）
+- **ADR-003**: gRPC（tonic），在 Application Service 层抽象
+- **ADR-004~008**: 数据模型、Agent Runtime、gRPC 接口、事件流、PromptSection
+- **事件流模型**: append-only EventStore，Session State = Fold(Event Stream)
+- **系统提示词**: session 创建时构建一次，ConfigChange 事件驱动更新
+- **LLM Provider**: 支持 fallback chain，当前接 OpenAI-compatible API
 
 ## 数据库 Schema
 
 ```sql
--- users
-id UUID PRIMARY KEY, email TEXT UNIQUE, password_hash TEXT, display_name TEXT, created_at/updated_at TIMESTAMPTZ
-
--- sessions
-id UUID PRIMARY KEY, user_id UUID FK, agent_id TEXT, title TEXT, summary TEXT, created_at/updated_at/last_message_at TIMESTAMPTZ, archived BOOLEAN
-
--- messages
-id UUID PRIMARY KEY, session_id UUID FK, role TEXT, content TEXT, created_at TIMESTAMPTZ, sequence_num BIGSERIAL
+-- users: id, email, password_hash, display_name, created_at, updated_at
+-- sessions: id, user_id, tenant_id, agent_id, title, summary, status, version,
+--           event_count, last_sequence, estimated_prompt_tokens,
+--           compacted_until_sequence, last_message_at, archived, created_at, updated_at
+-- messages: id, session_id, role, content, created_at, sequence_num
+-- events: event_id, session_id, sequence_number, event_type, payload(JSONB),
+--         tenant_id, user_id, created_at
 ```
-
-## 测试
-
-- 38 个测试（33 单元 + 5 集成），覆盖率 54%
-- 集成测试用 `#[sqlx::test]`，每个测试独立临时数据库
-- e2e 测试：`crates/agent-e2e`（Rust 原生 e2e，6 个核心场景，已替代旧 grpcurl shell 验收脚本）
 
 ## 本地开发
 
 ```bash
-# 环境变量
 export PATH="$HOME/.cargo/bin:$PATH"
-export DATABASE_URL="postgres://user:pass@127.0.0.1:5432/agentdemo"  # 实际凭证见 deploy/.env
+export DATABASE_URL="postgres://agentdemo:<password>@127.0.0.1:5432/agentdemo"  # 见 deploy/.env
 
-# 编译运行
-cd server && cargo build && cargo run
-
-# 测试
+# 编译 + 测试（含 storage 集成测试）
+cargo build
 cargo test --workspace
 
 # 质量检查
 cargo fmt --all -- --check
-cargo clippy --workspace -- -D warnings
+cargo clippy --workspace --exclude agent-e2e -- -D warnings
 cargo test --workspace --test arch
 ```
 
+## Merge 策略
+
+- **Merge commit**，不用 squash
+- feature/* → develop → main（develop→main 需涂涂确认）
+- 创建 feature 分支后立即开 PR（触发 CI）
+- merge 后删分支
+
 ## 设计文档
 
-详细架构设计见 `docs/design/`：
-- `principles.md` — 架构原则
-- `crate-structure.md` — Crate 划分设计
-- `ports/` — 核心 Port trait 精确定义
-- `core/agent-runtime-detail.md` — Agent Runtime 设计
-- `channel-system/port.md` — Channel Port trait
-- `error-types.md` — 错误类型体系
+`docs/design/` 下 11 个设计文档（~9500 行），按层组织：
+- `architecture.md` — 整体分层架构
+- `core/event-model.md` — 事件流数据模型
+- `capabilities/` — llm-provider, tool-system, context-builder, session-lifecycle
+- `orchestration/turn-executor.md` — Turn 编排
+- `infrastructure/` — grpc-layer, postgres-adapter
+- `decisions/` — ADR 001-008
+- `docs/research/` — 框架对比调研
 
 ## 进度追踪
 
