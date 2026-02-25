@@ -138,3 +138,66 @@ fn required_env(key: &str) -> Result<String, std::io::Error> {
         )
     })
 }
+
+/// Test-oriented server builder that accepts injected dependencies (mock LLM, etc.).
+pub struct ServerBuilder {
+    auth_service: Arc<AuthService>,
+    chat_handler: ChatServiceHandler,
+    session_handler: SessionServiceHandler,
+    addr: SocketAddr,
+}
+
+impl ServerBuilder {
+    pub fn new(
+        user_store: Arc<dyn agent_domain::AuthPort>,
+        llm: Arc<dyn LlmProvider>,
+        message_store: Arc<dyn agent_domain::MessageStore>,
+        jwt_secret: &str,
+        addr: SocketAddr,
+    ) -> Self {
+        let tools = build_tool_runtime();
+        let compaction = Arc::new(NoopCompactionService::new());
+        let turn_executor = Arc::new(TurnExecutor::new(
+            llm,
+            tools,
+            message_store.clone(),
+            compaction,
+            TurnExecutorConfig::default(),
+        ));
+        let auth_service = Arc::new(AuthService::new(user_store, jwt_secret.to_string()));
+        let chat_handler = ChatServiceHandler::new(turn_executor);
+        let session_handler = SessionServiceHandler::new(message_store);
+
+        Self {
+            auth_service,
+            chat_handler,
+            session_handler,
+            addr,
+        }
+    }
+
+    pub async fn serve_with_shutdown(
+        self,
+        shutdown: impl std::future::Future<Output = ()>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let auth_handler = AuthServiceHandler::new(self.auth_service.clone());
+        let chat_service = ChatServiceServer::with_interceptor(
+            self.chat_handler,
+            auth_interceptor(self.auth_service.clone()),
+        );
+        let session_service = SessionServiceServer::with_interceptor(
+            self.session_handler,
+            auth_interceptor(self.auth_service),
+        );
+        let auth_service = AuthServiceServer::new(auth_handler);
+
+        Server::builder()
+            .add_service(chat_service)
+            .add_service(session_service)
+            .add_service(auth_service)
+            .serve_with_shutdown(self.addr, shutdown)
+            .await?;
+
+        Ok(())
+    }
+}
