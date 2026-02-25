@@ -19,6 +19,9 @@ struct MockMessageStore {
     history: Arc<Mutex<Vec<StoredMessage>>>,
 }
 
+#[derive(Default)]
+struct FailingMessageStore;
+
 #[async_trait::async_trait]
 impl MessageStore for MockMessageStore {
     async fn create_session(&self, user_id: &str, _agent_id: &str) -> Result<String, StoreError> {
@@ -62,6 +65,34 @@ impl MessageStore for MockMessageStore {
 
     async fn get_or_create_default_session(&self, user_id: &str) -> Result<String, StoreError> {
         Ok(format!("session-{user_id}"))
+    }
+}
+
+#[async_trait::async_trait]
+impl MessageStore for FailingMessageStore {
+    async fn create_session(&self, _user_id: &str, _agent_id: &str) -> Result<String, StoreError> {
+        Err(StoreError::Internal("boom".to_string()))
+    }
+
+    async fn save_message(
+        &self,
+        _session_id: &str,
+        _role: &str,
+        _content: &str,
+    ) -> Result<String, StoreError> {
+        Err(StoreError::Internal("boom".to_string()))
+    }
+
+    async fn get_session_messages(
+        &self,
+        _session_id: &str,
+        _limit: i64,
+    ) -> Result<Vec<StoredMessage>, StoreError> {
+        Ok(vec![])
+    }
+
+    async fn get_or_create_default_session(&self, _user_id: &str) -> Result<String, StoreError> {
+        Err(StoreError::Internal("boom".to_string()))
     }
 }
 
@@ -275,4 +306,87 @@ async fn length_truncated() {
 
     assert_eq!(out.assistant_text, "partial");
     assert_eq!(out.finish_reason, TurnFinishReason::LengthTruncated);
+}
+
+#[tokio::test]
+async fn finish_reason_error_and_content_filter_fallback_to_stop() {
+    for reason in [FinishReason::Error, FinishReason::ContentFilter] {
+        let runtime = TurnExecutor::new(
+            Arc::new(MockLlmProvider::new(response_with(
+                reason,
+                "fallback",
+                vec![],
+            ))),
+            Arc::new(DefaultToolRuntime::new()),
+            Arc::new(MockMessageStore::default()),
+            Arc::new(NoopCompactionService::new()),
+            TurnExecutorConfig::default(),
+        );
+
+        let out = runtime
+            .run_turn(TurnInput {
+                user_id: "u1".to_string(),
+                session_id: Some("s1".to_string()),
+                user_message: "hi".to_string(),
+            })
+            .await
+            .expect("ok");
+
+        assert_eq!(out.finish_reason, TurnFinishReason::Stop);
+        assert_eq!(out.assistant_text, "fallback");
+    }
+}
+
+#[tokio::test]
+async fn resolves_default_session_when_input_session_id_missing_or_blank() {
+    let llm = Arc::new(MockLlmProvider::with_text("ok"));
+    let runtime = TurnExecutor::new(
+        llm,
+        Arc::new(DefaultToolRuntime::new()),
+        Arc::new(MockMessageStore::default()),
+        Arc::new(NoopCompactionService::new()),
+        TurnExecutorConfig::default(),
+    );
+
+    let out_missing = runtime
+        .run_turn(TurnInput {
+            user_id: "u1".to_string(),
+            session_id: None,
+            user_message: "hi".to_string(),
+        })
+        .await
+        .expect("ok");
+    assert_eq!(out_missing.session_id, "session-u1");
+
+    let out_blank = runtime
+        .run_turn(TurnInput {
+            user_id: "u1".to_string(),
+            session_id: Some("   ".to_string()),
+            user_message: "hi again".to_string(),
+        })
+        .await
+        .expect("ok");
+    assert_eq!(out_blank.session_id, "session-u1");
+}
+
+#[tokio::test]
+async fn store_errors_are_mapped_to_session_error() {
+    let runtime = TurnExecutor::new(
+        Arc::new(MockLlmProvider::with_text("unused")),
+        Arc::new(DefaultToolRuntime::new()),
+        Arc::new(FailingMessageStore),
+        Arc::new(NoopCompactionService::new()),
+        TurnExecutorConfig::default(),
+    );
+
+    let err = runtime
+        .run_turn(TurnInput {
+            user_id: "u1".to_string(),
+            session_id: None,
+            user_message: "hello".to_string(),
+        })
+        .await
+        .expect_err("store should fail");
+
+    assert!(matches!(err, TurnError::SessionError(_)));
 }
