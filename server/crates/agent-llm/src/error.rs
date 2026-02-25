@@ -38,3 +38,62 @@ impl LlmError {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::LlmError;
+
+    #[test]
+    fn is_retryable_matches_expected_variants() {
+        let retryable = [
+            LlmError::RateLimit,
+            LlmError::Timeout,
+            LlmError::ProviderDown,
+            LlmError::Transport("io".into()),
+        ];
+        for err in retryable {
+            assert!(err.is_retryable());
+        }
+
+        let non_retryable = [
+            LlmError::AuthError,
+            LlmError::InvalidRequest("bad".into()),
+            LlmError::InvalidResponse("bad".into()),
+            LlmError::UnsupportedCapability {
+                provider: "p".into(),
+                capability: "stream".into(),
+            },
+            LlmError::Internal("bug".into()),
+        ];
+        for err in non_retryable {
+            assert!(!err.is_retryable());
+        }
+    }
+
+    #[test]
+    fn is_fallbackable_matches_expected_variants() {
+        let fallbackable = [
+            LlmError::RateLimit,
+            LlmError::Timeout,
+            LlmError::ProviderDown,
+            LlmError::Transport("io".into()),
+        ];
+        for err in fallbackable {
+            assert!(err.is_fallbackable());
+        }
+
+        let non_fallbackable = [
+            LlmError::AuthError,
+            LlmError::InvalidRequest("bad".into()),
+            LlmError::InvalidResponse("bad".into()),
+            LlmError::UnsupportedCapability {
+                provider: "p".into(),
+                capability: "stream".into(),
+            },
+            LlmError::Internal("bug".into()),
+        ];
+        for err in non_fallbackable {
+            assert!(!err.is_fallbackable());
+        }
+    }
+}
