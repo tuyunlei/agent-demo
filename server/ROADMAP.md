@@ -71,7 +71,7 @@
 
 ### 第五步：接入层 + DI 重构
 
-- [ ] **R-08：agent-channel + agent-server 重构**
+- [x] **R-08：agent-channel + agent-server 重构** (PR #13)
   - Channel handler 只做协议转换（对齐 grpc-layer.md）
   - agent-server 作为 Composition Root 做 DI 组装
   - 错误码映射对齐设计
