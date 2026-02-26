@@ -1,8 +1,8 @@
 # agent-demo/server — 状态
 
-## Phase: review-pending
+## Phase: idle
 
-Docker Compose 部署完成，PR #18 待 merge。
+Docker Compose 部署完成，PR #18 已 merge 到 develop。
 
 ## 当前进度
 
@@ -10,14 +10,16 @@ Docker Compose 部署完成，PR #18 待 merge。
 - [x] 新架构设计文档（11 个任务全部完成）
 - [x] 代码重构对齐设计（R-01 ~ R-09 全部完成）
 - [x] 测试覆盖率提升：65% → 77.48%
-- [x] Docker Compose 部署（PR #18）
+- [x] Docker Compose 部署（PR #18 ✅ merged）
   - [x] Multi-stage Dockerfile（rust:1.88 → debian:bookworm-slim，~36MB）
   - [x] docker-compose.yml（postgres + server，可配置端口）
   - [x] PG_* 独立环境变量 + percent-encoding（Codex review 修复）
+  - [x] .dockerignore（排除 server/target/ 等，build context 从 20GB 降到 ~7MB）
+  - [x] 空环境变量处理（DATABASE_URL + PG_*）
+  - [x] pre-push hook（fmt + clippy + test）
   - [x] Preview 环境运行中：`preview-agent.xclz.org`
   - [x] Production 环境运行中：`agent.xclz.org`
   - [x] TLS 证书自动签发（Let's Encrypt via Caddy）
-  - [x] CI 绿 ✅
 
 ## 部署架构
 
@@ -31,7 +33,6 @@ Internet → :443 TLS → Caddy (host, shared) → localhost:50051/50052 h2c →
 
 ## 阻塞点
 
-- PR #18 merge 到 develop（CI 已绿，待确认）
 - develop → main merge 需要涂涂确认
 
 ---
