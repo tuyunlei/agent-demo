@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+export PATH="$HOME/.cargo/bin:$PATH"
+
+echo "🔍 Running pre-push checks..."
+
+cd server
+
+echo "  fmt..."
+cargo fmt --all -- --check
+
+echo "  clippy..."
+cargo clippy --workspace -- -D warnings
+
+echo "  test..."
+cargo test --workspace --exclude agent-e2e --exclude agent-storage
+
+echo "✅ All checks passed"
