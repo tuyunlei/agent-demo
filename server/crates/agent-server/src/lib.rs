@@ -187,12 +187,13 @@ fn percent_encode(input: &str) -> String {
 }
 
 fn required_env(key: &str) -> Result<String, std::io::Error> {
-    std::env::var(key).map_err(|_| {
-        std::io::Error::new(
+    match std::env::var(key) {
+        Ok(val) if !val.is_empty() => Ok(val),
+        _ => Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{key} environment variable is required"),
-        )
-    })
+            format!("{key} environment variable is required and must not be empty"),
+        )),
+    }
 }
 
 #[cfg(test)]
