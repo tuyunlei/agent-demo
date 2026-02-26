@@ -48,7 +48,9 @@ impl ServerConfig {
     /// Otherwise, build from individual `PG_*` variables with proper percent-encoding.
     fn resolve_database_url() -> Result<String, Box<dyn std::error::Error>> {
         if let Ok(url) = std::env::var("DATABASE_URL") {
-            return Ok(url);
+            if !url.is_empty() {
+                return Ok(url);
+            }
         }
 
         let user = required_env("PG_USER")?;

@@ -1,0 +1,5 @@
+server/target/
+mobile/
+.git/
+deploy/
+*.md
