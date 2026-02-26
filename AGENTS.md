@@ -33,6 +33,14 @@ agent-demo/
 - feature 分支创建后立即开 PR（触发 CI）
 - PR merge 后删除 feature 分支
 
+## 开发环境
+
+```bash
+git config core.hooksPath .githooks   # 启用 pre-push hook（fmt + clippy + test）
+```
+
+跳过 hook（紧急情况）：`git push --no-verify`
+
 ## 质量标准（不可妥协）
 
 - **CI 红 = 不能 merge**，没有例外

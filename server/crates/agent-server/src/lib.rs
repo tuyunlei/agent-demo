@@ -30,14 +30,38 @@ impl ServerConfig {
             .unwrap_or_else(|_| "127.0.0.1:50051".to_string())
             .parse()?;
 
+        let database_url = Self::resolve_database_url()?;
+
         Ok(Self {
-            database_url: required_env("DATABASE_URL")?,
+            database_url,
             jwt_secret: required_env("JWT_SECRET")?,
             llm_api_key: required_env("LLM_API_KEY")?,
             llm_base_url: required_env("LLM_BASE_URL")?,
             llm_model: required_env("LLM_MODEL")?,
             listen_addr,
         })
+    }
+
+    /// Resolve database URL from environment.
+    ///
+    /// If `DATABASE_URL` is set, use it directly (supports external databases).
+    /// Otherwise, build from individual `PG_*` variables with proper percent-encoding.
+    fn resolve_database_url() -> Result<String, Box<dyn std::error::Error>> {
+        if let Ok(url) = std::env::var("DATABASE_URL")
+            && !url.is_empty()
+        {
+            return Ok(url);
+        }
+
+        let user = required_env("PG_USER")?;
+        let password = required_env("PG_PASSWORD")?;
+        let host = std::env::var("PG_HOST").unwrap_or_else(|_| "localhost".to_string());
+        let port = std::env::var("PG_PORT").unwrap_or_else(|_| "5432".to_string());
+        let database = required_env("PG_DATABASE")?;
+
+        Ok(build_database_url(
+            &user, &password, &host, &port, &database,
+        ))
     }
 }
 
@@ -130,13 +154,78 @@ async fn ensure_admin_user_from_env(
     Ok(())
 }
 
+/// Build a PostgreSQL connection URL from individual components.
+///
+/// User and password are percent-encoded per RFC 3986 for URL safety.
+fn build_database_url(
+    user: &str,
+    password: &str,
+    host: &str,
+    port: &str,
+    database: &str,
+) -> String {
+    let user = percent_encode(user);
+    let password = percent_encode(password);
+    format!("postgres://{user}:{password}@{host}:{port}/{database}")
+}
+
+/// Percent-encode a string for use in a URI userinfo component (RFC 3986 §3.2.1).
+fn percent_encode(input: &str) -> String {
+    let mut encoded = String::with_capacity(input.len());
+    for byte in input.bytes() {
+        match byte {
+            // unreserved characters (RFC 3986 §2.3)
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                encoded.push(byte as char);
+            }
+            _ => {
+                encoded.push_str(&format!("%{byte:02X}"));
+            }
+        }
+    }
+    encoded
+}
+
 fn required_env(key: &str) -> Result<String, std::io::Error> {
-    std::env::var(key).map_err(|_| {
-        std::io::Error::new(
+    match std::env::var(key) {
+        Ok(val) if !val.is_empty() => Ok(val),
+        _ => Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("{key} environment variable is required"),
-        )
-    })
+            format!("{key} environment variable is required and must not be empty"),
+        )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn percent_encode_preserves_unreserved_chars() {
+        assert_eq!(percent_encode("hello"), "hello");
+        assert_eq!(percent_encode("user-name_1.0~test"), "user-name_1.0~test");
+    }
+
+    #[test]
+    fn percent_encode_encodes_special_chars() {
+        assert_eq!(percent_encode("p@ss:w/rd#1"), "p%40ss%3Aw%2Frd%231");
+        assert_eq!(percent_encode("a b"), "a%20b");
+    }
+
+    #[test]
+    fn build_database_url_encodes_special_chars() {
+        let url = build_database_url("user", "p@ss:w/rd", "db.example.com", "5433", "mydb");
+        assert_eq!(
+            url,
+            "postgres://user:p%40ss%3Aw%2Frd@db.example.com:5433/mydb"
+        );
+    }
+
+    #[test]
+    fn build_database_url_plain_credentials() {
+        let url = build_database_url("admin", "secret", "localhost", "5432", "testdb");
+        assert_eq!(url, "postgres://admin:secret@localhost:5432/testdb");
+    }
 }
 
 /// Test-oriented server builder that accepts injected dependencies (mock LLM, etc.).
