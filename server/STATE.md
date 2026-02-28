@@ -1,8 +1,8 @@
 # agent-demo/server — 状态
 
-## Phase: dev-pending
+## Phase: idle
 
-Lint 强化进行中。PR #22（阈值收紧）等 CI。
+Lint 强化全部完成（L-01~L-05 + 阈值收紧）。PRs #20, #21, #22 已 merge。
 
 ## 当前进度
 
@@ -12,9 +12,10 @@ Lint 强化进行中。PR #22（阈值收紧）等 CI。
 - [x] 测试覆盖率提升：65% → 85.96%（CI 阈值 85%）
 - [x] Docker Compose 部署（PR #18）
 - [x] Provider Capabilities（PR #19）
-- [x] **L-01~L-04：Lint 配置 + cast 审计 + unwrap 禁令 + 函数拆分**（PR #20 ✅ merged）
-- [x] **L-05：must_use 审计**（PR #21 ✅ merged）
-- [ ] **阈值收紧：30 行 / 复杂度 10**（PR #22 等 CI）
+- [x] **Lint 强化全部完成**（PRs #20, #21, #22）
+  - deny: cast_possible_truncation, cast_sign_loss, unwrap_used, too_many_lines, cognitive_complexity
+  - warn: cast_lossless, must_use_candidate
+  - 阈值：函数 ≤30 行，复杂度 ≤10
 
 ## 部署架构
 
@@ -31,4 +32,4 @@ Internet → :443 TLS → Caddy (host, shared) → localhost:50051/50052 h2c →
 
 ---
 
-*最后更新：2026-02-28 22:15 CST*
+*最后更新：2026-02-28 22:25 CST*
