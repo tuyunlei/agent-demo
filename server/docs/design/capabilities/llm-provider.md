@@ -165,6 +165,7 @@ pub struct LlmProviderCapabilities {
     pub supports_tools: bool,
     pub supports_vision: bool,
     pub supports_json_mode: bool,
+    pub supports_stateful: bool,
 }
 ```
 
@@ -280,6 +281,8 @@ pub struct ToolCall {
 pub struct LlmRequest {
     pub messages: Vec<ModelMessage>,
     pub tool_specs: Vec<ToolSpec>,
+    pub builtin_tools: Vec<String>,
+    pub previous_response_id: Option<String>,
     pub config: LlmRequestConfig,
     pub metadata: LlmRequestMetadata,
 }
@@ -302,6 +305,20 @@ pub struct LlmRequestMetadata {
     pub trace_id: Option<String>,
 }
 ```
+
+### 3.4.1 Stateful 模式
+
+编排层始终构造完整 `messages`，不因为 provider 是否支持 stateful 而改变调用接口。
+
+当 provider 声明 `supports_stateful = true` 时，可在请求中带上 `previous_response_id`，由 provider 侧利用该 ID 进行会话续接优化。
+
+回退到 stateless（不传 `previous_response_id`）的条件：
+
+1. system prompt 发生变更
+2. toolset（`tool_specs` 或 `builtin_tools`）发生变更
+3. model 发生变更
+
+若 provider 返回“response id 无效/不可用”等错误，编排层应在**同一 turn**降级为 stateless 重试一次（保持其它参数不变，仅移除 `previous_response_id`）。
 
 ### 3.5 响应模型
 

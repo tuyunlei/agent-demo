@@ -112,6 +112,7 @@ impl Tool for WebSearchTool {
                 "required": ["query"]
             }),
             strict: false,
+            execution_class: crate::ExecutionClass::Local,
         }
     }
 

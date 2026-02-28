@@ -4,6 +4,8 @@ use std::time::Duration;
 pub struct LlmRequest {
     pub messages: Vec<ModelMessage>,
     pub tool_specs: Vec<ToolSpec>,
+    pub builtin_tools: Vec<String>,
+    pub previous_response_id: Option<String>,
     pub config: LlmRequestConfig,
     pub metadata: LlmRequestMetadata,
 }
@@ -84,4 +86,5 @@ pub struct LlmProviderCapabilities {
     pub supports_tools: bool,
     pub supports_vision: bool,
     pub supports_json_mode: bool,
+    pub supports_stateful: bool,
 }

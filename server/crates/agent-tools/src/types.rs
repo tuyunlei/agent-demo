@@ -1,12 +1,22 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ExecutionClass {
+    #[default]
+    Local,
+    Remote,
+    ProviderBuiltin,
+    Client,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ToolSpec {
     pub name: String,
     pub description: String,
     pub parameters_schema: Value,
     pub strict: bool,
+    pub execution_class: ExecutionClass,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

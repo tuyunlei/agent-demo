@@ -95,6 +95,7 @@ mod tests {
                 description: "Echo input".to_string(),
                 parameters_schema: json!({"type": "object"}),
                 strict: false,
+                execution_class: crate::ExecutionClass::Local,
             }
         }
 
