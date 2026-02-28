@@ -134,13 +134,9 @@ impl AuthService {
         let access_exp = now + ACCESS_TOKEN_TTL_SECONDS;
         let refresh_exp = now + REFRESH_TOKEN_TTL_SECONDS;
 
-        let access_token = self
-            .sign_token(user_id, now, access_exp, "access")
-            .map_err(|_| AuthServiceError::TokenCreation)?;
+        let access_token = self.sign_token(user_id, now, access_exp, "access")?;
 
-        let refresh_token = self
-            .sign_token(user_id, now, refresh_exp, "refresh")
-            .map_err(|_| AuthServiceError::TokenCreation)?;
+        let refresh_token = self.sign_token(user_id, now, refresh_exp, "refresh")?;
 
         Ok(TokenPair {
             access_token,
@@ -156,13 +152,11 @@ impl AuthService {
         iat: i64,
         exp: i64,
         token_type: &str,
-    ) -> Result<String, jsonwebtoken::errors::Error> {
+    ) -> Result<String, AuthServiceError> {
         let claims = Claims {
             sub: user_id.to_string(),
-            // iat/exp are derived from `SystemTime::now()` and fixed positive TTLs,
-            // so negative values would indicate a programming/system clock bug.
-            exp: usize::try_from(exp).expect("JWT exp must be non-negative"),
-            iat: usize::try_from(iat).expect("JWT iat must be non-negative"),
+            exp: usize::try_from(exp).map_err(|_| AuthServiceError::TokenCreation)?,
+            iat: usize::try_from(iat).map_err(|_| AuthServiceError::TokenCreation)?,
             token_type: token_type.to_string(),
         };
 
@@ -171,6 +165,7 @@ impl AuthService {
             &claims,
             &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
         )
+        .map_err(|_| AuthServiceError::TokenCreation)
     }
 }
 
