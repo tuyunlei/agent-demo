@@ -1,136 +1,102 @@
-# server — Rust 服务端
+# server/ — 架构约束
 
-## 技术栈
+本文件是给所有在 `server/` 目录下工作的开发者（包括 sub-agent）的架构指南。
+改代码前先读这个文件。子目录下如果有自己的 AGENTS.md，也要读。
 
-- Rust 2024 edition（stable）/ Tokio / Tonic（gRPC）
-- PostgreSQL 16 + sqlx（compile-time checked queries）
-- 四层架构（Channel → Orchestration → Capability → Infrastructure）
+---
 
-## Crate 结构（四层 13 crate，严格 DAG）
+## 项目概述
+
+多租户 AI Agent 平台后端。Rust 单体，trait 边界保证未来可拆分。
+
+## 四层架构
 
 ```
-Layer 1 (Channel):        agent-channel, agent-server
-Layer 2 (Orchestration):  agent-orchestrator
-Layer 3 (Capability):     agent-llm, agent-tools, agent-context, agent-memory
-Layer 4 (Infrastructure): agent-storage
-Cross-cutting:            agent-domain (所有层可依赖), agent-proto (L1 可依赖)
-Testing:                  agent-e2e
+┌─ Channel（接入层）─────────────────────────────────┐
+│  协议转换 · 认证鉴权 · DTO ↔ Domain 映射            │
+│  crates: agent-server, agent-channel               │
+└────────────────────────┬───────────────────────────┘
+                         ▼
+┌─ Orchestration（编排层）───────────────────────────┐
+│  TurnExecutor · SessionLifecycle · turn 状态机       │
+│  crates: agent-orchestrator                         │
+└────────────────────────┬───────────────────────────┘
+                         ▼
+┌─ Capability（能力层）──────────────────────────────┐
+│  业务抽象 trait + 默认实现                           │
+│  crates: agent-domain, agent-context, agent-llm,    │
+│          agent-tools, agent-memory                   │
+└────────────────────────▲───────────────────────────┘
+                         │ implements traits
+┌─ Infrastructure（基础设施层）───────────────────────┐
+│  外部系统适配器，实现 Capability trait                │
+│  crates: agent-storage                              │
+└────────────────────────────────────────────────────┘
+
+Shared: agent-proto（协议生成代码）, agent-e2e（测试）
 ```
 
-**依赖方向**：只能上层依赖下层，不可反向。`arch.rs` 自动检测违规。
+## 依赖规则（硬约束，CI 架构测试强制执行）
 
-## 架构约束（不可妥协）
+**允许：**
+- Channel → Orchestration → Capability
+- Infrastructure → Capability
 
-- Domain 定义 Port trait，适配器实现；依赖只能由上向下
-- Trait 按域分布：每个 capability crate 定义自己的 trait
-- `async trait`：`dyn Trait + async-trait`，`Arc<dyn Trait + Send + Sync>`
-- 显式错误处理，显式依赖注入
-- 单文件 ≤300 行（业务）/ ≤500 行（测试），单函数 ≤50 行
-- agent-server 是 Composition Root：4 层 DI 组装
+**禁止：**
+- Orchestration → Infrastructure（编排层不能依赖具体实现）
+- Channel → Capability 或 Channel → Infrastructure（接入层不能绕过编排层）
+- Capability → Channel / Orchestration / Infrastructure（能力层不能反向依赖）
+- Infrastructure → Channel / Orchestration（基础设施不感知上层）
 
-## CI 门禁（全部强制，红 = 不能 merge）
+违反依赖方向 = CI 红 = 不能 merge。
 
-1. `cargo fmt --all -- --check`
-2. `cargo clippy --workspace --exclude agent-e2e -- -D warnings`
-3. `cargo test --workspace --test arch`（架构依赖方向 + 文件大小检查）
-4. `cargo check --workspace`
-5. `cargo test --workspace`（需要 DATABASE_URL，CI 用 PostgreSQL service container）
-6. cargo-tarpaulin 覆盖率门槛（见下方测试策略）
-7. 集成测试：`sqlx::test` + CI PostgreSQL service container
+## Crate 总表
 
-## 测试策略（不可妥协）
+| Crate | 层 | 一句话职责 |
+|---|---|---|
+| agent-server | Channel | 进程入口 + Composition Root（DI 在这里） |
+| agent-channel | Channel | 协议 handler + 鉴权 + DTO 转换 |
+| agent-orchestrator | Orchestration | TurnExecutor + AuthService + turn 流程编排 |
+| agent-domain | Capability | 领域模型：Event, Session, User, ports(trait) |
+| agent-context | Capability | ContextBuilder + PromptSection 组合 |
+| agent-llm | Capability | LlmProvider trait + provider adapter |
+| agent-tools | Capability | Tool trait + ToolRuntime + 内置工具 |
+| agent-memory | Capability | CompactionService trait + 策略 |
+| agent-storage | Infrastructure | PostgreSQL 适配器，实现 Capability port trait |
+| agent-proto | 共享 | protobuf 生成代码 |
+| agent-e2e | 测试 | 端到端 + 架构依赖测试 |
 
-### 核心原则
+## 关键设计决策（ADR 摘要）
 
-- **所有预期内的生产功能 feature 都必须有测试**，没有例外
-- 边界 case 优先级可以低一些，但核心链路 feature 全部要测到
+每条决策都有完整文档在 `docs/archive/design/decisions/`，这里只记结论。
+
+1. **单体部署**（ADR-001）— 一个 binary，trait 边界保留拆分能力
+2. **PostgreSQL 唯一存储**（ADR-002）— 结构化 + JSONB + 未来 pgvector；所有查询必须带 user_id
+3. **协议是实现细节**（ADR-003）— 不抽象传输层，抽象业务层；加新协议就加一个 handler
+4. **Append-only 事件流**（ADR-004/007）— 事件流是 source of truth，消息列表是投影
+5. **TurnExecutor + ContextBuilder 分离**（ADR-005）— 编排归编排，上下文归上下文
+6. **接入层只做协议转换**（ADR-006）— handler 禁止直连 DB/LLM/工具
+7. **PromptSection 可插拔**（ADR-008）— system prompt = section 组合，不是大字符串模板
+8. **Provider 能力统一接口**（ADR-009）— stateful/builtin tools/compaction 通过可选字段和元数据建模，不膨胀 trait
+
+## 事件类型（8 种）
+
+UserMessage · AssistantMessage · ToolCallRequest · ToolCallResult · SystemEvent · ConfigChange · CompactionMarker · Summary
+
+事件追加写入，不可变。压缩通过 Summary + CompactionMarker 表达，不改写历史。
+
+## 质量门禁
+
+- `cargo fmt` + `cargo clippy -- -D warnings` + `cargo test`（pre-push hook）
+- 覆盖率 ≥ 85%（CI tarpaulin）
+- 函数 ≤ 30 行，认知复杂度 ≤ 10
+- deny: `cast_possible_truncation`, `cast_sign_loss`, `unwrap_used`, `too_many_lines`, `cognitive_complexity`
+- warn: `cast_lossless`, `must_use_candidate`
+- 生产代码禁止 `unwrap()`/`expect()` 用于可能失败的操作
 - 新功能必须有对应测试
-- 单元测试 + 集成测试（sqlx::test）共同计算覆盖率
 
-### 覆盖率目标
+## 安全约束
 
-- **长期目标：90%**（棘轮，只升不降）
-- 当前门槛：见 `.github/workflows/server-ci.yml` 中 THRESHOLD 值
-
-### 覆盖率白名单
-
-确实无法单测的文件可以排除在覆盖率计算之外。**白名单变更需要涂涂审批。**
-
-当前已审批白名单：
-
-| 文件 | 行数 | 理由 | 审批时间 |
-|------|------|------|---------|
-| `agent-server/src/lib.rs` | 92 | Composition Root：DI 组装 + DB migration + admin seed，纯启动胶水代码 | 2026-02-25 |
-| `*/src/main.rs` | ~8 | 入口文件 | 2026-02-25 |
-| `*/build.rs` | - | 构建脚本 | 2026-02-25 |
-| `*.pb.rs` | - | protobuf 生成代码 | 2026-02-25 |
-
-**不允许加白名单的**：有业务逻辑的文件（provider、handler、store 等）。这些必须通过 mock/stub 方式测试。
-
-### 测试分层
-
-- **单元测试**：每个 crate 内 `*_tests.rs`，测试纯逻辑
-- **集成测试**：`agent-storage` 内 `sqlx::test`，测试 DB 交互（本地 + CI 都要跑）
-- **e2e 测试**：`agent-e2e`，测试完整 gRPC 链路（需要 DATABASE_URL）
-- **架构测试**：`agent-e2e/tests/arch.rs`，自动检测依赖方向违规 + 文件大小
-
-## 关键设计决策
-
-- **ADR-001**: 单二进制 + 模块（trait 边界支持未来拆分）
-- **ADR-002**: PostgreSQL only（结构化 + JSONB + 未来 pgvector）
-- **ADR-003**: gRPC（tonic），在 Application Service 层抽象
-- **ADR-004~008**: 数据模型、Agent Runtime、gRPC 接口、事件流、PromptSection
-- **事件流模型**: append-only EventStore，Session State = Fold(Event Stream)
-- **系统提示词**: session 创建时构建一次，ConfigChange 事件驱动更新
-- **LLM Provider**: 支持 fallback chain，当前接 OpenAI-compatible API
-
-## 数据库 Schema
-
-```sql
--- users: id, email, password_hash, display_name, created_at, updated_at
--- sessions: id, user_id, tenant_id, agent_id, title, summary, status, version,
---           event_count, last_sequence, estimated_prompt_tokens,
---           compacted_until_sequence, last_message_at, archived, created_at, updated_at
--- messages: id, session_id, role, content, created_at, sequence_num
--- events: event_id, session_id, sequence_number, event_type, payload(JSONB),
---         tenant_id, user_id, created_at
-```
-
-## 本地开发
-
-```bash
-export PATH="$HOME/.cargo/bin:$PATH"
-export DATABASE_URL="postgres://agentdemo:<password>@127.0.0.1:5432/agentdemo"  # 见 deploy/.env
-
-# 编译 + 测试（含 storage 集成测试）
-cargo build
-cargo test --workspace
-
-# 质量检查
-cargo fmt --all -- --check
-cargo clippy --workspace --exclude agent-e2e -- -D warnings
-cargo test --workspace --test arch
-```
-
-## Merge 策略
-
-- **Merge commit**，不用 squash
-- feature/* → develop → main（develop→main 需涂涂确认）
-- 创建 feature 分支后立即开 PR（触发 CI）
-- merge 后删分支
-
-## 设计文档
-
-`docs/design/` 下 11 个设计文档（~9500 行），按层组织：
-- `architecture.md` — 整体分层架构
-- `core/event-model.md` — 事件流数据模型
-- `capabilities/` — llm-provider, tool-system, context-builder, session-lifecycle
-- `orchestration/turn-executor.md` — Turn 编排
-- `infrastructure/` — grpc-layer, postgres-adapter
-- `decisions/` — ADR 001-008
-- `docs/research/` — 框架对比调研
-
-## 进度追踪
-
-- `ROADMAP.md` — 完整任务列表和状态
-- `STATE.md` — 当前 phase 和活跃任务
+- JWT secret + 密码 = 环境变量，禁止硬编码
+- 仓库是 public 的 — 禁止提交 IP、密码、API key、内部域名
+- 多租户查询必须带 tenant/user 维度过滤
