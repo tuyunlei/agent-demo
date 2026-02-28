@@ -114,3 +114,8 @@ UserMessage · AssistantMessage · ToolCallRequest · ToolCallResult · SystemEv
 - 修了 bug 且根因涉及架构理解
 
 不确定要不要记？记。宁可多记一条以后删掉，不要漏掉重要的东西。
+
+**更新哪个层级？**
+- 改了某个文件 → 更新该文件所在目录的 AGENTS.md（如果有的话），没有就往上找最近的
+- 发现的问题影响整个 crate → 更新 crate 根目录的 AGENTS.md
+- 发现的问题影响跨 crate 的架构约束 → 更新 `server/AGENTS.md`
