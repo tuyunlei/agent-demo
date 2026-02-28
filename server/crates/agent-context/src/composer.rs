@@ -5,6 +5,7 @@ pub struct SystemPromptComposer {
 }
 
 impl SystemPromptComposer {
+    #[must_use]
     pub fn new(sections: Vec<Box<dyn PromptSection>>) -> Self {
         Self { sections }
     }

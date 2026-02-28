@@ -17,6 +17,7 @@ pub struct ChatServiceHandler {
 }
 
 impl ChatServiceHandler {
+    #[must_use]
     pub fn new(runtime: Arc<TurnExecutor>) -> Self {
         Self { runtime }
     }

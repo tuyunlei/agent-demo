@@ -24,6 +24,7 @@ pub enum LlmError {
 }
 
 impl LlmError {
+    #[must_use]
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
@@ -31,6 +32,7 @@ impl LlmError {
         )
     }
 
+    #[must_use]
     pub fn is_fallbackable(&self) -> bool {
         matches!(
             self,

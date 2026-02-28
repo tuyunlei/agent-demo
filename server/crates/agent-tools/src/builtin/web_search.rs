@@ -14,6 +14,7 @@ pub struct WebSearchTool {
 }
 
 impl WebSearchTool {
+    #[must_use]
     pub fn new(api_key: Option<String>) -> Self {
         Self {
             http_client: Client::new(),
@@ -21,6 +22,7 @@ impl WebSearchTool {
         }
     }
 
+    #[must_use]
     pub fn from_env() -> Self {
         Self::new(std::env::var("BRAVE_SEARCH_API_KEY").ok())
     }
