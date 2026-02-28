@@ -100,3 +100,17 @@ UserMessage · AssistantMessage · ToolCallRequest · ToolCallResult · SystemEv
 - JWT secret + 密码 = 环境变量，禁止硬编码
 - 仓库是 public 的 — 禁止提交 IP、密码、API key、内部域名
 - 多租户查询必须带 tenant/user 维度过滤
+
+## AGENTS.md 维护
+
+每个 crate 和关键子目录都有自己的 AGENTS.md。这是活的记忆，不是一次性文档。
+
+**读**：改代码前先读对应目录的 AGENTS.md。
+
+**写**：改完代码后，如果遇到以下情况，更新对应的 AGENTS.md：
+- 新增、删除或重命名了公共接口
+- 踩了坑或发现了不明显的约束
+- 做了设计决策（为什么选 A 不选 B）
+- 修了 bug 且根因涉及架构理解
+
+不确定要不要记？记。宁可多记一条以后删掉，不要漏掉重要的东西。
