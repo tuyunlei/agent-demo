@@ -36,6 +36,8 @@ pub fn map_from_domain_request(request: domain::LlmRequest, default_model: &str)
                 strict: false,
             })
             .collect(),
+        builtin_tools: vec![],
+        previous_response_id: None,
         config: LlmRequestConfig {
             model: request.model.unwrap_or_else(|| default_model.to_string()),
             temperature: request.temperature,

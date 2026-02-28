@@ -203,6 +203,7 @@ impl LlmProvider for OpenAiProvider {
             supports_tools: true,
             supports_vision: false,
             supports_json_mode: true,
+            supports_stateful: false,
         }
     }
 }

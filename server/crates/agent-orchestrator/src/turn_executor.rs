@@ -90,6 +90,8 @@ impl TurnExecutor {
                     .iter()
                     .map(domain_tool_spec_to_llm_spec)
                     .collect::<Vec<_>>(),
+                builtin_tools: vec![],
+                previous_response_id: None,
                 config: LlmRequestConfig {
                     model: "mock".to_string(),
                     temperature: None,

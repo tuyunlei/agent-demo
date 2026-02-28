@@ -24,6 +24,8 @@ fn build_request_body_uses_default_model_and_serializes_tools_json_mode() {
             parameters_schema: json!({"type":"object"}),
             strict: true,
         }],
+        builtin_tools: vec![],
+        previous_response_id: None,
         config: LlmRequestConfig {
             model: String::new(),
             temperature: Some(0.3),
@@ -69,6 +71,8 @@ fn build_request_body_preserves_explicit_model_and_message_tool_calls() {
             tool_call_id: Some("tool_call_1".into()),
         }],
         tool_specs: vec![],
+        builtin_tools: vec![],
+        previous_response_id: None,
         config: LlmRequestConfig {
             model: "gpt-4o".into(),
             temperature: None,
@@ -111,6 +115,8 @@ fn build_request_body_without_tools_keeps_temperature() {
             tool_call_id: None,
         }],
         tool_specs: vec![],
+        builtin_tools: vec![],
+        previous_response_id: None,
         config: LlmRequestConfig {
             model: String::new(),
             temperature: Some(0.7),
@@ -149,6 +155,8 @@ fn build_request_body_with_tools_allows_none_temperature() {
             parameters_schema: json!({"type":"object"}),
             strict: false,
         }],
+        builtin_tools: vec![],
+        previous_response_id: None,
         config: LlmRequestConfig {
             model: "gpt-4o".into(),
             temperature: None,

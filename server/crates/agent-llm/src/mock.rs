@@ -134,6 +134,8 @@ impl domain::LlmProvider for MockLlmProvider {
                     strict: false,
                 })
                 .collect(),
+            builtin_tools: vec![],
+            previous_response_id: None,
             config: LlmRequestConfig {
                 model: request.model.unwrap_or_else(|| "mock".to_string()),
                 temperature: request.temperature,

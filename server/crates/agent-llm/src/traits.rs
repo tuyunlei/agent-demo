@@ -59,6 +59,8 @@ mod tests {
                 tool_call_id: None,
             }],
             tool_specs: vec![],
+            builtin_tools: vec![],
+            previous_response_id: None,
             config: LlmRequestConfig {
                 model: String::new(),
                 temperature: None,
