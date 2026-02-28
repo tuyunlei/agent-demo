@@ -726,6 +726,8 @@ pub async fn run_turn(&self, turn_ctx: TurnContext) -> Result<TurnOutcome, TurnE
         let llm_resp = self.llm.complete(LlmRequest {
             messages: self.context.build_messages(&turn_ctx)?,
             tool_specs,
+            builtin_tools: vec![],
+            previous_response_id: None,
             config: turn_ctx.llm_config.clone(),
             metadata: turn_ctx.llm_meta.clone(),
         }).await?;
