@@ -44,7 +44,7 @@ impl DefaultToolRuntime {
 
         if let Some(timeout_ms) = input.timeout_ms {
             let run = tool.execute(input);
-            match tokio::time::timeout(std::time::Duration::from_millis(timeout_ms as u64), run)
+            match tokio::time::timeout(std::time::Duration::from_millis(u64::from(timeout_ms)), run)
                 .await
             {
                 Ok(result) => result,

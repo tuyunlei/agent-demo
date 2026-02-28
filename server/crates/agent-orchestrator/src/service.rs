@@ -134,13 +134,9 @@ impl AuthService {
         let access_exp = now + ACCESS_TOKEN_TTL_SECONDS;
         let refresh_exp = now + REFRESH_TOKEN_TTL_SECONDS;
 
-        let access_token = self
-            .sign_token(user_id, now, access_exp, "access")
-            .map_err(|_| AuthServiceError::TokenCreation)?;
+        let access_token = self.sign_token(user_id, now, access_exp, "access")?;
 
-        let refresh_token = self
-            .sign_token(user_id, now, refresh_exp, "refresh")
-            .map_err(|_| AuthServiceError::TokenCreation)?;
+        let refresh_token = self.sign_token(user_id, now, refresh_exp, "refresh")?;
 
         Ok(TokenPair {
             access_token,
@@ -156,11 +152,11 @@ impl AuthService {
         iat: i64,
         exp: i64,
         token_type: &str,
-    ) -> Result<String, jsonwebtoken::errors::Error> {
+    ) -> Result<String, AuthServiceError> {
         let claims = Claims {
             sub: user_id.to_string(),
-            exp: exp as usize,
-            iat: iat as usize,
+            exp: usize::try_from(exp).map_err(|_| AuthServiceError::TokenCreation)?,
+            iat: usize::try_from(iat).map_err(|_| AuthServiceError::TokenCreation)?,
             token_type: token_type.to_string(),
         };
 
@@ -169,6 +165,7 @@ impl AuthService {
             &claims,
             &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
         )
+        .map_err(|_| AuthServiceError::TokenCreation)
     }
 }
 
@@ -184,7 +181,9 @@ fn current_unix_seconds() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("system clock should be after UNIX_EPOCH")
-        .as_secs() as i64
+        .as_secs()
+        .try_into()
+        .expect("unix seconds must fit in i64")
 }
 
 #[cfg(test)]

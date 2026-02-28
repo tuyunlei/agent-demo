@@ -41,57 +41,71 @@ impl OpenAiProvider {
     }
 
     fn build_request_body(&self, request: LlmRequest) -> OpenAiChatCompletionRequest {
+        let model = self.resolve_model(request.config.model.clone());
+        let messages = Self::map_messages(request.messages);
+        let tools = Self::map_tools(request.tool_specs);
+
         OpenAiChatCompletionRequest {
-            model: if request.config.model.is_empty() {
-                self.default_model.clone()
-            } else {
-                request.config.model
-            },
-            messages: request
-                .messages
-                .into_iter()
-                .map(|m| OpenAiMessage {
-                    role: m.role,
-                    content: m.content,
-                    tool_calls: m.tool_calls.map(|calls| {
-                        calls
-                            .into_iter()
-                            .map(|call| OpenAiToolCall {
-                                id: call.call_id,
-                                call_type: "function".to_string(),
-                                function: OpenAiFunctionCall {
-                                    name: call.name,
-                                    arguments: call.arguments,
-                                },
-                            })
-                            .collect()
-                    }),
-                    tool_call_id: m.tool_call_id,
-                })
-                .collect(),
+            model,
+            messages,
             temperature: request.config.temperature,
             top_p: request.config.top_p,
             max_tokens: request.config.max_tokens,
-            tools: (!request.tool_specs.is_empty()).then(|| {
-                request
-                    .tool_specs
-                    .into_iter()
-                    .map(|tool| OpenAiToolSpec {
-                        tool_type: "function".to_string(),
-                        function: OpenAiFunctionSpec {
-                            name: tool.name,
-                            description: tool.description,
-                            parameters: tool.parameters_schema,
-                            strict: tool.strict,
-                        },
-                    })
-                    .collect()
-            }),
+            tools,
             response_format: request
                 .config
                 .json_mode
                 .then_some(OpenAiResponseFormat::json_object()),
         }
+    }
+
+    fn resolve_model(&self, model: String) -> String {
+        if model.is_empty() {
+            self.default_model.clone()
+        } else {
+            model
+        }
+    }
+
+    fn map_messages(messages: Vec<crate::types::ModelMessage>) -> Vec<OpenAiMessage> {
+        messages
+            .into_iter()
+            .map(|m| OpenAiMessage {
+                role: m.role,
+                content: m.content,
+                tool_calls: m.tool_calls.map(|calls| {
+                    calls
+                        .into_iter()
+                        .map(|call| OpenAiToolCall {
+                            id: call.call_id,
+                            call_type: "function".to_string(),
+                            function: OpenAiFunctionCall {
+                                name: call.name,
+                                arguments: call.arguments,
+                            },
+                        })
+                        .collect()
+                }),
+                tool_call_id: m.tool_call_id,
+            })
+            .collect()
+    }
+
+    fn map_tools(tool_specs: Vec<crate::types::ToolSpec>) -> Option<Vec<OpenAiToolSpec>> {
+        (!tool_specs.is_empty()).then(|| {
+            tool_specs
+                .into_iter()
+                .map(|tool| OpenAiToolSpec {
+                    tool_type: "function".to_string(),
+                    function: OpenAiFunctionSpec {
+                        name: tool.name,
+                        description: tool.description,
+                        parameters: tool.parameters_schema,
+                        strict: tool.strict,
+                    },
+                })
+                .collect()
+        })
     }
 
     fn parse_success_body(body: &str) -> Result<LlmResponse, LlmError> {

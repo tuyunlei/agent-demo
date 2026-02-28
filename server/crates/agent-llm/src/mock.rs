@@ -100,6 +100,7 @@ impl LlmProvider for MockLlmProvider {
 
 #[async_trait::async_trait]
 impl domain::LlmProvider for MockLlmProvider {
+    #[allow(clippy::too_many_lines)] // Test mock — splitting would reduce readability.
     async fn generate(
         &self,
         request: domain::LlmRequest,

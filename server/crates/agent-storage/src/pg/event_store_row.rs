@@ -20,6 +20,10 @@ pub fn i64_to_u64(value: i64) -> Result<u64, EventStoreError> {
     u64::try_from(value).map_err(|e| EventStoreError::Database(e.to_string()))
 }
 
+pub fn i32_to_u32(value: i32) -> Result<u32, EventStoreError> {
+    u32::try_from(value).map_err(|e| EventStoreError::Database(e.to_string()))
+}
+
 pub fn row_to_event(row: PgRow) -> Result<EventEnvelope, EventStoreError> {
     let payload_json: serde_json::Value = row.try_get("payload").map_err(db)?;
     let payload = serde_json::from_value::<EventPayload>(payload_json).map_err(db)?;
@@ -35,6 +39,8 @@ pub fn row_to_event(row: PgRow) -> Result<EventEnvelope, EventStoreError> {
                 .map_err(db)?
                 .to_string(),
             sequence_number: i64_to_u64(row.try_get("sequence_number").map_err(db)?)?,
+            // TODO: migrate `events.timestamp_ms` from DOUBLE PRECISION to BIGINT to avoid float->int conversion.
+            #[allow(clippy::cast_possible_truncation)]
             timestamp_ms: row.try_get::<f64, _>("timestamp_ms").map_err(db)? as i64,
             causation_id: None,
             correlation_id: None,
@@ -65,7 +71,8 @@ pub fn row_to_session(row: PgRow) -> Result<Session, EventStoreError> {
         estimated_prompt_tokens: row
             .try_get::<Option<i32>, _>("estimated_prompt_tokens")
             .map_err(db)?
-            .map(|v| v as u32),
+            .map(i32_to_u32)
+            .transpose()?,
         estimated_tokens_after_compaction: None,
         compacted_until_sequence: row
             .try_get::<Option<i64>, _>("compacted_until_sequence")

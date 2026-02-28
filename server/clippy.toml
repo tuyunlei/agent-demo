@@ -1,7 +1,8 @@
-# QG10: 认知复杂度阈值
-# 超过此值 clippy 会报 warning（配合 -D warnings 变为 error）
-cognitive-complexity-threshold = 10
+# Clippy configuration for agent-demo
+# See: https://doc.rust-lang.org/clippy/configuration.html
 
-# QG14: 函数行数阈值（有效行，不含空行和注释）
-# 替代 check-file-size.sh 中的函数行数检查
+# Functions longer than this trigger clippy::too_many_lines
 too-many-lines-threshold = 50
+
+# Functions more complex than this trigger clippy::cognitive_complexity
+cognitive-complexity-threshold = 25
