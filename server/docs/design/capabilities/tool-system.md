@@ -285,6 +285,16 @@ pub struct ToolSpec {
     pub description: String,
     pub parameters_schema: serde_json::Value,
     pub strict: bool,
+    pub execution_class: ExecutionClass,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ExecutionClass {
+    #[default]
+    Local,
+    Remote,
+    ProviderBuiltin,
+    Client,
 }
 ```
 
@@ -451,6 +461,22 @@ fn bootstrap_tools(runtime: &mut dyn ToolRuntime, infra: &InfraDeps) {
 - 区分仅体现在**实现归属和依赖来源**
 - 对 TurnExecutor/LLM 来说，都是 `ToolSpec + ToolCall + ToolResult`
 - 避免 “内置一套接口、扩展另一套接口” 的双轨系统
+
+### 5.4 内置工具与执行位置
+
+Provider 内置工具（例如 provider 侧 `web_search`）不经过 `ToolRuntime` 执行链路。
+
+这类工具在 `LlmRequest.builtin_tools` 中声明即可，由 provider 侧自行执行并把结果注入模型上下文。
+
+`ToolSpec.execution_class` 是轻量元数据，主要用于审计、策略检查与可观测性标注：
+
+- `Local`：本服务执行
+- `Remote`：外部远端服务执行
+- `ProviderBuiltin`：provider 内置执行
+- `Client`：客户端执行
+
+注意：编排层不依赖 `execution_class` 做主流程分支。主流程仍以统一 tool loop 为核心，`execution_class` 只作为附加信息。
+
 
 ---
 

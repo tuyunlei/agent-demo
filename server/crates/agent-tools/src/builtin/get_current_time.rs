@@ -30,6 +30,7 @@ impl Tool for GetCurrentTimeTool {
                 "required": []
             }),
             strict: false,
+            execution_class: crate::ExecutionClass::Local,
         }
     }
 

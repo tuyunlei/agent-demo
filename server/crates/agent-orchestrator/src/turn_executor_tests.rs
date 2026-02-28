@@ -5,7 +5,8 @@ use agent_llm::mock::MockLlmProvider;
 use agent_llm::types::{FinishReason, LlmResponse, LlmUsage, ToolCall};
 use agent_memory::NoopCompactionService;
 use agent_tools::{
-    DefaultToolRuntime, Tool, ToolError, ToolInput, ToolOutput, ToolRuntime, ToolSpec,
+    DefaultToolRuntime, ExecutionClass, Tool, ToolError, ToolInput, ToolOutput, ToolRuntime,
+    ToolSpec,
 };
 use async_trait::async_trait;
 use serde_json::json;
@@ -106,6 +107,7 @@ impl Tool for EchoTool {
             description: "echo".to_string(),
             parameters_schema: json!({"type": "object"}),
             strict: false,
+            execution_class: ExecutionClass::Local,
         }
     }
 

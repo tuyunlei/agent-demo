@@ -7,4 +7,4 @@ pub mod types;
 pub use error::ToolError;
 pub use runtime::{DefaultToolRuntime, ToolCallResult, ToolRuntime};
 pub use tool::{Tool, ToolInput, ToolOutput};
-pub use types::{ToolCall, ToolResult, ToolSpec};
+pub use types::{ExecutionClass, ToolCall, ToolResult, ToolSpec};
