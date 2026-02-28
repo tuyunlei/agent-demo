@@ -951,6 +951,22 @@ fn assemble_with_compaction(events: &[EventEnvelope], policy: &MappingPolicy) ->
 - 仅使用最新摘要
 - 其余摘要不注入
 
+### 6.8 Compaction 分层
+
+`CompactionService` 可以有两类实现，并通过同一接口对上层暴露：
+
+1. `ProviderCompaction`：委托 provider 原生 compaction 能力
+2. `SelfCompaction`：服务端自建 summary（规则/模型均可）
+
+同一 turn 内两种路径互斥，只能选择其中一条，避免重复压缩或冲突摘要。
+
+为保证审计与回放可解释性，Summary event 增加 `source` 字段用于区分来源，例如：
+
+- `source = "provider"`
+- `source = "self"`
+
+上层 ContextBuilder 仅消费统一 Summary 事件，不关心具体压缩实现细节。
+
 ### 6.7 与事件模型一致性
 
 与 `event-model.md` 对齐：
