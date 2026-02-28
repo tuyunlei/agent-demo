@@ -2,24 +2,21 @@
 
 ## Phase: idle
 
-Docker Compose 部署完成，PR #18 已 merge 到 develop。
+PR #19 (Provider Capabilities) merged。Lint 强化 ROADMAP 已规划（L-01 ~ L-05）。
 
 ## 当前进度
 
 - [x] 框架分层架构源码调研
 - [x] 新架构设计文档（11 个任务全部完成）
 - [x] 代码重构对齐设计（R-01 ~ R-09 全部完成）
-- [x] 测试覆盖率提升：65% → 77.48%
-- [x] Docker Compose 部署（PR #18 ✅ merged）
-  - [x] Multi-stage Dockerfile（rust:1.88 → debian:bookworm-slim，~36MB）
-  - [x] docker-compose.yml（postgres + server，可配置端口）
-  - [x] PG_* 独立环境变量 + percent-encoding（Codex review 修复）
-  - [x] .dockerignore（排除 server/target/ 等，build context 从 20GB 降到 ~7MB）
-  - [x] 空环境变量处理（DATABASE_URL + PG_*）
-  - [x] pre-push hook（fmt + clippy + test）
-  - [x] Preview 环境运行中：`preview-agent.xclz.org`
-  - [x] Production 环境运行中：`agent.xclz.org`
-  - [x] TLS 证书自动签发（Let's Encrypt via Caddy）
+- [x] 测试覆盖率提升：65% → 85.96%（CI 阈值 85%）
+- [x] Docker Compose 部署（PR #18）
+- [x] Provider Capabilities（PR #19）— stateful API、builtin tools、compaction layering、ADR-009
+- [ ] **Lint 强化**（L-01 ~ L-05）— 待开始
+
+## 下一步
+
+L-01（lint 配置骨架）→ L-02（cast 审计）→ L-03（unwrap 禁令）→ L-04（拆分大函数）→ L-05（must_use 审计）
 
 ## 部署架构
 
@@ -29,7 +26,6 @@ Internet → :443 TLS → Caddy (host, shared) → localhost:50051/50052 h2c →
 
 - Preview: `preview-agent.xclz.org` → localhost:50051
 - Production: `agent.xclz.org` → localhost:50052
-- Caddy 独立于项目，作为共享基础设施运行
 
 ## 阻塞点
 
@@ -37,4 +33,4 @@ Internet → :443 TLS → Caddy (host, shared) → localhost:50051/50052 h2c →
 
 ---
 
-*最后更新：2026-02-26*
+*最后更新：2026-02-28*
