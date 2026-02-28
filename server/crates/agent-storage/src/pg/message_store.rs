@@ -35,6 +35,7 @@ struct MessageRow {
 }
 
 impl PostgresMessageStore {
+    #[must_use]
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }

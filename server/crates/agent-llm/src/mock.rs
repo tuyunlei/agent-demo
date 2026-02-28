@@ -17,6 +17,7 @@ pub struct MockLlmProvider {
 }
 
 impl MockLlmProvider {
+    #[must_use]
     pub fn new(response: Result<LlmResponse, LlmError>) -> Self {
         Self {
             response: Arc::new(Mutex::new(response)),
@@ -25,6 +26,7 @@ impl MockLlmProvider {
         }
     }
 
+    #[must_use]
     pub fn with_tool_call_sequence(responses: Vec<Result<LlmResponse, LlmError>>) -> Self {
         Self {
             response: Arc::new(Mutex::new(Ok(default_response("mock")))),
@@ -33,10 +35,12 @@ impl MockLlmProvider {
         }
     }
 
+    #[must_use]
     pub fn with_text(text: &str) -> Self {
         Self::new(Ok(default_response(text)))
     }
 
+    #[must_use]
     pub fn calls(&self) -> Vec<LlmRequest> {
         self.calls
             .lock()

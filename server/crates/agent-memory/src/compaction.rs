@@ -34,6 +34,7 @@ pub struct NoopCompactionService {
 }
 
 impl NoopCompactionService {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             policy: CompactionPolicy::default(),

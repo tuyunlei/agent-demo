@@ -31,6 +31,7 @@ pub struct DefaultToolRuntime {
 }
 
 impl DefaultToolRuntime {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

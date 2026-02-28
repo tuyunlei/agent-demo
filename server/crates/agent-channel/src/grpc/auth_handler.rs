@@ -16,6 +16,7 @@ pub struct AuthServiceHandler {
 }
 
 impl AuthServiceHandler {
+    #[must_use]
     pub fn new(auth_service: Arc<AuthService>) -> Self {
         Self { auth_service }
     }

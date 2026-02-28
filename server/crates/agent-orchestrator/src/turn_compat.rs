@@ -4,6 +4,7 @@ use agent_tools::{ToolError, ToolInput, ToolOutput};
 use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::Tz;
 
+#[must_use]
 pub fn chat_message_to_model_message(msg: &ChatMessage) -> ModelMessage {
     ModelMessage {
         role: msg.role.clone(),
@@ -22,6 +23,7 @@ pub fn chat_message_to_model_message(msg: &ChatMessage) -> ModelMessage {
     }
 }
 
+#[must_use]
 pub fn llm_tool_call_to_tool_input(call: &LlmToolCall) -> ToolInput {
     ToolInput {
         request_id: call.call_id.clone(),
@@ -31,6 +33,7 @@ pub fn llm_tool_call_to_tool_input(call: &LlmToolCall) -> ToolInput {
     }
 }
 
+#[must_use]
 pub fn tool_output_to_chat_message(call_id: &str, output: &ToolOutput) -> ChatMessage {
     ChatMessage {
         role: "tool".to_string(),
@@ -40,6 +43,7 @@ pub fn tool_output_to_chat_message(call_id: &str, output: &ToolOutput) -> ChatMe
     }
 }
 
+#[must_use]
 pub fn domain_tool_spec_to_llm_spec(spec: &DomainToolSpec) -> LlmToolSpec {
     LlmToolSpec {
         name: spec.name.clone(),
@@ -49,6 +53,7 @@ pub fn domain_tool_spec_to_llm_spec(spec: &DomainToolSpec) -> LlmToolSpec {
     }
 }
 
+#[must_use]
 pub fn to_domain_call(call: agent_llm::types::ToolCall) -> ToolCall {
     ToolCall {
         call_id: call.call_id,
@@ -57,6 +62,7 @@ pub fn to_domain_call(call: agent_llm::types::ToolCall) -> ToolCall {
     }
 }
 
+#[must_use]
 pub fn tool_specs_to_domain_specs(specs: &[agent_tools::ToolSpec]) -> Vec<ToolSpec> {
     specs
         .iter()
@@ -68,14 +74,17 @@ pub fn tool_specs_to_domain_specs(specs: &[agent_tools::ToolSpec]) -> Vec<ToolSp
         .collect()
 }
 
+#[must_use]
 pub fn tool_error_json(err: &ToolError) -> String {
     serde_json::json!({ "error": err.to_string() }).to_string()
 }
 
+#[must_use]
 pub fn parse_timezone(name: &str) -> Tz {
     name.parse().unwrap_or(chrono_tz::UTC)
 }
 
+#[must_use]
 pub fn format_message_content(role: &str, content: &str, created_at: i64, timezone: Tz) -> String {
     if role != "user" && role != "assistant" {
         return content.to_string();
@@ -93,6 +102,7 @@ fn format_timestamp(timestamp: DateTime<Utc>, timezone: Tz) -> String {
         .to_string()
 }
 
+#[must_use]
 pub fn build_system_prompt(tool_specs: &[ToolSpec], timezone: Tz) -> String {
     let now = format_timestamp(Utc::now(), timezone);
     let tools = if tool_specs.is_empty() {

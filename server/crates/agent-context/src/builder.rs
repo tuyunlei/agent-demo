@@ -133,12 +133,14 @@ pub struct DefaultContextBuilder {
 }
 
 impl DefaultContextBuilder {
+    #[must_use]
     pub fn new(sections: Vec<Box<dyn PromptSection>>) -> Self {
         Self {
             composer: SystemPromptComposer::new(sections),
         }
     }
 
+    #[must_use]
     pub fn with_default_sections() -> Self {
         Self::new(vec![
             Box::new(IdentitySection),

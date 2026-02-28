@@ -16,6 +16,7 @@ pub struct PostgresEventStore {
 }
 
 impl PostgresEventStore {
+    #[must_use]
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
