@@ -16,3 +16,19 @@ resolver = "2"
 
 [workspace.package]
 edition = "2024"
+
+[workspace.lints.clippy]
+# Safety: prevent silent data loss in numeric conversions
+cast_possible_truncation = "deny"
+cast_sign_loss = "deny"
+cast_lossless = "warn"
+
+# Correctness: no panicking in production code
+unwrap_used = "deny"
+
+# Complexity: keep functions small and simple
+too_many_lines = "deny"
+cognitive_complexity = "deny"
+
+# API hygiene: callers should not silently ignore return values
+must_use_candidate = "warn"
