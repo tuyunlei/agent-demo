@@ -1,8 +1,8 @@
 # agent-demo/server — 状态
 
-## Phase: idle
+## Phase: dev-pending
 
-PR #19 (Provider Capabilities) merged。Lint 强化 ROADMAP 已规划（L-01 ~ L-05）。
+Lint 强化进行中。PR #22（阈值收紧）等 CI。
 
 ## 当前进度
 
@@ -11,12 +11,10 @@ PR #19 (Provider Capabilities) merged。Lint 强化 ROADMAP 已规划（L-01 ~ L
 - [x] 代码重构对齐设计（R-01 ~ R-09 全部完成）
 - [x] 测试覆盖率提升：65% → 85.96%（CI 阈值 85%）
 - [x] Docker Compose 部署（PR #18）
-- [x] Provider Capabilities（PR #19）— stateful API、builtin tools、compaction layering、ADR-009
-- [ ] **Lint 强化**（L-01 ~ L-05）— 待开始
-
-## 下一步
-
-L-01（lint 配置骨架）→ L-02（cast 审计）→ L-03（unwrap 禁令）→ L-04（拆分大函数）→ L-05（must_use 审计）
+- [x] Provider Capabilities（PR #19）
+- [x] **L-01~L-04：Lint 配置 + cast 审计 + unwrap 禁令 + 函数拆分**（PR #20 ✅ merged）
+- [x] **L-05：must_use 审计**（PR #21 ✅ merged）
+- [ ] **阈值收紧：30 行 / 复杂度 10**（PR #22 等 CI）
 
 ## 部署架构
 
@@ -33,4 +31,4 @@ Internet → :443 TLS → Caddy (host, shared) → localhost:50051/50052 h2c →
 
 ---
 
-*最后更新：2026-02-28*
+*最后更新：2026-02-28 22:15 CST*
