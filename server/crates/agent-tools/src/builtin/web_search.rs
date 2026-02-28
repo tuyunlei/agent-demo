@@ -24,6 +24,57 @@ impl WebSearchTool {
     pub fn from_env() -> Self {
         Self::new(std::env::var("BRAVE_SEARCH_API_KEY").ok())
     }
+
+    async fn call_brave_search(
+        &self,
+        api_key: &str,
+        args: &WebSearchArgs,
+    ) -> Result<Vec<BraveWebResult>, ToolOutput> {
+        let response = match self
+            .http_client
+            .get(BRAVE_SEARCH_URL)
+            .header("X-Subscription-Token", api_key)
+            .query(&[
+                ("q", args.query.as_str()),
+                ("count", &args.count.to_string()),
+            ])
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                return Err(ToolOutput {
+                    content_json: json!({
+                        "error": format!("web_search failed to call Brave Search API: {e}")
+                    })
+                    .to_string(),
+                });
+            }
+        };
+
+        if !response.status().is_success() {
+            return Err(ToolOutput {
+                content_json: json!({
+                    "error": format!("web_search failed: Brave Search API returned {}", response.status())
+                })
+                .to_string(),
+            });
+        }
+
+        let payload = match response.json::<BraveSearchResponse>().await {
+            Ok(p) => p,
+            Err(e) => {
+                return Err(ToolOutput {
+                    content_json: json!({
+                        "error": format!("web_search failed to parse Brave Search response: {e}")
+                    })
+                    .to_string(),
+                });
+            }
+        };
+
+        Ok(payload.web.map(|w| w.results).unwrap_or_default())
+    }
 }
 
 #[derive(Deserialize)]
@@ -127,50 +178,11 @@ impl Tool for WebSearchTool {
             });
         };
 
-        let response = match self
-            .http_client
-            .get(BRAVE_SEARCH_URL)
-            .header("X-Subscription-Token", api_key)
-            .query(&[
-                ("q", args.query.as_str()),
-                ("count", &args.count.to_string()),
-            ])
-            .send()
-            .await
-        {
-            Ok(r) => r,
-            Err(e) => {
-                return Ok(ToolOutput {
-                    content_json: json!({
-                        "error": format!("web_search failed to call Brave Search API: {e}")
-                    })
-                    .to_string(),
-                });
-            }
+        let results = match self.call_brave_search(api_key, &args).await {
+            Ok(results) => results,
+            Err(output) => return Ok(output),
         };
 
-        if !response.status().is_success() {
-            return Ok(ToolOutput {
-                content_json: json!({
-                    "error": format!("web_search failed: Brave Search API returned {}", response.status())
-                })
-                .to_string(),
-            });
-        }
-
-        let payload = match response.json::<BraveSearchResponse>().await {
-            Ok(p) => p,
-            Err(e) => {
-                return Ok(ToolOutput {
-                    content_json: json!({
-                        "error": format!("web_search failed to parse Brave Search response: {e}")
-                    })
-                    .to_string(),
-                });
-            }
-        };
-
-        let results = payload.web.map(|w| w.results).unwrap_or_default();
         Ok(ToolOutput {
             content_json: json!({
                 "content": format_web_search_results(&args.query, &results)

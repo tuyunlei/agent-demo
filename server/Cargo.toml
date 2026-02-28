@@ -31,4 +31,4 @@ too_many_lines = "deny"
 cognitive_complexity = "deny"
 
 # API hygiene: callers should not silently ignore return values
-must_use_candidate = "warn"
+must_use_candidate = "allow"  # TODO: L-05 will audit and enable

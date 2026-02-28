@@ -3,7 +3,7 @@ use agent_domain::{
     SessionListFilter,
 };
 use agent_domain::{events::EventEnvelope, session::Session};
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Postgres, Row, Transaction};
 use uuid::Uuid;
 
 use super::event_store_row::{
@@ -19,34 +19,40 @@ impl PostgresEventStore {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
-}
 
-#[async_trait::async_trait]
-impl EventStore for PostgresEventStore {
-    async fn append_events(
-        &self,
+    async fn load_session_lock(
+        tx: &mut Transaction<'_, Postgres>,
         session_id: &str,
-        events: Vec<NewEvent>,
-    ) -> Result<AppendResult, EventStoreError> {
-        let session_uuid = parse_uuid(session_id)?;
-        let mut tx = self.pool.begin().await.map_err(db)?;
-
+        session_uuid: Uuid,
+    ) -> Result<(Uuid, Uuid, i64, i64), EventStoreError> {
         let lock = sqlx::query(
             "SELECT tenant_id, user_id, last_sequence, event_count
              FROM sessions WHERE id = $1 FOR UPDATE",
         )
         .bind(session_uuid)
-        .fetch_optional(&mut *tx)
+        .fetch_optional(&mut **tx)
         .await
         .map_err(db)?
         .ok_or_else(|| EventStoreError::SessionNotFound(session_id.to_string()))?;
 
-        let tenant_id: Uuid = lock.try_get("tenant_id").map_err(db)?;
-        let user_id: Uuid = lock.try_get("user_id").map_err(db)?;
-        let mut next_seq: i64 = lock.try_get("last_sequence").map_err(db)?;
-        let old_count: i64 = lock.try_get("event_count").map_err(db)?;
+        Ok((
+            lock.try_get("tenant_id").map_err(db)?,
+            lock.try_get("user_id").map_err(db)?,
+            lock.try_get("last_sequence").map_err(db)?,
+            lock.try_get("event_count").map_err(db)?,
+        ))
+    }
 
-        for event in &events {
+    async fn insert_events(
+        tx: &mut Transaction<'_, Postgres>,
+        session_uuid: Uuid,
+        tenant_id: Uuid,
+        user_id: Uuid,
+        start_seq: i64,
+        events: &[NewEvent],
+    ) -> Result<i64, EventStoreError> {
+        let mut next_seq = start_seq;
+        for event in events {
             next_seq += 1;
             sqlx::query(
                 "INSERT INTO events (event_id, session_id, sequence_number, event_type, payload, tenant_id, user_id)
@@ -59,12 +65,20 @@ impl EventStore for PostgresEventStore {
             .bind(event.payload.to_string())
             .bind(parse_uuid(&event.tenant_id).unwrap_or(tenant_id))
             .bind(parse_uuid(&event.user_id).unwrap_or(user_id))
-            .execute(&mut *tx)
+            .execute(&mut **tx)
             .await
             .map_err(map_append_error)?;
         }
 
-        let new_count = old_count + i64::try_from(events.len()).map_err(db)?;
+        Ok(next_seq)
+    }
+
+    async fn update_session_counters(
+        tx: &mut Transaction<'_, Postgres>,
+        session_uuid: Uuid,
+        next_seq: i64,
+        new_count: i64,
+    ) -> Result<(), EventStoreError> {
         sqlx::query(
             "UPDATE sessions
              SET last_sequence = $2,
@@ -77,9 +91,39 @@ impl EventStore for PostgresEventStore {
         .bind(session_uuid)
         .bind(next_seq)
         .bind(new_count)
-        .execute(&mut *tx)
+        .execute(&mut **tx)
         .await
         .map_err(db)?;
+
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl EventStore for PostgresEventStore {
+    async fn append_events(
+        &self,
+        session_id: &str,
+        events: Vec<NewEvent>,
+    ) -> Result<AppendResult, EventStoreError> {
+        let session_uuid = parse_uuid(session_id)?;
+        let mut tx = self.pool.begin().await.map_err(db)?;
+
+        let (tenant_id, user_id, old_last_sequence, old_count) =
+            Self::load_session_lock(&mut tx, session_id, session_uuid).await?;
+
+        let next_seq = Self::insert_events(
+            &mut tx,
+            session_uuid,
+            tenant_id,
+            user_id,
+            old_last_sequence,
+            &events,
+        )
+        .await?;
+
+        let new_count = old_count + i64::try_from(events.len()).map_err(db)?;
+        Self::update_session_counters(&mut tx, session_uuid, next_seq, new_count).await?;
 
         tx.commit().await.map_err(db)?;
 

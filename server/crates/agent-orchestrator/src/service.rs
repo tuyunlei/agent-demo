@@ -159,8 +159,10 @@ impl AuthService {
     ) -> Result<String, jsonwebtoken::errors::Error> {
         let claims = Claims {
             sub: user_id.to_string(),
-            exp: exp as usize,
-            iat: iat as usize,
+            // iat/exp are derived from `SystemTime::now()` and fixed positive TTLs,
+            // so negative values would indicate a programming/system clock bug.
+            exp: usize::try_from(exp).expect("JWT exp must be non-negative"),
+            iat: usize::try_from(iat).expect("JWT iat must be non-negative"),
             token_type: token_type.to_string(),
         };
 
@@ -184,7 +186,9 @@ fn current_unix_seconds() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("system clock should be after UNIX_EPOCH")
-        .as_secs() as i64
+        .as_secs()
+        .try_into()
+        .expect("unix seconds must fit in i64")
 }
 
 #[cfg(test)]
