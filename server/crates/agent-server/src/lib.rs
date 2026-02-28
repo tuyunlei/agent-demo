@@ -67,44 +67,84 @@ impl ServerConfig {
 
 pub async fn run_server(config: ServerConfig) -> Result<(), Box<dyn std::error::Error>> {
     // Layer 4: Infrastructure
-    let pool = PgPool::connect(&config.database_url).await?;
+    let stores = build_stores(&config.database_url).await?;
+    ensure_admin_user_from_env(&stores.user_store)
+        .await
+        .map_err(|err| std::io::Error::other(format!("{err:?}")))?;
+
+    // Layer 3 + 2: Capabilities and orchestration
+    let capabilities =
+        build_capabilities(config.llm_api_key, config.llm_base_url, config.llm_model);
+    let turn_executor = Arc::new(TurnExecutor::new(
+        capabilities.llm,
+        capabilities.tools,
+        stores.message_store.clone(),
+        capabilities.compaction,
+        TurnExecutorConfig::default(),
+    ));
+    let auth_service = Arc::new(AuthService::new(stores.user_store, config.jwt_secret));
+
+    // Layer 1: Channel handlers and server assembly
+    serve_handlers(
+        config.listen_addr,
+        turn_executor,
+        auth_service,
+        stores.message_store,
+    )
+    .await
+}
+
+struct ServerStores {
+    user_store: Arc<PostgresUserStore>,
+    message_store: Arc<PostgresMessageStore>,
+    _event_store: Arc<PostgresEventStore>,
+}
+
+async fn build_stores(database_url: &str) -> Result<ServerStores, Box<dyn std::error::Error>> {
+    let pool = PgPool::connect(database_url).await?;
     sqlx::migrate!("../agent-storage/migrations")
         .run(&pool)
         .await?;
 
-    let user_store = Arc::new(PostgresUserStore::new(pool.clone()));
-    let message_store = Arc::new(PostgresMessageStore::new(pool.clone()));
-    let _event_store = Arc::new(PostgresEventStore::new(pool));
+    Ok(ServerStores {
+        user_store: Arc::new(PostgresUserStore::new(pool.clone())),
+        message_store: Arc::new(PostgresMessageStore::new(pool.clone())),
+        _event_store: Arc::new(PostgresEventStore::new(pool)),
+    })
+}
 
-    ensure_admin_user_from_env(&user_store)
-        .await
-        .map_err(|err| std::io::Error::other(format!("{err:?}")))?;
+struct ServerCapabilities {
+    llm: Arc<dyn LlmProvider>,
+    tools: Arc<dyn ToolRuntime>,
+    compaction: Arc<dyn agent_memory::CompactionService>,
+}
 
-    // Layer 3: Capabilities
-    let llm: Arc<dyn LlmProvider> = Arc::new(OpenAiProvider::with_config(
-        config.llm_api_key,
-        config.llm_base_url,
-        config.llm_model,
-    ));
-    let tools = build_tool_runtime();
-    let compaction = Arc::new(NoopCompactionService::new());
+fn build_capabilities(
+    llm_api_key: String,
+    llm_base_url: String,
+    llm_model: String,
+) -> ServerCapabilities {
+    ServerCapabilities {
+        llm: Arc::new(OpenAiProvider::with_config(
+            llm_api_key,
+            llm_base_url,
+            llm_model,
+        )),
+        tools: build_tool_runtime(),
+        compaction: Arc::new(NoopCompactionService::new()),
+    }
+}
 
-    // Layer 2: Orchestration
-    let turn_executor = Arc::new(TurnExecutor::new(
-        llm,
-        tools,
-        message_store.clone(),
-        compaction,
-        TurnExecutorConfig::default(),
-    ));
-    let auth_service = Arc::new(AuthService::new(user_store, config.jwt_secret));
-
-    // Layer 1: Channel handlers
+async fn serve_handlers(
+    listen_addr: SocketAddr,
+    turn_executor: Arc<TurnExecutor>,
+    auth_service: Arc<AuthService>,
+    message_store: Arc<PostgresMessageStore>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let chat_handler = ChatServiceHandler::new(turn_executor);
     let auth_handler = AuthServiceHandler::new(auth_service.clone());
     let session_handler = SessionServiceHandler::new(message_store);
 
-    // Server assembly
     let chat_service =
         ChatServiceServer::with_interceptor(chat_handler, auth_interceptor(auth_service.clone()));
     let session_service =
@@ -115,7 +155,7 @@ pub async fn run_server(config: ServerConfig) -> Result<(), Box<dyn std::error::
         .add_service(chat_service)
         .add_service(session_service)
         .add_service(auth_service)
-        .serve(config.listen_addr)
+        .serve(listen_addr)
         .await?;
 
     Ok(())

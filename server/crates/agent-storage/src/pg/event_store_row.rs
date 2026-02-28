@@ -51,6 +51,8 @@ pub fn row_to_event(row: PgRow) -> Result<EventEnvelope, EventStoreError> {
     })
 }
 
+// Flat struct mapping — splitting would scatter related field extractions.
+#[allow(clippy::too_many_lines)]
 pub fn row_to_session(row: PgRow) -> Result<Session, EventStoreError> {
     Ok(Session {
         session_id: row.try_get::<Uuid, _>("id").map_err(db)?.to_string(),

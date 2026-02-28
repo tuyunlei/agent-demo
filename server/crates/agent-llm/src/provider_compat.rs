@@ -6,48 +6,62 @@ use crate::types::{
 };
 
 pub fn map_from_domain_request(request: domain::LlmRequest, default_model: &str) -> LlmRequest {
+    let domain::LlmRequest {
+        messages,
+        model,
+        temperature,
+        max_tokens,
+        tools,
+    } = request;
+
     LlmRequest {
-        messages: request
-            .messages
-            .into_iter()
-            .map(|m| crate::types::ModelMessage {
-                role: m.role,
-                content: m.content,
-                tool_calls: m.tool_calls.map(|calls| {
-                    calls
-                        .into_iter()
-                        .map(|c| ToolCall {
-                            call_id: c.call_id,
-                            name: c.name,
-                            arguments: c.arguments,
-                        })
-                        .collect()
-                }),
-                tool_call_id: m.tool_call_id,
-            })
-            .collect(),
-        tool_specs: request
-            .tools
-            .into_iter()
-            .map(|t| ToolSpec {
-                name: t.name,
-                description: t.description,
-                parameters_schema: t.parameters,
-                strict: false,
-            })
-            .collect(),
+        messages: map_messages(messages),
+        tool_specs: map_tool_specs(tools),
         builtin_tools: vec![],
         previous_response_id: None,
         config: LlmRequestConfig {
-            model: request.model.unwrap_or_else(|| default_model.to_string()),
-            temperature: request.temperature,
+            model: model.unwrap_or_else(|| default_model.to_string()),
+            temperature,
             top_p: None,
-            max_tokens: request.max_tokens,
+            max_tokens,
             timeout: None,
             json_mode: false,
         },
         metadata: LlmRequestMetadata::default(),
     }
+}
+
+fn map_messages(messages: Vec<domain::ChatMessage>) -> Vec<crate::types::ModelMessage> {
+    messages
+        .into_iter()
+        .map(|m| crate::types::ModelMessage {
+            role: m.role,
+            content: m.content,
+            tool_calls: m.tool_calls.map(|calls| {
+                calls
+                    .into_iter()
+                    .map(|c| ToolCall {
+                        call_id: c.call_id,
+                        name: c.name,
+                        arguments: c.arguments,
+                    })
+                    .collect()
+            }),
+            tool_call_id: m.tool_call_id,
+        })
+        .collect()
+}
+
+fn map_tool_specs(tools: Vec<domain::ToolSpec>) -> Vec<ToolSpec> {
+    tools
+        .into_iter()
+        .map(|t| ToolSpec {
+            name: t.name,
+            description: t.description,
+            parameters_schema: t.parameters,
+            strict: false,
+        })
+        .collect()
 }
 
 pub fn map_to_domain_response(response: LlmResponse) -> domain::LlmResponse {

@@ -2,7 +2,7 @@
 # See: https://doc.rust-lang.org/clippy/configuration.html
 
 # Functions longer than this trigger clippy::too_many_lines
-too-many-lines-threshold = 50
+too-many-lines-threshold = 30
 
 # Functions more complex than this trigger clippy::cognitive_complexity
-cognitive-complexity-threshold = 25
+cognitive-complexity-threshold = 10
