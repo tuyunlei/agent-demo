@@ -32,7 +32,7 @@ impl WebSearchTool {
         api_key: &str,
         args: &WebSearchArgs,
     ) -> Result<Vec<BraveWebResult>, ToolOutput> {
-        let response = match self
+        let response = self
             .http_client
             .get(BRAVE_SEARCH_URL)
             .header("X-Subscription-Token", api_key)
@@ -42,40 +42,30 @@ impl WebSearchTool {
             ])
             .send()
             .await
-        {
-            Ok(r) => r,
-            Err(e) => {
-                return Err(ToolOutput {
-                    content_json: json!({
-                        "error": format!("web_search failed to call Brave Search API: {e}")
-                    })
-                    .to_string(),
-                });
-            }
-        };
+            .map_err(|e| {
+                search_error(format!("web_search failed to call Brave Search API: {e}"))
+            })?;
 
         if !response.status().is_success() {
-            return Err(ToolOutput {
-                content_json: json!({
-                    "error": format!("web_search failed: Brave Search API returned {}", response.status())
-                })
-                .to_string(),
-            });
+            return Err(search_error(format!(
+                "web_search failed: Brave Search API returned {}",
+                response.status()
+            )));
         }
 
-        let payload = match response.json::<BraveSearchResponse>().await {
-            Ok(p) => p,
-            Err(e) => {
-                return Err(ToolOutput {
-                    content_json: json!({
-                        "error": format!("web_search failed to parse Brave Search response: {e}")
-                    })
-                    .to_string(),
-                });
-            }
-        };
+        let payload = response.json::<BraveSearchResponse>().await.map_err(|e| {
+            search_error(format!(
+                "web_search failed to parse Brave Search response: {e}"
+            ))
+        })?;
 
         Ok(payload.web.map(|w| w.results).unwrap_or_default())
+    }
+}
+
+fn search_error(msg: String) -> ToolOutput {
+    ToolOutput {
+        content_json: json!({ "error": msg }).to_string(),
     }
 }
 
