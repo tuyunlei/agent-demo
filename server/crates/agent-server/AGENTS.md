@@ -16,7 +16,7 @@
 
 ## Dependencies
 - Depend on `agent_channel` for handlers and `auth_interceptor()` only.
-- Depend on `agent_orchestrator` for orchestration entrypoints (`TurnExecutor`, `AuthService`, `TurnExecutorConfig`).
+- Depend on `agent_orchestrator` for orchestration entrypoints (`ChatRuntime`, `TurnExecutor`, `AuthService`, `TurnExecutorConfig`).
 - Depend on `agent_llm` via `LlmProvider`; default to `OpenAiProvider::with_config(...)`.
 - Depend on `agent_tools` via `ToolRuntime`; register built-ins in `build_tool_runtime()`.
 - Depend on `agent_storage::pg` for Postgres adapters and run SQLx migrations in this crate.
@@ -25,7 +25,7 @@
 ## Key constraints
 - Do all DI in this crate; don’t instantiate infra/capability implementations inside channel handlers.
 - Keep handler creation centralized in `serve_handlers()`; don’t duplicate interceptor wiring.
-- Keep `TurnExecutor::new(...)` assembly in one place and pass trait objects (`Arc<dyn ...>`).
+- Keep `TurnExecutor::new(...)` assembly in one place and pass chat runtime as `Arc<dyn ChatRuntime>`.
 - Initialize admin bootstrap through `ensure_admin_user_from_env()` only; don’t add hidden bootstrap paths.
 - Resolve DB URL via `ServerConfig::resolve_database_url()`; prefer `DATABASE_URL`, otherwise compose from `PG_*`.
 - Keep URL credential safety by using `build_database_url()` + `percent_encode()`.

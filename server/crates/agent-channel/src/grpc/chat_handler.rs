@@ -2,7 +2,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use super::UserId;
-use agent_orchestrator::{TurnExecutor, TurnInput};
+use agent_orchestrator::{ChatRuntime, TurnInput};
 use agent_proto::chat_service_server::ChatService;
 use agent_proto::{
     ChatEvent, SendMessageRequest, SendMessageResponse, SubmitToolResultRequest,
@@ -13,12 +13,12 @@ use tonic::{Request, Response, Status};
 use super::error::into_status;
 
 pub struct ChatServiceHandler {
-    runtime: Arc<TurnExecutor>,
+    runtime: Arc<dyn ChatRuntime>,
 }
 
 impl ChatServiceHandler {
     #[must_use]
-    pub fn new(runtime: Arc<TurnExecutor>) -> Self {
+    pub fn new(runtime: Arc<dyn ChatRuntime>) -> Self {
         Self { runtime }
     }
 }

@@ -7,7 +7,7 @@ use agent_channel::{
 };
 use agent_llm::{LlmProvider, OpenAiProvider};
 use agent_memory::NoopCompactionService;
-use agent_orchestrator::{AuthService, TurnExecutor, TurnExecutorConfig};
+use agent_orchestrator::{AuthService, ChatRuntime, TurnExecutor, TurnExecutorConfig};
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
 use agent_proto::health_service_server::HealthServiceServer;
@@ -77,7 +77,7 @@ pub async fn run_server(config: ServerConfig) -> Result<(), Box<dyn std::error::
     // Layer 3 + 2: Capabilities and orchestration
     let capabilities =
         build_capabilities(config.llm_api_key, config.llm_base_url, config.llm_model);
-    let turn_executor = Arc::new(TurnExecutor::new(
+    let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(
         capabilities.llm,
         capabilities.tools,
         stores.message_store.clone(),
@@ -139,7 +139,7 @@ fn build_capabilities(
 
 async fn serve_handlers(
     listen_addr: SocketAddr,
-    turn_executor: Arc<TurnExecutor>,
+    turn_executor: Arc<dyn ChatRuntime>,
     auth_service: Arc<AuthService>,
     message_store: Arc<PostgresMessageStore>,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -291,7 +291,7 @@ impl ServerBuilder {
     ) -> Self {
         let tools = build_tool_runtime();
         let compaction = Arc::new(NoopCompactionService::new());
-        let turn_executor = Arc::new(TurnExecutor::new(
+        let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(
             llm,
             tools,
             message_store.clone(),

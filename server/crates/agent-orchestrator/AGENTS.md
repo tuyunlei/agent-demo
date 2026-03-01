@@ -3,6 +3,7 @@
 ## What this is
 - Treat this crate as Layer 2 orchestration for turn execution and auth flow.
 - Use `TurnExecutor` to run one complete conversational turn.
+- Use `ChatRuntime` as the channel-facing runtime boundary for turn execution.
 - Use `AuthService` to handle login/register/refresh token workflows.
 - Keep this crate focused on coordination, not implementation details.
 
@@ -50,7 +51,7 @@
 - Map `AuthError` to `AuthServiceError` with `map_auth_error`.
 
 ## Notes
-- Re-export only stable orchestration API from `lib.rs` (`TurnExecutor`, `AuthService`, turn/auth types).
+- Re-export only stable orchestration API from `lib.rs` (`ChatRuntime`, `TurnExecutor`, `AuthService`, turn/auth types).
 - Keep `turn_compat` as the conversion boundary between domain/llm/tool models.
 - Update tests when behavior changes (`turn_executor_tests`, `service_tests`, `service_refresh_tests`, `service_prop_tests`).
 - Keep orchestration behavior observable through typed outputs/errors, not hidden side effects.
