@@ -3,6 +3,14 @@
 本文件是给所有在 `server/` 目录下工作的开发者（包括 sub-agent）的架构指南。
 改代码前先读这个文件。子目录下如果有自己的 AGENTS.md，也要读。
 
+⚠️ **改代码前也要看 `KNOWN_ISSUES.md`** — 记录了已知的架构问题，避免在有问题的基础上继续建设。
+
+## 任务管理
+
+- `tasks/QUEUE.md` — 当前任务队列，按顺序执行
+- `tasks/<task-id>/brief.md` — 每个任务的详细描述
+- 完成后归档到 `tasks/done/`
+
 ---
 
 ## 项目概述
@@ -68,7 +76,7 @@ Shared: agent-proto（协议生成代码）, agent-e2e（测试）
 
 ## 关键设计决策（ADR 摘要）
 
-每条决策都有完整文档在 `docs/archive/design/decisions/`，这里只记结论。
+以下是关键设计决策摘要。
 
 1. **单体部署**（ADR-001）— 一个 binary，trait 边界保留拆分能力
 2. **PostgreSQL 唯一存储**（ADR-002）— 结构化 + JSONB + 未来 pgvector；所有查询必须带 user_id

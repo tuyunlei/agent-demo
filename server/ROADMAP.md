@@ -35,46 +35,24 @@
 
 ---
 
-## 当前：Lint 强化（代码质量门禁）
+## 已完成：Lint 强化（L-01~L-05，PRs #20-22）
 
-### L-01：基础设施 — lint 配置骨架
+<details>
+<summary>展开查看</summary>
 
-- `Cargo.toml` 加 `[workspace.lints.clippy]` section，各 crate 继承
-- 新建 `clippy.toml`（`too-many-lines-threshold = 50`，`cognitive-complexity-threshold = 25`）
-- `agent-proto` crate 级别 `#![allow]` 排除生成代码
-- 纯配置，零代码改动
-
-### L-02：安全类型转换 — cast 审计
-
-- 开启 `cast_possible_truncation`、`cast_sign_loss`、`cast_lossless`
-- 7 处违规逐个审视：转换语义是否正确、边界情况是否处理
-- 重点：JWT 时间戳 `i64 → usize`、DB 行 `f64 → i64` / `i64 → u32`、timeout `i32 → u64`
-
-### L-03：unwrap 禁令 — 错误处理门禁
-
-- 开启 `unwrap_used`（生产代码 deny，`#[cfg(test)]` allow）
-- 当前生产代码 0 违规，此步为防止未来引入
-- 扫描现有 `expect()` 的 reason 是否有意义
-
-### L-04：函数规模控制 — 拆分大函数
-
-- 开启 `too_many_lines`（阈值 50）、`cognitive_complexity`（阈值 25）
-- 4 处真实违规：
-  - `web_search.rs` (56 行)、`provider.rs` (51 行)
-  - `turn_executor.rs` (133 行，核心 turn loop)
-  - `event_store.rs` (53 行)
-- 拆分边界需审视抽象层次一致性
-- `mock.rs` (73 行) 加 `#[allow]`（测试辅助，拆了反而难读）
-
-### L-05：must_use 审计
-
-- 开启 `must_use_candidate`
-- 32 处逐个判断：返回值被忽略是否真有问题
-- 重点关注：有没有调用方忽略了重要返回值的 bug
-- 确实不需要的加 `#[allow]` + 注释
+- [x] L-01：lint 配置骨架
+- [x] L-02：cast 审计（cast_possible_truncation, cast_sign_loss, cast_lossless）
+- [x] L-03：unwrap 禁令（deny unwrap_used）
+- [x] L-04：函数规模控制（≤30行，复杂度≤10）
+- [x] L-05：must_use 审计
+</details>
 
 ---
 
-## 后续：测试覆盖率提升（目标 90%）
+## 待办
+
+详见 `tasks/QUEUE.md`。
+
+### 测试覆盖率提升（目标 90%）
 
 当前覆盖率：85.96%（CI 阈值 85%）。长期目标 90%。

@@ -9,12 +9,12 @@ agent-demo/
 ├── proto/                    # gRPC Proto 定义（4 文件：auth, chat, common, session）
 ├── server/                   # Rust 服务端（Cargo workspace，8 crate）
 │   ├── crates/               # 六边形架构：types → domain → app → channel/llm/storage → server
-│   ├── docs/design/          # 架构设计文档
 │   ├── crates/agent-e2e/tests/arch.rs  # Rust 架构/文件大小门禁测试
-│   └── migrations/           # 在 crates/agent-storage/migrations/
+│   ├── migrations/           # 在 crates/agent-storage/migrations/
+│   ├── tasks/                # 任务队列
+│   └── KNOWN_ISSUES.md       # 已知架构问题
 ├── mobile/                   # iOS 客户端（Swift + SwiftUI）
 │   ├── AgentDemo/            # Xcode 项目
-│   └── docs/design/          # 客户端架构设计
 └── deploy/                   # 部署配置（Caddyfile + .env）
 ```
 
