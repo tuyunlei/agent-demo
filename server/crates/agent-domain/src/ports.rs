@@ -96,12 +96,6 @@ pub enum LlmError {
     Timeout,
 }
 
-#[async_trait::async_trait]
-pub trait ToolRuntime: Send + Sync {
-    fn list_tools(&self) -> Vec<ToolSpec>;
-    async fn execute(&self, name: &str, arguments: &str) -> Result<ToolResult, AgentError>;
-}
-
 #[derive(Debug, Clone)]
 pub struct NewEvent {
     pub event_id: String,
@@ -259,25 +253,6 @@ pub struct StoredSession {
 pub enum StoreError {
     NotFound(String),
     Internal(String),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AgentError {
-    InvalidInput(String),
-    Llm(LlmError),
-    Store(StoreError),
-}
-
-impl From<LlmError> for AgentError {
-    fn from(value: LlmError) -> Self {
-        Self::Llm(value)
-    }
-}
-
-impl From<StoreError> for AgentError {
-    fn from(value: StoreError) -> Self {
-        Self::Store(value)
-    }
 }
 
 #[cfg(test)]

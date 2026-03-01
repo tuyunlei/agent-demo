@@ -23,7 +23,7 @@
 ## Port traits
 - Use `AuthPort` for user auth boundary; keep `AuthResult`/`AuthError` semantics explicit.
 - Use `LlmProvider` for model generation boundary with `LlmRequest`, `LlmResponse`, `LlmUsage`, `LlmError`, and `FinishReason`.
-- Use `ToolRuntime` for tool listing/execution via `ToolSpec`, `ToolCall`, and `ToolResult`.
+- Keep tool-related value types (`ToolSpec`, `ToolCall`, `ToolResult`) as shared contracts used by LLM and orchestration layers.
 - Use `EventStore` as the primary event-stream persistence contract (`append_events`, `read_events`, `read_recent_events`, `get_session`, `create_session`, `list_sessions`).
 - Keep `NewEvent`, `AppendResult`, `EventRange`, `CreateSessionParams`, and `SessionListFilter` consistent with `EventStore` semantics.
 - Keep `MessageStore` for compatibility/read-model scenarios without promoting it over `EventStore` as source-of-truth.
