@@ -2,11 +2,11 @@
 
 ## 架构决策（已确定）
 
-- **角色**：Planner（任务拆解）、Dev（写代码）、Reviewer（审查）— 不要 Architect
-- **模型**：Planner = Claude Sonnet 4.6，Dev = gpt-5.3-codex，Reviewer = gpt-5.3-codex
+- **角色**：Planner（任务拆解）、Developer（写代码）、Reviewer（审查）— 不要 Architect
+- **模型**：Planner = Claude Sonnet 4.6，Developer = gpt-5.3-codex，Reviewer = gpt-5.3-codex
 - **通信**：事件驱动，`send_message` function tool + asyncio.Queue 消息总线
-- **拓扑**：Planner 是中心节点，Dev/Reviewer 互不通信
-- **三层**：涂涂 → 小小涂（机制层，管 orchestrator 本身）→ Planner/Dev/Reviewer（项目层）
+- **拓扑**：Planner 是中心节点，Developer/Reviewer 互不通信
+- **三层**：涂涂 → 小小涂（机制层，管 orchestrator 本身）→ Planner/Developer/Reviewer（项目层）
 - **语言**：Python（LiteLLM 开箱即用）
 - **运行模式**：当前一次性脚本，后续考虑 daemon
 
@@ -30,11 +30,11 @@ Planner instructions 最复杂，需要：
 - 读 server/ROADMAP.md 了解待办
 - 读 server/AGENTS.md 了解架构
 - 读 server/KNOWN_ISSUES.md 了解已知问题
-- 拆解任务为 Dev 可执行的粒度
-- 判断 Dev 产出是否需要 Reviewer
+- 拆解任务为 Developer 可执行的粒度
+- 判断 Developer 产出是否需要 Reviewer
 - 判断任务是否完成、报告给 Human
 
-Dev instructions：
+Developer instructions：
 - Codex MCP 操作项目文件
 - 写代码 + 写测试
 - 完成后 send_message 给 Planner
