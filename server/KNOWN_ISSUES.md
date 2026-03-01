@@ -1,113 +1,113 @@
-# 已知问题
+# Known Issues
 
-改代码前先看这里，避免在有问题的基础上继续建设。
-
----
-
-## 1. agent-context 是死 crate
-
-**严重程度**：高 — 设计与实现脱节
-
-agent-context 定义了完整的 system prompt 组合系统（`ContextBuilder`、`PromptSection`、`SystemPromptComposer`），包含身份、时区、安全、工具等多个 section。
-
-**但没有任何 crate 依赖它。** `Cargo.toml` 中零外部引用。
-
-实际的 system prompt 构建在 `agent-orchestrator/src/turn_compat.rs` 的 `build_system_prompt` 函数里硬编码完成，完全绕过了 agent-context 的设计。
-
-**影响**：
-- ~500 行精心设计的代码无人使用
-- 新开发者看到 agent-context 会以为 system prompt 走这里，实际不是
-- 设计意图（可插拔 section、token 预算管理）从未落地
-
-**修复方向**：要么让 TurnExecutor 真正使用 ContextBuilder，要么删掉 agent-context 并在 turn_compat 里做好。二选一，不能两套并存。
+Read this before modifying code to avoid building on top of problematic foundations.
 
 ---
 
-## 2. agent-domain 影子 trait
+## 1. agent-context is a dead crate
 
-**严重程度**：高 — 架构一致性问题
+**Severity**: High — Design and implementation are disconnected
 
-agent-domain 和 agent-llm 各自定义了一套 trait，概念重复：
+agent-context defines a complete system prompt composition system (`ContextBuilder`, `PromptSection`, `SystemPromptComposer`), including identity, timezone, security, tools, and other sections.
 
-| 概念 | agent-domain | agent-llm |
-|------|-------------|-----------|
-| LLM 调用 | `LlmProvider::generate` | `LlmProvider::complete` |
-| 工具运行 | `ToolRuntime` | `ToolRuntime`（agent-tools） |
-| 工具定义 | `ToolSpec`, `ToolCall` | `ToolSpec`, `ToolCall`（agent-tools） |
+**But no crate depends on it.** Zero external references in `Cargo.toml`.
 
-`OpenAiProvider` 同时实现两个 `LlmProvider` trait，中间用 `provider_compat` 转换层桥接。
+The actual system prompt build is done through hardcoded string concatenation in the `build_system_prompt` function in `agent-orchestrator/src/turn_compat.rs`, completely bypassing agent-context's design.
 
-**影响**：
-- 新开发者不知道该用哪个 trait
-- 转换层是纯胶水代码，不应该存在
-- agent-domain 的版本是"影子 API"——被实现但不是真正驱动系统的
+**Impact**:
+- ~500 lines of carefully designed code are unused
+- New developers seeing agent-context will assume system prompt goes through here, but it doesn't
+- Design intent (pluggable sections, token budget management) never landed
 
-**修复方向**：统一到一个定义处，消除 provider_compat 转换层。
+**Fix direction**: Either make TurnExecutor actually use ContextBuilder, or delete agent-context and do it well in turn_compat. Pick one, cannot have both.
 
 ---
 
-## 3. agent-channel 虚假 dev-dependencies
+## 2. agent-domain shadow trait
 
-**严重程度**：中 — 测试依赖泄漏
+**Severity**: High — Architecture consistency issue
 
-agent-channel 的 `Cargo.toml` 中 dev-dependencies 包含 `agent-llm`、`agent-tools`、`agent-memory`。
+agent-domain and agent-llm each define a set of traits with overlapping concepts:
 
-Channel 层（六边形最外层）的测试不应该直接依赖具体适配器 crate。这意味着测试没有通过 trait 边界隔离，而是直接构造了内层的具体实现。
+| Concept | agent-domain | agent-llm |
+|---------|-------------|-----------|
+| LLM call | `LlmProvider::generate` | `LlmProvider::complete` |
+| Tool execution | `ToolRuntime` | `ToolRuntime` (agent-tools) |
+| Tool definition | `ToolSpec`, `ToolCall` | `ToolSpec`, `ToolCall` (agent-tools) |
 
-**影响**：
-- 违反六边形架构的依赖规则（外层不应依赖内层具体实现）
-- 测试与具体实现耦合，换适配器就要改测试
-- 掩盖了 trait 接口是否真正可 mock 的问题
+`OpenAiProvider` implements both `LlmProvider` traits simultaneously, with a `provider_compat` conversion layer bridging them.
 
-**修复方向**：Channel 测试应该用 mock 实现 trait，不引用具体适配器。如果 mock 困难，说明 trait 设计有问题，先修 trait。
+**Impact**:
+- New developers don't know which trait to use
+- Conversion layer is pure glue code that shouldn't exist
+- agent-domain's version is a "shadow API" — implemented but not actually driving the system
 
----
-
-## 4. TurnExecutor 构造暴露过多内部依赖
-
-**严重程度**：中 — 接口设计问题
-
-`TurnExecutor::new` 接受 5 个 `Arc<dyn Trait>` 参数：`LlmProvider`、`ToolRuntime`、`MessageStore`、`CompactionService`、`TurnExecutorConfig`。
-
-调用者必须知道 TurnExecutor 内部需要哪些组件才能构造它，这是实现细节泄漏。
-
-**影响**：
-- 每次新增内部依赖，所有构造 TurnExecutor 的地方都要改
-- Composition Root（agent-server）承担了过多的组装知识
-- 测试需要构造全部依赖才能测试一个行为
-
-**修复方向**：考虑 Builder pattern 或 Context/Config 结构体封装依赖。或者反过来审视：TurnExecutor 是否承担了过多职责需要拆分。
+**Fix direction**: Unify to one definition, eliminate the provider_compat conversion layer.
 
 ---
 
-## 5. system prompt 硬编码在 turn_compat 中
+## 3. agent-channel fake dev-dependencies
 
-**严重程度**：中 — 与问题 1 直接相关
+**Severity**: Medium — Test dependency leakage
 
-`turn_compat.rs` 中的 `build_system_prompt` 函数直接用字符串拼接构建 system prompt，绕过了 agent-context 设计的整套组合系统。
+agent-channel's `Cargo.toml` dev-dependencies include `agent-llm`, `agent-tools`, `agent-memory`.
+
+Channel layer (outermost layer of hexagon) tests should not directly depend on concrete adapter crates. This means tests are not isolated through trait boundaries, but directly construct inner layer concrete implementations.
+
+**Impact**:
+- Violates hexagonal architecture dependency rules (outer layer should not depend on inner layer concrete implementations)
+- Tests are coupled with concrete implementations, changing adapters requires changing tests
+- Masks whether trait interfaces are truly mockable
+
+**Fix direction**: Channel tests should use mock implementations of traits, not reference concrete adapters. If mocking is difficult, the trait design has issues, fix the trait first.
+
+---
+
+## 4. TurnExecutor constructor exposes too many internal dependencies
+
+**Severity**: Medium — Interface design issue
+
+`TurnExecutor::new` accepts 5 `Arc<dyn Trait>` parameters: `LlmProvider`, `ToolRuntime`, `MessageStore`, `CompactionService`, `TurnExecutorConfig`.
+
+Callers must know which components TurnExecutor needs internally to construct it, this is implementation detail leakage.
+
+**Impact**:
+- Every time a new internal dependency is added, all places constructing TurnExecutor need to change
+- Composition Root (agent-server) takes on too much assembly knowledge
+- Tests need to construct all dependencies to test a behavior
+
+**Fix direction**: Consider Builder pattern or Context/Config struct to encapsulate dependencies. Or reconsider: does TurnExecutor have too many responsibilities that need to be split.
+
+---
+
+## 5. system prompt hardcoded in turn_compat
+
+**Severity**: Medium — Directly related to Issue 1
+
+The `build_system_prompt` function in `turn_compat.rs` builds system prompt through direct string concatenation, bypassing the entire composition system designed by agent-context.
 
 ```
-turn_compat.rs::build_system_prompt  ←  实际使用
-agent-context::ContextBuilder        ←  设计但未接入
+turn_compat.rs::build_system_prompt  ←  Actually used
+agent-context::ContextBuilder        ←  Designed but not connected
 ```
 
-**影响**：
-- system prompt 内容和格式不可配置
-- 无法按用户/场景动态组合不同 section
-- 新增 prompt 内容要改 Rust 代码，重新编译
+**Impact**:
+- system prompt content and format are not configurable
+- Cannot dynamically compose different sections by user/scenario
+- Adding prompt content requires modifying Rust code, recompiling
 
-**修复方向**：与问题 1 一起解决。如果保留 agent-context，把 turn_compat 的逻辑迁移过去；如果删除 agent-context，至少把硬编码提取为可配置的模板。
-
----
-
-## 6. AgentError 死代码
-
-**严重程度**：低 — 仅 agent-domain 内部
-
-`AgentError` 在 `agent-domain/src/ports.rs` 中定义，通过 `lib.rs` 导出，但没有任何外部 crate 引用它。仅在 `ports_tests.rs` 中被测试。
-
-**修复方向**：确认是否有使用计划。如果没有，删除。
+**Fix direction**: Solve together with Issue 1. If keeping agent-context, migrate turn_compat's logic there; if deleting agent-context, at least extract hardcoding into configurable templates.
 
 ---
 
-*最后更新：2026-03-02*
+## 6. AgentError dead code
+
+**Severity**: Low — Only internal to agent-domain
+
+`AgentError` is defined in `agent-domain/src/ports.rs`, exported through `lib.rs`, but no external crate references it. Only tested in `ports_tests.rs`.
+
+**Fix direction**: Confirm if there are plans to use it. If not, delete.
+
+---
+
+*Last updated: 2026-03-02*

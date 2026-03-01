@@ -1,95 +1,95 @@
-# CLAUDE.md — iOS 客户端开发指南
+# CLAUDE.md — iOS Client Development Guide
 
-## 项目概述
+## Project Overview
 
-AI 陪伴 Agent 平台的 iOS 客户端。Swift + SwiftUI，gRPC 通信。
+AI companion Agent platform iOS client. Swift + SwiftUI, gRPC communication.
 
-- **代码**：当前目录（`mobile/`）
-- **服务端**：`../server/`（Rust，部署地址见 `deploy/.env`）
-- **Proto**：`../proto/`（SPM Build Plugin 自动生成 Swift 代码）
-- **设计文档**：`docs/design/`
-- **CI**：GitHub Actions macOS runner
+- **Code**: Current directory (`mobile/`)
+- **Server**: `../server/` (Rust, deployment address see `deploy/.env`)
+- **Proto**: `../proto/` (SPM Build Plugin auto-generates Swift code)
+- **Design docs**: `docs/design/`
+- **CI**: GitHub Actions macOS runner
 
-## 工作流
+## Workflow
 
-1. 读 `tasks/QUEUE.md`，取第一个任务名
-2. 进入 `tasks/<任务名>/`，读 `brief.md`（任务目标 + 验收标准）
-3. 如果有 `feedback.md`，先看——那是上次 CI/review 的问题
-4. 创建 `feature/*` 分支
-5. 编码 + 本地测试
-6. commit + push + 开 PR：
+1. Read `tasks/QUEUE.md`, get first task name
+2. Enter `tasks/<task-name>/`, read `brief.md` (task goal + acceptance criteria)
+3. If `feedback.md` exists, read it first — that's CI/review issues from last time
+4. Create `feature/*` branch
+5. Code + local testing
+6. commit + push + open PR:
    ```bash
-   git push origin feature/<分支名>
+   git push origin feature/<branch-name>
    gh pr create --base develop --fill
    ```
-7. **不要修改 `tasks/` 下的任何文件**——tasks 由 PM 管理
+7. **Do not modify any files under `tasks/`** — tasks are managed by PM
 
-## 任务完成后
+## After Task Completion
 
-PR 提交后，PM 会负责 review + CI + merge + 归档。你不需要关心后续。
+After PR submission, PM will handle review + CI + merge + archive. You don't need to care about follow-up.
 
-**当涂涂让你继续下一个任务时：**
+**When TuTu asks you to continue to next task:**
 
 1. `git checkout develop && git pull origin develop`
-2. 如果旧的 feature 分支还在本地，可以删掉（远程分支 PM 已删）
-3. 重新走工作流第 1 步（读 `tasks/` → 选下一个 → 开新分支）
+2. If old feature branch still exists locally, can delete (remote branch already deleted by PM)
+3. Restart workflow step 1 (read `tasks/` → pick next → open new branch)
 
-**怎么知道上个任务完成了**：`tasks/` 里如果那个目录消失了（被归档到 `tasks/done/`），说明已 merge。
+**How to know last task completed**: If that directory disappeared from `tasks/` (archived to `tasks/done/`), it's merged.
 
-## 分支规则
+## Branch Rules
 
-- 在 `feature/*` 分支开发，禁止直接提交 develop
-- PR 目标分支：develop
-- 一个任务一个分支一个 PR
+- Develop on `feature/*` branches, direct commits to develop prohibited
+- PR target branch: develop
+- One task, one branch, one PR
 
-## 本地构建与测试
+## Local Build and Test
 
-**不要用 `swift build` / `swift test`**——protoc 插件需要 `-skipPackagePluginValidation`，只有 xcodebuild 支持。
+**Don't use `swift build` / `swift test`** — protoc plugin needs `-skipPackagePluginValidation`, only xcodebuild supports this.
 
 ```bash
-# 构建（先查可用模拟器：xcrun simctl list devices available | grep iPhone）
+# Build (first check available simulators: xcrun simctl list devices available | grep iPhone)
 xcodebuild build \
   -project AgentDemo.xcodeproj -scheme AgentDemo \
-  -destination 'platform=iOS Simulator,name=<模拟器名>' \
+  -destination 'platform=iOS Simulator,name=<simulator-name>' \
   -configuration Debug CODE_SIGNING_ALLOWED=NO -skipPackagePluginValidation
 
-# 测试
+# Test
 xcodebuild test \
   -project AgentDemo.xcodeproj -scheme AgentDemo \
-  -destination 'platform=iOS Simulator,name=<模拟器名>' \
+  -destination 'platform=iOS Simulator,name=<simulator-name>' \
   -configuration Debug -skip-testing:AgentDemoUITests \
   CODE_SIGNING_ALLOWED=NO -skipPackagePluginValidation
 ```
 
-模拟器名称因机器而异（CI 用 `iPhone 16 Pro`，本地可能不同）。具体名称可写在 `CLAUDE.local.md` 里，不入仓库。
+Simulator names vary by machine (CI uses `iPhone 16 Pro`, local may differ). Specific names can be written in `CLAUDE.local.md`, not in repository.
 
-## 质量要求
+## Quality Requirements
 
-- **SwiftLint**：`--strict` 模式，警告视为错误
-- **SwiftFormat**：`--lint` 模式
-- **测试**：新功能必须有对应的 Swift Testing 单元测试
-- **文件大小**：单文件 ≤300 行（业务代码），单函数 ≤50 行
-- **CI 必须绿**：PR 不过 CI 不会被 merge
+- **SwiftLint**: `--strict` mode, warnings treated as errors
+- **SwiftFormat**: `--lint` mode
+- **Tests**: New features must have corresponding Swift Testing unit tests
+- **File size**: Single file ≤300 lines (business code), single function ≤50 lines
+- **CI must be green**: PR won't be merged if CI fails
 
-## 架构约束
+## Architecture Constraints
 
-- 分层架构：详见 `docs/design/principles.md`
-- ViewModel 通过 Protocol 注入依赖，方便测试
-- Service 层抽象为 Protocol（如 ChatServiceProtocol、SessionServiceProtocol）
-- 现有模式参考：`ChatViewModel` + `ChatServiceProtocol` 的做法
+- Layered architecture: See `docs/design/principles.md`
+- ViewModel injects dependencies through Protocol for easy testing
+- Service layer abstracted as Protocol (e.g., ChatServiceProtocol, SessionServiceProtocol)
+- Reference existing pattern: `ChatViewModel` + `ChatServiceProtocol` approach
 
-## 技术栈
+## Tech Stack
 
-- **UI**：SwiftUI
-- **gRPC**：grpc-swift v2（grpc-swift-protobuf + grpc-swift-nio-transport）
-- **Proto 生成**：SPM Build Plugin（proto 变更零成本同步）
-- **测试**：Swift Testing 框架
-- **最低版本**：iOS 26.2
-- **依赖锁定**：`Package.resolved` 必须提交，保证可复现构建
+- **UI**: SwiftUI
+- **gRPC**: grpc-swift v2 (grpc-swift-protobuf + grpc-swift-nio-transport)
+- **Proto generation**: SPM Build Plugin (zero-cost sync on proto changes)
+- **Testing**: Swift Testing framework
+- **Minimum version**: iOS 26.2
+- **Dependency locking**: `Package.resolved` must be committed for reproducible builds
 
-## 注意事项
+## Notes
 
-- ⚠️ **仓库是 public 的** — 禁止写入 IP 地址、密码、API key、内部域名等敏感信息。凭证走环境变量，地址走配置文件（gitignored）
-- `tasks/` 只读——不创建、不修改、不删除其中的文件
-- 有问题或不确定的地方，写在 PR description 里，PM 会看到
-- 服务端 API 文档：`../server/docs/design/` + `../proto/`
+- ⚠️ **Repository is public** — Writing IP addresses, passwords, API keys, internal domain names and other sensitive information is prohibited. Credentials go through environment variables, addresses go through config files (gitignored)
+- `tasks/` is read-only — do not create, modify, or delete files in it
+- For questions or uncertainties, write in PR description, PM will see it
+- Server API docs: `../server/docs/design/` + `../proto/`

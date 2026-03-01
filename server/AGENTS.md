@@ -1,129 +1,129 @@
-# server/ — 架构约束
+# server/ — Architecture Constraints
 
-本文件是给所有在 `server/` 目录下工作的开发者（包括 sub-agent）的架构指南。
-改代码前先读这个文件。子目录下如果有自己的 AGENTS.md，也要读。
+This file is an architecture guide for all developers (including sub-agents) working in the `server/` directory.
+Read this file before modifying code. If there is an AGENTS.md in a subdirectory, read that too.
 
-⚠️ **改代码前也要看 `KNOWN_ISSUES.md`** — 记录了已知的架构问题，避免在有问题的基础上继续建设。
+⚠️ **Also check `KNOWN_ISSUES.md` before modifying code** — Records known architecture issues, avoid building on top of problematic foundations.
 
-## 任务管理
+## Task Management
 
-- `tasks/QUEUE.md` — 当前任务队列，按顺序执行
-- `tasks/<task-id>/brief.md` — 每个任务的详细描述
-- 完成后归档到 `tasks/done/`
+- `tasks/QUEUE.md` — Current task queue, execute in order
+- `tasks/<task-id>/brief.md` — Detailed description of each task
+- Archive to `tasks/done/` after completion
 
 ---
 
-## 项目概述
+## Project Overview
 
-多租户 AI Agent 平台后端。Rust 单体，trait 边界保证未来可拆分。
+Multi-tenant AI Agent platform backend. Rust monolith, trait boundaries ensure future split-ability.
 
-## 四层架构
+## Four-Layer Architecture
 
 ```
-┌─ Channel（接入层）─────────────────────────────────┐
-│  协议转换 · 认证鉴权 · DTO ↔ Domain 映射            │
+┌─ Channel (Access Layer)───────────────────────────┐
+│  Protocol conversion · Auth · DTO ↔ Domain mapping │
 │  crates: agent-server, agent-channel               │
 └────────────────────────┬───────────────────────────┘
                          ▼
-┌─ Orchestration（编排层）───────────────────────────┐
-│  TurnExecutor · SessionLifecycle · turn 状态机       │
+┌─ Orchestration (Orchestration Layer)──────────────┐
+│  TurnExecutor · SessionLifecycle · turn state machine  │
 │  crates: agent-orchestrator                         │
 └────────────────────────┬───────────────────────────┘
                          ▼
-┌─ Capability（能力层）──────────────────────────────┐
-│  业务抽象 trait + 默认实现                           │
+┌─ Capability (Capability Layer)────────────────────┐
+│  Business abstraction trait + default implementation │
 │  crates: agent-domain, agent-context, agent-llm,    │
 │          agent-tools, agent-memory                   │
 └────────────────────────▲───────────────────────────┘
                          │ implements traits
-┌─ Infrastructure（基础设施层）───────────────────────┐
-│  外部系统适配器，实现 Capability trait                │
+┌─ Infrastructure (Infrastructure Layer)──────────────┐
+│  External system adapters, implement Capability port trait │
 │  crates: agent-storage                              │
 └────────────────────────────────────────────────────┘
 
-Shared: agent-proto（协议生成代码）, agent-e2e（测试）
+Shared: agent-proto (protocol generated code), agent-e2e (tests)
 ```
 
-## 依赖规则（硬约束，CI 架构测试强制执行）
+## Dependency Rules (Hard constraints, enforced by CI architecture tests)
 
-**允许：**
+**Allowed:**
 - Channel → Orchestration → Capability
 - Infrastructure → Capability
 
-**禁止：**
-- Orchestration → Infrastructure（编排层不能依赖具体实现）
-- Channel → Capability 或 Channel → Infrastructure（接入层不能绕过编排层）
-- Capability → Channel / Orchestration / Infrastructure（能力层不能反向依赖）
-- Infrastructure → Channel / Orchestration（基础设施不感知上层）
+**Prohibited:**
+- Orchestration → Infrastructure (Orchestration layer cannot depend on concrete implementations)
+- Channel → Capability or Channel → Infrastructure (Access layer cannot bypass orchestration layer)
+- Capability → Channel / Orchestration / Infrastructure (Capability layer cannot have reverse dependencies)
+- Infrastructure → Channel / Orchestration (Infrastructure is not aware of upper layers)
 
-违反依赖方向 = CI 红 = 不能 merge。
+Violating dependency direction = CI red = cannot merge.
 
-## Crate 总表
+## Crate Summary Table
 
-| Crate | 层 | 一句话职责 |
+| Crate | Layer | One-sentence responsibility |
 |---|---|---|
-| agent-server | Channel | 进程入口 + Composition Root（DI 在这里） |
-| agent-channel | Channel | 协议 handler + 鉴权 + DTO 转换 |
-| agent-orchestrator | Orchestration | TurnExecutor + AuthService + turn 流程编排 |
-| agent-domain | Capability | 领域模型：Event, Session, User, ports(trait) |
-| agent-context | Capability | ContextBuilder + PromptSection 组合 |
+| agent-server | Channel | Process entry + Composition Root (DI is here) |
+| agent-channel | Channel | Protocol handler + auth + DTO conversion |
+| agent-orchestrator | Orchestration | TurnExecutor + AuthService + turn flow orchestration |
+| agent-domain | Capability | Domain models: Event, Session, User, ports(trait) |
+| agent-context | Capability | ContextBuilder + PromptSection composition |
 | agent-llm | Capability | LlmProvider trait + provider adapter |
-| agent-tools | Capability | Tool trait + ToolRuntime + 内置工具 |
-| agent-memory | Capability | CompactionService trait + 策略 |
-| agent-storage | Infrastructure | PostgreSQL 适配器，实现 Capability port trait |
-| agent-proto | 共享 | protobuf 生成代码 |
-| agent-e2e | 测试 | 端到端 + 架构依赖测试 |
+| agent-tools | Capability | Tool trait + ToolRuntime + built-in tools |
+| agent-memory | Capability | CompactionService trait + strategy |
+| agent-storage | Infrastructure | PostgreSQL adapter, implements Capability port trait |
+| agent-proto | Shared | protobuf generated code |
+| agent-e2e | Test | End-to-end + architecture dependency tests |
 
-## 关键设计决策（ADR 摘要）
+## Key Design Decisions (ADR Summary)
 
-以下是关键设计决策摘要。
+Below is a summary of key design decisions.
 
-1. **单体部署**（ADR-001）— 一个 binary，trait 边界保留拆分能力
-2. **PostgreSQL 唯一存储**（ADR-002）— 结构化 + JSONB + 未来 pgvector；所有查询必须带 user_id
-3. **协议是实现细节**（ADR-003）— 不抽象传输层，抽象业务层；加新协议就加一个 handler
-4. **Append-only 事件流**（ADR-004/007）— 事件流是 source of truth，消息列表是投影
-5. **TurnExecutor + ContextBuilder 分离**（ADR-005）— 编排归编排，上下文归上下文
-6. **接入层只做协议转换**（ADR-006）— handler 禁止直连 DB/LLM/工具
-7. **PromptSection 可插拔**（ADR-008）— system prompt = section 组合，不是大字符串模板
-8. **Provider 能力统一接口**（ADR-009）— stateful/builtin tools/compaction 通过可选字段和元数据建模，不膨胀 trait
+1. **Monolithic deployment** (ADR-001) — One binary, trait boundaries preserve split-ability
+2. **PostgreSQL only storage** (ADR-002) — Structured + JSONB + future pgvector; all queries must include user_id
+3. **Protocol is implementation detail** (ADR-003) — Don't abstract transport layer, abstract business layer; add a handler for new protocol
+4. **Append-only event stream** (ADR-004/007) — Event stream is source of truth, message list is projection
+5. **TurnExecutor + ContextBuilder separation** (ADR-005) — Orchestration is orchestration, context is context
+6. **Access layer only does protocol conversion** (ADR-006) — Handler cannot directly connect to DB/LLM/tools
+7. **PromptSection pluggable** (ADR-008) — system prompt = section composition, not big string template
+8. **Provider capability unified interface** (ADR-009) — stateful/builtin tools/compaction modeled through optional fields and metadata, no trait bloat
 
-## 事件类型（8 种）
+## Event Types (8 types)
 
 UserMessage · AssistantMessage · ToolCallRequest · ToolCallResult · SystemEvent · ConfigChange · CompactionMarker · Summary
 
-事件追加写入，不可变。压缩通过 Summary + CompactionMarker 表达，不改写历史。
+Events are append-only writes, immutable. Compaction is expressed through Summary + CompactionMarker, history is not rewritten.
 
-## 质量门禁
+## Quality Gates
 
-- `cargo fmt` + `cargo clippy -- -D warnings` + `cargo test`（pre-push hook）
-- 覆盖率 ≥ 85%（CI tarpaulin）
-- 函数 ≤ 30 行，认知复杂度 ≤ 10
+- `cargo fmt` + `cargo clippy -- -D warnings` + `cargo test` (pre-push hook)
+- Coverage ≥ 85% (CI tarpaulin)
+- Function ≤ 30 lines, cognitive complexity ≤ 10
 - deny: `cast_possible_truncation`, `cast_sign_loss`, `unwrap_used`, `too_many_lines`, `cognitive_complexity`
 - warn: `cast_lossless`, `must_use_candidate`
-- 生产代码禁止 `unwrap()`/`expect()` 用于可能失败的操作
-- 新功能必须有对应测试
+- Production code prohibits `unwrap()`/`expect()` for operations that may fail
+- New features must have corresponding tests
 
-## 安全约束
+## Security Constraints
 
-- JWT secret + 密码 = 环境变量，禁止硬编码
-- 仓库是 public 的 — 禁止提交 IP、密码、API key、内部域名
-- 多租户查询必须带 tenant/user 维度过滤
+- JWT secret + passwords = environment variables, hardcoding prohibited
+- Repository is public — committing IP, passwords, API keys, internal domain names is prohibited
+- Multi-tenant queries must include tenant/user dimension filtering
 
-## AGENTS.md 维护
+## AGENTS.md Maintenance
 
-每个 crate 和关键子目录都有自己的 AGENTS.md。这是活的记忆，不是一次性文档。
+Each crate and key subdirectory has its own AGENTS.md. This is living memory, not a one-time document.
 
-**读**：改代码前先读对应目录的 AGENTS.md。
+**Read**: Read the AGENTS.md of the corresponding directory before modifying code.
 
-**写**：改完代码后，如果遇到以下情况，更新对应的 AGENTS.md：
-- 新增、删除或重命名了公共接口
-- 踩了坑或发现了不明显的约束
-- 做了设计决策（为什么选 A 不选 B）
-- 修了 bug 且根因涉及架构理解
+**Write**: After modifying code, if you encounter the following situations, update the corresponding AGENTS.md:
+- Added, deleted, or renamed public interfaces
+- Stepped on pitfalls or discovered non-obvious constraints
+- Made design decisions (why choose A over B)
+- Fixed a bug where the root cause involves architectural understanding
 
-不确定要不要记？记。宁可多记一条以后删掉，不要漏掉重要的东西。
+Not sure whether to record it? Record it. Better to record an extra entry and delete it later than to miss something important.
 
-**更新哪个层级？**
-- 改了某个文件 → 更新该文件所在目录的 AGENTS.md（如果有的话），没有就往上找最近的
-- 发现的问题影响整个 crate → 更新 crate 根目录的 AGENTS.md
-- 发现的问题影响跨 crate 的架构约束 → 更新 `server/AGENTS.md`
+**Which level to update?**
+- Modified a file → Update the AGENTS.md in that file's directory (if it exists), otherwise look upward for the nearest one
+- Issue found affects the entire crate → Update AGENTS.md at the crate root directory
+- Issue found affects cross-crate architectural constraints → Update `server/AGENTS.md`

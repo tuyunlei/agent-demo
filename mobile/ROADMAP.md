@@ -1,157 +1,156 @@
 # agent-demo/mobile — ROADMAP
 
-> Phase 0 架构设计已完成。进入 Phase 1 Walking Skeleton 实现。
-> 详细设计文档见 `docs/design/`
+> Phase 0 architecture design completed. Entering Phase 1 Walking Skeleton implementation.
+> Detailed design docs in `docs/design/`
 >
-> **MVP 产品范围**：Login + Chat 两个页面，AI 回复整块返回（unary，不做流式）
+> **MVP product scope**: Login + Chat two pages, AI response returned as whole block (unary, no streaming)
 
 ---
 
-## 技术选型
+## Tech Selection
 
-- **gRPC 库**：grpc-swift v2（grpc-swift-protobuf + grpc-swift-nio-transport）— Swift Concurrency 原生
-- **Server 地址**：见 `deploy/.env`（gRPC over TLS，Caddy 反代）
+- **gRPC library**: grpc-swift v2 (grpc-swift-protobuf + grpc-swift-nio-transport) — native Swift Concurrency
+- **Server address**: See `deploy/.env` (gRPC over TLS, Caddy reverse proxy)
 
 ---
 
-## Phase 0：架构设计（已完成）
+## Phase 0: Architecture Design (Completed)
 
 <details>
-<summary>展开查看</summary>
+<summary>Expand to view</summary>
 
-| # | 任务 | 状态 | 位置 |
-|---|------|------|------|
-| M01 | 架构原则 + 分层规范 | ✅ | `docs/design/principles.md` |
-| M02 | 技术选型 + 约束 | ✅ | `docs/design/tech-stack.md` |
-| M03 | 基础层设计 | ✅ | `docs/design/foundation.md` |
-| M04 | 服务层设计 | ✅ | `docs/design/services.md` |
-| M05 | 业务模块划分 | ✅ | `docs/design/business-modules.md` |
-| M06 | 应用集成层设计 | ✅ | `docs/design/app-integration.md` |
-| M07 | Proto 定义 | ✅ | `../proto/` |
+| # | Task | Status | Location |
+|---|------|--------|----------|
+| M01 | Architecture principles + layering spec | ✅ | `docs/design/principles.md` |
+| M02 | Tech selection + constraints | ✅ | `docs/design/tech-stack.md` |
+| M03 | Foundation layer design | ✅ | `docs/design/foundation.md` |
+| M04 | Service layer design | ✅ | `docs/design/services.md` |
+| M05 | Business module division | ✅ | `docs/design/business-modules.md` |
+| M06 | App integration layer design | ✅ | `docs/design/app-integration.md` |
+| M07 | Proto definitions | ✅ | `../proto/` |
 
 </details>
 
 ---
 
-## Phase 1：Walking Skeleton
+## Phase 1: Walking Skeleton
 
-### Step 3：iOS 项目起步（已完成）
+### Step 3: iOS Project Kickoff (Completed)
 
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| TM3.1a | Xcode 项目初始化 | ✅ | SwiftUI，iOS 26.2 |
-| TM3.1b | grpc-swift v2 配置 | ✅ | SPM 依赖 + protoc .pb.swift + TLS channel + APIClient |
-| TM3.2 | GitHub Actions iOS CI | ✅ | macOS runner，Xcode 26.2，xcbeautify + raw log artifact |
-| TM3.3 | Login 页面 | ✅ | 登录 UI + AuthService.Login 调用 |
-| TM3.4 | Chat 页面 | ✅ | 聊天 UI + SendMessage 调用 |
-
----
-
-## Quality Gate：质量保障体系
-
-> 所有检查在 CI（macOS runner）中执行。VPS 无 Xcode，仅文件大小检查可本地跑。
-
-### 代码质量（自动门禁）
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| MQG1 | SwiftLint + SwiftFormat | ✅ | SwiftLint --strict + SwiftFormat --lint，CI 门禁（PR #7） |
-| MQG2 | 文件大小 & 复杂度 | ✅ | 单文件 ≤300 行，单函数 ≤50 行；脚本 + CI 门禁（PR #8） |
-
-### 基础设施
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| MQG-infra | SPM Build Plugin 替代手动 protoc | ✅ | PR #9，grpc-swift v2 SPM plugin，proto 变更零成本同步 |
-
-### 功能质量（测试保障）
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| MQG3 | ViewModel 重构 + 单元测试 | ✅ | ChatViewModel + ChatServiceProtocol + 5 个 Swift Testing 单测 |
-| MQG4 | 测试补全 + Protocol 化 | ✅ | PR #1，SessionServiceProtocol + loadHistory 4 测试 + AppState 3 测试 |
-
-### 质量铁律
-
-- CI 红 = 不能 merge
-- 新功能 PR 必须包含对应测试
-- SwiftLint 警告视为错误（--strict）
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| TM3.1a | Xcode project initialization | ✅ | SwiftUI, iOS 26.2 |
+| TM3.1b | grpc-swift v2 configuration | ✅ | SPM dependency + protoc .pb.swift + TLS channel + APIClient |
+| TM3.2 | GitHub Actions iOS CI | ✅ | macOS runner, Xcode 26.2, xcbeautify + raw log artifact |
+| TM3.3 | Login page | ✅ | Login UI + AuthService.Login call |
+| TM3.4 | Chat page | ✅ | Chat UI + SendMessage call |
 
 ---
 
-## 修复与补完
+## Quality Gate: Quality Assurance System
 
-> 质量门禁完成后，修复现有功能问题。
+> All checks run in CI (macOS runner). VPS has no Xcode, only file size checks can run locally.
 
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| FIX-1 | Chat 页面显示 AI 回复 | ✅ | 解析 assistantContent 中的 TextBlock |
+### Code Quality (Automatic Gates)
 
----
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| MQG1 | SwiftLint + SwiftFormat | ✅ | SwiftLint --strict + SwiftFormat --lint, CI gate (PR #7) |
+| MQG2 | File size & complexity | ✅ | Single file ≤300 lines, single function ≤50 lines; script + CI gate (PR #8) |
 
-## Phase 1（续）：功能开发
+### Infrastructure
 
-> 质量门禁 + 修复完成后恢复功能开发。
-> **Mobile 做完以下内容后暂停，等涂涂验收，之后与服务端同步推进。**
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| MQG-infra | SPM Build Plugin replaces manual protoc | ✅ | PR #9, grpc-swift v2 SPM plugin, zero-cost sync on proto changes |
 
-### Step 4：注册 + 持久化
+### Functional Quality (Test Assurance)
 
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| TM-REG | 用户注册 | ✅ | PR #7，LoginView Sign In/Sign Up 切换 + AuthServiceClient.register |
-| TM-PERSIST | Token + Session 持久化 | ✅ | PR #9，Keychain 存 token + UserDefaults 存 sessionID |
-| TM-HISTORY | 聊天历史加载 | ✅ | PR #11，SessionServiceClient + ChatView 启动加载历史 |
-| TM4.1 | GRDB + SQLite | 🔲 | 本地消息缓存，离线查看历史 |
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| MQG3 | ViewModel refactoring + unit tests | ✅ | ChatViewModel + ChatServiceProtocol + 5 Swift Testing unit tests |
+| MQG4 | Test completion + Protocol-ization | ✅ | PR #1, SessionServiceProtocol + loadHistory 4 tests + AppState 3 tests |
 
-### Step 5：韧性
+### Quality Iron Laws
 
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| TM5.1 | 网络错误处理 | ✅ | PR #8，友好错误提示 + 失败回滚 + 错误横幅 + Sign Out |
-| TM5.2 | Token 自动刷新 | 🔲 | RefreshToken 逻辑，过期自动续期 |
-
-### Step 6：会话管理
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| TM6.1 | 会话列表页 | 🔲 | （MVP 后续，暂不实现） |
+- CI red = cannot merge
+- New feature PRs must include corresponding tests
+- SwiftLint warnings treated as errors (--strict)
 
 ---
 
-## 测试体系建设
+## Fixes and Completion
 
-> 利用完整 Mac 环境（本地 + CI macOS runner），建立多层测试保障。
+> After quality gates complete, fix existing functional issues.
 
-### XCUITest（UI 自动化）
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| TUI-1 | XCUITest 基础设施 | 🔲 | Mock 网络层 + LaunchArgument 注入 + 测试 helper |
-| TUI-2 | 登录流程测试 | 🔲 | 注册 → 登录 → 进入聊天页；错误提示验证 |
-| TUI-3 | 聊天流程测试 | 🔲 | 发消息 → 收到回复 → 历史加载 |
-
-### 集成测试
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| TINT-1 | Mock gRPC Server | 🔲 | 本地轻量 gRPC server，验证完整网络链路 |
-| TINT-2 | 核心场景集成验证 | 🔲 | 注册/登录/聊天/Token 刷新 端到端 mock 验证 |
-
-### E2E（全链路，低频）
-
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| TE2E-1 | 真实服务端 E2E | 🔲 | App → 真实服务端 → Mock LLM，手动或 CI 低频触发 |
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| FIX-1 | Chat page displays AI response | ✅ | Parse TextBlock in assistantContent |
 
 ---
 
-## 未来建设（待讨论）
+## Phase 1 (Continued): Feature Development
 
-| # | Task | 状态 | 内容 |
-|---|------|------|------|
-| OBS-1 | 日志与观测体系 | 🔲 | 客户端日志收集、错误上报、性能监控。待涂涂讨论后细化 |
+> Resume feature development after quality gates + fixes complete.
+> **Mobile pauses after completing below content, waits for TuTu acceptance, then advances in sync with server.**
+
+### Step 4: Registration + Persistence
+
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| TM-REG | User registration | ✅ | PR #7, LoginView Sign In/Sign Up toggle + AuthServiceClient.register |
+| TM-PERSIST | Token + Session persistence | ✅ | PR #9, Keychain store token + UserDefaults store sessionID |
+| TM-HISTORY | Chat history loading | ✅ | PR #11, SessionServiceClient + ChatView load history on launch |
+| TM4.1 | GRDB + SQLite | 🔲 | Local message cache, offline history viewing |
+
+### Step 5: Resilience
+
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| TM5.1 | Network error handling | ✅ | PR #8, friendly error prompts + failure rollback + error banner + Sign Out |
+| TM5.2 | Token auto-refresh | 🔲 | RefreshToken logic, automatic renewal on expiration |
+
+### Step 6: Session Management
+
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| TM6.1 | Session list page | 🔲 | (Post-MVP, not implemented yet) |
 
 ---
 
-*最后更新：2026-02-24*
+## Test System Construction
 
+> Leverage full Mac environment (local + CI macOS runner) to establish multi-layer test assurance.
+
+### XCUITest (UI Automation)
+
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| TUI-1 | XCUITest infrastructure | 🔲 | Mock network layer + LaunchArgument injection + test helper |
+| TUI-2 | Login flow test | 🔲 | Register → Login → Enter chat page; error prompt verification |
+| TUI-3 | Chat flow test | 🔲 | Send message → Receive reply → History loading |
+
+### Integration Tests
+
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| TINT-1 | Mock gRPC Server | 🔲 | Local lightweight gRPC server, verify complete network chain |
+| TINT-2 | Core scenario integration verification | 🔲 | Register/Login/Chat/Token refresh end-to-end mock verification |
+
+### E2E (Full Chain, Low Frequency)
+
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| TE2E-1 | Real server E2E | 🔲 | App → Real server → Mock LLM, manual or CI low-frequency trigger |
+
+---
+
+## Future Construction (To Be Discussed)
+
+| # | Task | Status | Content |
+|---|------|--------|---------|
+| OBS-1 | Logging and observability system | 🔲 | Client log collection, error reporting, performance monitoring. To be detailed after discussion with TuTu |
+
+---
+
+*Last updated: 2026-02-24*

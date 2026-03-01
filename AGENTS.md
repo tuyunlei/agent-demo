@@ -1,66 +1,66 @@
 # agent-demo — AI Agent Platform
 
-多租户 AI 智能体平台（SaaS），面向普通用户的情感陪伴和生活助手。
+Multi-tenant AI agent platform (SaaS) for emotional companionship and life assistance for general users.
 
-## 项目结构
+## Project Structure
 
 ```
 agent-demo/
-├── proto/                    # gRPC Proto 定义（4 文件：auth, chat, common, session）
-├── server/                   # Rust 服务端（Cargo workspace，8 crate）
-│   ├── crates/               # 六边形架构：types → domain → app → channel/llm/storage → server
-│   ├── crates/agent-e2e/tests/arch.rs  # Rust 架构/文件大小门禁测试
-│   ├── migrations/           # 在 crates/agent-storage/migrations/
-│   ├── tasks/                # 任务队列
-│   └── KNOWN_ISSUES.md       # 已知架构问题
-├── mobile/                   # iOS 客户端（Swift + SwiftUI）
-│   ├── AgentDemo/            # Xcode 项目
-└── deploy/                   # 部署配置（Caddyfile + .env）
+├── proto/                    # gRPC Proto definitions (4 files: auth, chat, common, session)
+├── server/                   # Rust server (Cargo workspace, 8 crates)
+│   ├── crates/               # Hexagonal architecture: types → domain → app → channel/llm/storage → server
+│   ├── crates/agent-e2e/tests/arch.rs  # Rust architecture/file size gate tests
+│   ├── migrations/           # In crates/agent-storage/migrations/
+│   ├── tasks/                # Task queue
+│   └── KNOWN_ISSUES.md       # Known architecture issues
+├── mobile/                   # iOS client (Swift + SwiftUI)
+│   ├── AgentDemo/            # Xcode project
+└── deploy/                   # Deployment config (Caddyfile + .env)
 ```
 
-## 核心架构
+## Core Architecture
 
-- **服务端**：六边形架构（Ports & Adapters），Domain 定义 Port trait，适配器实现，依赖只能由外向内
-- **客户端**：四层架构（应用集成 → 业务 → 服务 → 基础）
-- **通信**：gRPC（tonic/grpc-swift v2），Proto package `ai.agent.platform.v1`
-- **LLM**：provider-agnostic，当前用 Kimi K2.5（volcengine OpenAI-compatible API）
-- **数据库**：PostgreSQL 16，sqlx
+- **Server**: Hexagonal architecture (Ports & Adapters), Domain defines Port traits, adapters implement, dependencies can only flow inward
+- **Client**: Four-layer architecture (App Integration → Business → Service → Foundation)
+- **Communication**: gRPC (tonic/grpc-swift v2), Proto package `ai.agent.platform.v1`
+- **LLM**: provider-agnostic, currently using Kimi K2.5 (volcengine OpenAI-compatible API)
+- **Database**: PostgreSQL 16, sqlx
 
-## Git 分支策略
+## Git Branch Strategy
 
-- `feature/*` → `develop`（PR + CI，merge commit，不要 squash）→ `main`（需要人工确认）
-- **禁止直接提交 develop 或 main**
-- feature 分支创建后立即开 PR（触发 CI）
-- PR merge 后删除 feature 分支
+- `feature/*` → `develop` (PR + CI, merge commit, no squash) → `main` (requires manual confirmation)
+- **No direct commits to develop or main**
+- Create PR immediately after feature branch creation (triggers CI)
+- Delete feature branch after PR merge
 
-## 开发环境
+## Development Environment
 
 ```bash
-git config core.hooksPath .githooks   # 启用 pre-push hook（fmt + clippy + test）
+git config core.hooksPath .githooks   # Enable pre-push hook (fmt + clippy + test)
 ```
 
-跳过 hook（紧急情况）：`git push --no-verify`
+Skip hook (emergency): `git push --no-verify`
 
-## 质量标准（不可妥协）
+## Quality Standards (Non-negotiable)
 
-- **CI 红 = 不能 merge**，没有例外
-- 新功能必须包含对应测试
-- 代码必须符合架构约束（依赖方向只能由外向内）
+- **CI red = cannot merge**, no exceptions
+- New features must include corresponding tests
+- Code must comply with architecture constraints (dependencies can only flow inward)
 
-## Proto 关键约定
+## Proto Key Conventions
 
-- `ContentBlock` 的 oneof 字段叫 `kind`（不是 `block`）
+- oneof field in `ContentBlock` is called `kind` (not `block`)
 - package: `ai.agent.platform.v1`
-- Proto 文件不能随意修改，改动需要同步服务端和客户端
+- Proto files cannot be modified arbitrarily, changes require synchronization between server and client
 
-## 部署
+## Deployment
 
-- 服务地址见 `deploy/.env`（gitignored）
-- Caddy 反代 gRPC（TLS）
-- 所有凭证走环境变量，不入仓库
+- Service address see `deploy/.env` (gitignored)
+- Caddy reverse proxy gRPC (TLS)
+- All credentials via environment variables, not in repository
 
-⚠️ **仓库是 public 的** — 禁止写入 IP 地址、密码、API key、内部域名等敏感信息。
+⚠️ **Repository is public** — Writing IP addresses, passwords, API keys, internal domain names and other sensitive information is prohibited.
 
-## 当前进度
+## Current Progress
 
-服务端和客户端的详细进度见各自目录的 `STATE.md` 和 `ROADMAP.md`。
+See `STATE.md` and `ROADMAP.md` in each directory for detailed server and client progress.

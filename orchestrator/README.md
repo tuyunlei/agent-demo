@@ -1,35 +1,35 @@
 # orchestrator — Multi-Agent Developer Team
 
-基于 OpenAI Agents SDK + Codex MCP 的多 agent 协作开发系统。
+Multi-agent collaborative development system based on OpenAI Agents SDK + Codex MCP.
 
-## 架构
+## Architecture
 
 ```
-涂涂 → 小小涂（机制层）
+TuTu → XiaoXiaoTu (mechanism layer)
               ↓
-     ┌── Planner（Sonnet 4.6）── 任务拆解 + 协调
-     ├── Developer（gpt-5.3-codex）── 代码实现（Codex MCP）
-     └── Reviewer（gpt-5.3-codex）── 代码审查（只读）
+     ┌── Planner (Sonnet 4.6)── Task breakdown + coordination
+     ├── Developer (gpt-5.3-codex)── Code implementation (Codex MCP)
+     └── Reviewer (gpt-5.3-codex)── Code review (read-only)
 ```
 
-- 事件驱动：agent 间通过 `send_message` + asyncio.Queue 通信
-- Planner 是中心节点，Developer/Reviewer 互不直接通信
-- LiteLLM 统一多模型接口
+- Event-driven: agents communicate via `send_message` + asyncio.Queue
+- Planner is central node, Developer/Reviewer don't communicate directly
+- LiteLLM unified multi-model interface
 
-## 依赖
+## Dependencies
 
 - Python 3.10+
-- openai-agents[litellm]（编排 + 多模型）
-- Codex CLI（代码执行，MCP server 模式）
+- openai-agents[litellm] (orchestration + multi-model)
+- Codex CLI (code execution, MCP server mode)
 
-## 使用
+## Usage
 
 ```bash
 cd orchestrator
 source .venv/bin/activate
-python main.py "实现 Sandbox trait"
+python main.py "Implement Sandbox trait"
 ```
 
-## 进度
+## Progress
 
-见 `ROADMAP.md`。
+See `ROADMAP.md`.
