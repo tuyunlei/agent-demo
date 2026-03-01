@@ -1,22 +1,26 @@
 # orchestrator — Multi-Agent Dev Team
 
-基于 OpenAI Agents SDK + Codex MCP 的项目迭代 agent team。
+基于 OpenAI Agents SDK + Codex MCP 的多 agent 协作开发系统。
 
 ## 架构
 
 ```
-OpenAI Agents SDK（编排）
-  ├── PM Agent（任务拆解 + 分配）
-  ├── Dev Agent（代码实现，通过 Codex MCP）
-  ├── Reviewer Agent（代码审查，只读）
-  └── Architect Agent（全局架构审计，只读）
+涂涂 → 小小涂（机制层）
+              ↓
+     ┌── Planner（Sonnet 4.6）── 任务拆解 + 协调
+     ├── Dev（gpt-5.3-codex）── 代码实现（Codex MCP）
+     └── Reviewer（gpt-5.3-codex）── 代码审查（只读）
 ```
+
+- 事件驱动：agent 间通过 `send_message` + asyncio.Queue 通信
+- Planner 是中心节点，Dev/Reviewer 互不直接通信
+- LiteLLM 统一多模型接口
 
 ## 依赖
 
 - Python 3.10+
-- openai-agents + litellm（编排 + 多模型支持）
-- Codex CLI（代码执行层，作为 MCP server）
+- openai-agents[litellm]（编排 + 多模型）
+- Codex CLI（代码执行，MCP server 模式）
 
 ## 使用
 
@@ -25,3 +29,7 @@ cd orchestrator
 source .venv/bin/activate
 python main.py "实现 Sandbox trait"
 ```
+
+## 进度
+
+见 `ROADMAP.md`。
