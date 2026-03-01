@@ -13,6 +13,9 @@ deploy/.env.*
 # Claude Code local config
 CLAUDE.local.md
 
+# OpenClaw agent workspaces
+.openclaw/
+
 # macOS
 .DS_Store
 
