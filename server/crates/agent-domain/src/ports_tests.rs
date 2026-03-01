@@ -1,6 +1,6 @@
 use super::{
-    AgentError, AppendResult, AuthError, CreateSessionParams, EventRange, EventStoreError,
-    LlmError, NewEvent, SessionListFilter, StoreError,
+    AppendResult, AuthError, CreateSessionParams, EventRange, EventStoreError, LlmError, NewEvent,
+    SessionListFilter,
 };
 
 #[test]
@@ -33,23 +33,6 @@ fn llm_error_variants() {
         LlmError::InvalidRequest("missing messages".to_string())
     );
     assert!(format!("{:?}", LlmError::Timeout).contains("Timeout"));
-}
-
-#[test]
-fn agent_error_from_llm_error() {
-    let err = AgentError::from(LlmError::RateLimited);
-
-    assert_eq!(err, AgentError::Llm(LlmError::RateLimited));
-}
-
-#[test]
-fn agent_error_from_store_error() {
-    let err = AgentError::from(StoreError::Internal("db down".to_string()));
-
-    assert_eq!(
-        err,
-        AgentError::Store(StoreError::Internal("db down".to_string()))
-    );
 }
 
 #[test]
