@@ -10,6 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "../../../proto/auth.proto",
                 "../../../proto/chat.proto",
                 "../../../proto/session.proto",
+                "../../../proto/health.proto",
             ],
             &[proto_root],
         )?;

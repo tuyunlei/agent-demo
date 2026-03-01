@@ -8,7 +8,7 @@ Treat this crate as shared protocol code, not business logic.
 ## How it works
 
 Run code generation in `build.rs` via `tonic_build`.
-Compile proto files from `../../../proto/`: `common.proto`, `auth.proto`, `chat.proto`, `session.proto`.
+Compile proto files from `../../../proto/`: `common.proto`, `auth.proto`, `chat.proto`, `session.proto`, `health.proto`.
 Generate both server and client code.
 Include modules through `tonic::include_proto!("ai.agent.platform.v1")`.
 Re-export `ai::agent::platform::v1::*` from `src/lib.rs`.

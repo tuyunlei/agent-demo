@@ -2,7 +2,7 @@
 
 ## What this is
 - Treat this directory as the concrete gRPC adapter for `agent-channel`.
-- Keep module wiring in `mod.rs`; export only `AuthServiceHandler`, `ChatServiceHandler`, `SessionServiceHandler`, `UserId`, and `auth_interceptor`.
+- Keep module wiring in `mod.rs`; export only `AuthServiceHandler`, `ChatServiceHandler`, `HealthServiceHandler`, `SessionServiceHandler`, `UserId`, and `auth_interceptor`.
 - Implement transport-facing `tonic` service traits here (`auth_service_server::AuthService`, `chat_service_server::ChatService`, `session_service_server::SessionService`).
 - Keep handlers focused on request extraction, DTO mapping, and delegation.
 

@@ -2,13 +2,15 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use agent_channel::{
-    AuthServiceHandler, ChatServiceHandler, SessionServiceHandler, auth_interceptor,
+    AuthServiceHandler, ChatServiceHandler, HealthServiceHandler, SessionServiceHandler,
+    auth_interceptor,
 };
 use agent_llm::{LlmProvider, OpenAiProvider};
 use agent_memory::NoopCompactionService;
 use agent_orchestrator::{AuthService, TurnExecutor, TurnExecutorConfig};
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
+use agent_proto::health_service_server::HealthServiceServer;
 use agent_proto::session_service_server::SessionServiceServer;
 use agent_storage::pg::{PostgresEventStore, PostgresMessageStore, PostgresUserStore};
 use agent_tools::{DefaultToolRuntime, ToolRuntime};
@@ -144,17 +146,20 @@ async fn serve_handlers(
     let chat_handler = ChatServiceHandler::new(turn_executor);
     let auth_handler = AuthServiceHandler::new(auth_service.clone());
     let session_handler = SessionServiceHandler::new(message_store);
+    let health_handler = HealthServiceHandler::new(env!("CARGO_PKG_VERSION"));
 
     let chat_service =
         ChatServiceServer::with_interceptor(chat_handler, auth_interceptor(auth_service.clone()));
     let session_service =
         SessionServiceServer::with_interceptor(session_handler, auth_interceptor(auth_service));
     let auth_service = AuthServiceServer::new(auth_handler);
+    let health_service = HealthServiceServer::new(health_handler);
 
     Server::builder()
         .add_service(chat_service)
         .add_service(session_service)
         .add_service(auth_service)
+        .add_service(health_service)
         .serve(listen_addr)
         .await?;
 
@@ -319,11 +324,14 @@ impl ServerBuilder {
             auth_interceptor(self.auth_service),
         );
         let auth_service = AuthServiceServer::new(auth_handler);
+        let health_service =
+            HealthServiceServer::new(HealthServiceHandler::new(env!("CARGO_PKG_VERSION")));
 
         Server::builder()
             .add_service(chat_service)
             .add_service(session_service)
             .add_service(auth_service)
+            .add_service(health_service)
             .serve_with_shutdown(self.addr, shutdown)
             .await?;
 
