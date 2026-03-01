@@ -3,7 +3,7 @@
 ## What this is
 - Treat this crate as the Channel-layer entry adapter for external protocols.
 - Expose protocol handlers from `src/grpc` via `src/lib.rs`.
-- Keep `lib.rs` as a narrow public surface that re-exports `AuthServiceHandler`, `ChatServiceHandler`, `SessionServiceHandler`, `UserId`, and `auth_interceptor`.
+- Keep `lib.rs` as a narrow public surface that re-exports `AuthServiceHandler`, `ChatServiceHandler`, `HealthServiceHandler`, `SessionServiceHandler`, `UserId`, and `auth_interceptor`.
 - Keep non-gRPC channel experiments isolated in `channel.rs` (currently `PlaceholderChannel`).
 
 ## Layer

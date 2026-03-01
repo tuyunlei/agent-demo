@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ai.agent.platform.v1;
+
+option go_package = "ai/agent/platform/v1;platformv1";
+
+service HealthService {
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string version = 1;
+}
