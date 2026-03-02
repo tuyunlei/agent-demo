@@ -1,48 +1,18 @@
 use std::sync::Arc;
 
-use agent_domain::{MessageStore, StoreError, StoredMessage};
-use agent_llm::mock::MockLlmProvider;
-use agent_memory::NoopCompactionService;
-use agent_orchestrator::{TurnExecutor, TurnExecutorConfig};
-use agent_proto::{ContentBlock, TextBlock};
-use agent_tools::DefaultToolRuntime;
+use agent_orchestrator::{ChatRuntime, TurnError, TurnFinishReason, TurnInput, TurnOutput};
+use agent_proto::{ContentBlock, TextBlock, content_block};
 
 use super::*;
 
-#[derive(Default)]
-struct MockMessageStore;
+struct MockChatRuntime {
+    result: Result<TurnOutput, TurnError>,
+}
 
 #[async_trait::async_trait]
-impl MessageStore for MockMessageStore {
-    async fn create_session(&self, user_id: &str, _agent_id: &str) -> Result<String, StoreError> {
-        Ok(format!("session-{user_id}"))
-    }
-
-    async fn save_message(
-        &self,
-        _session_id: &str,
-        _role: &str,
-        _content: &str,
-    ) -> Result<String, StoreError> {
-        Ok("msg-id".to_string())
-    }
-
-    async fn get_session_messages(
-        &self,
-        session_id: &str,
-        _limit: i64,
-    ) -> Result<Vec<StoredMessage>, StoreError> {
-        Ok(vec![StoredMessage {
-            id: "m1".to_string(),
-            session_id: session_id.to_string(),
-            role: "user".to_string(),
-            content: "hello runtime".to_string(),
-            created_at: 1,
-        }])
-    }
-
-    async fn get_or_create_default_session(&self, user_id: &str) -> Result<String, StoreError> {
-        Ok(format!("session-{user_id}"))
+impl ChatRuntime for MockChatRuntime {
+    async fn run_turn(&self, _input: TurnInput) -> Result<TurnOutput, TurnError> {
+        self.result.clone()
     }
 }
 
@@ -56,13 +26,14 @@ fn text_block(text: &str) -> ContentBlock {
 
 #[tokio::test]
 async fn test_send_message_calls_runtime_chain() {
-    let runtime = Arc::new(TurnExecutor::new(
-        Arc::new(MockLlmProvider::with_text("mocked-reply")),
-        Arc::new(DefaultToolRuntime::new()),
-        Arc::new(MockMessageStore),
-        Arc::new(NoopCompactionService::new()),
-        TurnExecutorConfig::default(),
-    ));
+    let runtime = Arc::new(MockChatRuntime {
+        result: Ok(TurnOutput {
+            session_id: "session-unknown".to_string(),
+            assistant_text: "mocked-reply".to_string(),
+            finish_reason: TurnFinishReason::Stop,
+            tool_iterations: 0,
+        }),
+    });
     let handler = ChatServiceHandler::new(runtime);
 
     let request = tonic::Request::new(SendMessageRequest {
@@ -83,13 +54,9 @@ async fn test_send_message_calls_runtime_chain() {
 
 #[tokio::test]
 async fn test_send_message_requires_text_content() {
-    let runtime = Arc::new(TurnExecutor::new(
-        Arc::new(MockLlmProvider::with_text("mocked-reply")),
-        Arc::new(DefaultToolRuntime::new()),
-        Arc::new(MockMessageStore),
-        Arc::new(NoopCompactionService::new()),
-        TurnExecutorConfig::default(),
-    ));
+    let runtime = Arc::new(MockChatRuntime {
+        result: Err(TurnError::InvalidInput("should not be called".to_string())),
+    });
     let handler = ChatServiceHandler::new(runtime);
 
     let request = tonic::Request::new(SendMessageRequest {

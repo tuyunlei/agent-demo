@@ -8,6 +8,7 @@ use agent_llm::types::{
 use agent_memory::CompactionService;
 use agent_tools::ToolRuntime;
 
+use crate::chat_runtime::ChatRuntime;
 use crate::turn_compat::{
     build_system_prompt, chat_message_to_model_message, domain_tool_spec_to_llm_spec,
     format_message_content, llm_tool_call_to_tool_input, parse_timezone, to_domain_call,
@@ -293,6 +294,13 @@ impl TurnExecutor {
             messages.push(message);
         }
         Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl ChatRuntime for TurnExecutor {
+    async fn run_turn(&self, input: TurnInput) -> Result<TurnOutput, TurnError> {
+        TurnExecutor::run_turn(self, input).await
     }
 }
 

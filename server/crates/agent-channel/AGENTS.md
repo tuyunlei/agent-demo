@@ -14,6 +14,7 @@
 
 ## Dependencies
 - Depend only on abstractions/use-cases that preserve Channel → Orchestration boundaries.
+- Use `ChatRuntime` (not concrete `TurnExecutor`) as the chat execution dependency.
 - Re-export handlers through `lib.rs` instead of leaking internal module layout.
 - Keep `grpc/mod.rs` as the module wiring point (`auth_handler`, `chat_handler`, `session_handler`, `auth_interceptor`, `error`).
 - Keep crate APIs small and explicit; remove dead exports quickly.

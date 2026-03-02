@@ -8,6 +8,7 @@
 
 ## Key constraints
 - Construct handlers with explicit dependencies (`AuthServiceHandler::new`, `ChatServiceHandler::new`, `SessionServiceHandler::new`).
+- Keep `ChatServiceHandler::new` runtime dependency typed as `Arc<dyn ChatRuntime>`.
 - Do extract authenticated identity from request extensions via `UserId` (or reject with `Status::unauthenticated` where required).
 - Do parse/validate transport payloads early (`extract_text`, `non_empty`, `normalize_page_size`, trimmed `session_id`).
 - Do keep defaulting behavior intentional and visible (for example, `send_message` currently falls back to `"unknown"` user id).
