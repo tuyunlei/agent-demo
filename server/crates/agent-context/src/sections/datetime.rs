@@ -17,7 +17,7 @@ impl PromptSection for DateTimeSection {
             .with_timezone(&timezone)
             .format("%Y-%m-%d %H:%M")
             .to_string();
-        Ok(format!("Current time: {now} ({})", ctx.timezone))
+        Ok(format!("Current time: {now} ({timezone})"))
     }
 
     fn is_stable(&self) -> bool {

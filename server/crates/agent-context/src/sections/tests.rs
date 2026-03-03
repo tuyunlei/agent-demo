@@ -65,6 +65,19 @@ fn datetime_section_builds_non_empty() {
 }
 
 #[test]
+fn datetime_section_invalid_timezone_falls_back_label_to_utc() {
+    let mut invalid_tz_ctx = ctx();
+    invalid_tz_ctx.timezone = "Invalid/Zone".to_string();
+
+    let out = DateTimeSection
+        .build(&invalid_tz_ctx)
+        .expect("build should succeed");
+
+    assert!(out.contains("(UTC)"));
+    assert!(!out.contains("(Invalid/Zone)"));
+}
+
+#[test]
 fn datetime_section_is_not_stable() {
     assert!(!DateTimeSection.is_stable());
 }
