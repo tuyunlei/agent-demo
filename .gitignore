@@ -29,4 +29,3 @@ mobile/AgentDemo/Sources/GRPCClient/Generated/
 # cargo-mutants output
 server/mutants.out/
 server/mutants.out.old/
-.agents/

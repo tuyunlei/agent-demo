@@ -6,61 +6,67 @@ Multi-tenant AI agent platform (SaaS) for emotional companionship and life assis
 
 ```
 agent-demo/
-├── proto/                    # gRPC Proto definitions (4 files: auth, chat, common, session)
-├── server/                   # Rust server (Cargo workspace, 8 crates)
-│   ├── crates/               # Hexagonal architecture: types → domain → app → channel/llm/storage → server
-│   ├── crates/agent-e2e/tests/arch.rs  # Rust architecture/file size gate tests
-│   ├── migrations/           # In crates/agent-storage/migrations/
-│   ├── tasks/                # Task queue
+├── scripts/flow              # Task lifecycle CLI (operations + metrics + merge gates)
+├── proto/                    # gRPC Proto definitions
+├── server/                   # Rust server (Cargo workspace)
+│   ├── crates/               # Hexagonal architecture
+│   ├── crates/agent-e2e/tests/arch.rs  # Architecture gate tests
 │   └── KNOWN_ISSUES.md       # Known architecture issues
 ├── mobile/                   # iOS client (Swift + SwiftUI)
-│   ├── AgentDemo/            # Xcode project
-└── deploy/                   # Deployment config (Caddyfile + .env)
+├── deploy/                   # Deployment config
+└── .openclaw/metrics/        # Task state + event log (gitignored)
 ```
 
-## Core Architecture
+## Git
 
-- **Server**: Hexagonal architecture (Ports & Adapters), Domain defines Port traits, adapters implement, dependencies can only flow inward
-- **Client**: Four-layer architecture (App Integration → Business → Service → Foundation)
-- **Communication**: gRPC (tonic/grpc-swift v2), Proto package `ai.agent.platform.v1`
-- **LLM**: provider-agnostic, currently using Kimi K2.5 (volcengine OpenAI-compatible API)
-- **Database**: PostgreSQL 16, sqlx
-
-## Git Branch Strategy
-
-- `feature/*` → `develop` (PR + CI, merge commit, no squash) → `main` (requires manual confirmation)
-- **No direct commits to develop or main**
-- Create PR immediately after feature branch creation (triggers CI)
+- Branch: `feature/<TASK_ID>-<description>` → `develop` (PR, merge commit, no squash) → `main` (manual)
+- **No direct commits to develop or main** — always use PRs
 - Delete feature branch after PR merge
+- Pre-push hook: `git config core.hooksPath .githooks` (fmt + clippy + test)
 
-## Development Environment
+## Environment
 
-```bash
-git config core.hooksPath .githooks   # Enable pre-push hook (fmt + clippy + test)
-```
+- Git remote and SSH keys are configured — `git push` works directly
+- `gh` CLI is authenticated — `gh pr create`, `gh pr merge` work directly
+- Rust toolchain: `~/.cargo/bin/` must be in PATH
+- Commit identity is pre-configured in git
 
-Skip hook (emergency): `git push --no-verify`
-
-## Quality Standards (Non-negotiable)
+## Quality Standards
 
 - **CI red = cannot merge**, no exceptions
 - New features must include corresponding tests
-- Code must comply with architecture constraints (dependencies can only flow inward)
+- Code must comply with architecture constraints (dependencies flow inward)
+- Function limits: 50 lines max, cognitive complexity ≤ 25
+- No `unwrap()` in production code
 
-## Proto Key Conventions
+## Flow CLI
 
-- oneof field in `ContentBlock` is called `kind` (not `block`)
-- package: `ai.agent.platform.v1`
-- Proto files cannot be modified arbitrarily, changes require synchronization between server and client
+All task lifecycle operations go through `./scripts/flow`:
 
-## Deployment
+```bash
+./scripts/flow init <TASK_ID> "<description>"       # Create task (orchestrator)
+./scripts/flow branch <TASK_ID> [short-desc]         # Create branch + record start (developer)
+./scripts/flow pr <TASK_ID> [title]                  # Push + open PR + record (developer)
+./scripts/flow verdict <TASK_ID> <PASS|FAIL>         # Record review (reviewer)
+./scripts/flow ci <TASK_ID> <green|red>              # Record CI (automated)
+./scripts/flow merge <TASK_ID>                       # Gate check → merge (orchestrator)
+./scripts/flow status [TASK_ID]                      # View progress
+./scripts/flow check <TASK_ID>                       # Verify checkpoints (CI gate)
+```
 
-- Service address see `deploy/.env` (gitignored)
-- Caddy reverse proxy gRPC (TLS)
-- All credentials via environment variables, not in repository
+**Merge is gated**: `flow merge` refuses unless review=PASS and CI=green.
+**Every command leaves a trace** — success and failure both recorded in events.jsonl.
 
-⚠️ **Repository is public** — Writing IP addresses, passwords, API keys, internal domain names and other sensitive information is prohibited.
+## Constraints
 
-## Current Progress
+⚠️ **Repository is public** — no IP addresses, passwords, API keys, or sensitive information.
 
-See `STATE.md` and `ROADMAP.md` in each directory for detailed server and client progress.
+## References
+
+| What | Where |
+|------|-------|
+| Server status | server/STATE.md |
+| Server roadmap | server/ROADMAP.md |
+| Known issues | server/KNOWN_ISSUES.md |
+| Task state | .openclaw/metrics/tasks/*.json |
+| Event log | .openclaw/metrics/events.jsonl |

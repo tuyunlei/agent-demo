@@ -1,0 +1,423 @@
+#!/usr/bin/env python3
+"""
+flow — Task lifecycle manager for agent-demo.
+
+Binds operations with metrics recording. Every command leaves a trace in
+events.jsonl, whether it succeeds or fails.
+
+Usage:
+  flow init <task_id> <description>           Create a task
+  flow branch <task_id> [short-description]   Create feature branch + record start
+  flow pr <task_id> [title]                   Push + open PR + record pr_opened
+  flow verdict <task_id> <PASS|FAIL>          Record review verdict
+  flow ci <task_id> <green|red>               Record CI result
+  flow merge <task_id>                        Gate check → merge PR → record completion
+  flow status [task_id]                       Show task status (or all active tasks)
+  flow check <task_id>                        Check metrics completeness (for CI gate)
+"""
+
+import json
+import subprocess
+import sys
+import traceback
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+
+# --- Config ---
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+METRICS_DIR = PROJECT_ROOT / ".openclaw" / "metrics"
+TASKS_DIR = METRICS_DIR / "tasks"
+EVENTS_FILE = METRICS_DIR / "events.jsonl"
+CST = timezone(timedelta(hours=8))
+
+
+def now_cst() -> str:
+    return datetime.now(CST).isoformat(timespec="seconds")
+
+
+def load_task(task_id: str) -> dict | None:
+    path = TASKS_DIR / f"{task_id}.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text())
+
+
+def save_task(task: dict):
+    TASKS_DIR.mkdir(parents=True, exist_ok=True)
+    path = TASKS_DIR / f"{task['task_id']}.json"
+    path.write_text(json.dumps(task, indent=2, ensure_ascii=False) + "\n")
+
+
+def append_event(event: dict):
+    EVENTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(EVENTS_FILE, "a") as f:
+        f.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+
+def record_failure(agent: str, task_id: str, event: str, reason: str):
+    """Record a failed operation — always leaves a trace."""
+    append_event({
+        "ts": now_cst(),
+        "agent": agent,
+        "task_id": task_id,
+        "event": event,
+        "result": "failed",
+        "reason": reason,
+    })
+
+
+def run(args: list[str], **kwargs) -> subprocess.CompletedProcess:
+    """Run a subprocess with PROJECT_ROOT as cwd."""
+    return subprocess.run(args, cwd=PROJECT_ROOT, **kwargs)
+
+
+def run_capture(args: list[str]) -> subprocess.CompletedProcess:
+    """Run a subprocess and capture output."""
+    return run(args, capture_output=True, text=True)
+
+
+def die(msg: str):
+    print(f"❌ {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def ok(msg: str):
+    print(f"✅ {msg}")
+
+
+def require_task(task_id: str) -> dict:
+    task = load_task(task_id)
+    if not task:
+        die(f"Task {task_id} not found. Run: flow init {task_id} \"description\"")
+    return task
+
+
+# --- Commands ---
+
+def cmd_init(task_id: str, description: str):
+    if load_task(task_id):
+        die(f"Task {task_id} already exists")
+
+    task = {
+        "task_id": task_id,
+        "description": description,
+        "status": "created",
+        "branch": None,
+        "pr": None,
+        "created_at": now_cst(),
+        "checkpoints": {
+            "task_started": None,
+            "pr_opened": None,
+            "review_pass": None,
+            "ci_green": None,
+            "merged": None,
+        },
+    }
+    save_task(task)
+    append_event({
+        "ts": now_cst(),
+        "agent": "orchestrator",
+        "task_id": task_id,
+        "event": "goal_received",
+        "desc": description,
+    })
+    ok(f"Task {task_id} created: {description}")
+
+
+def cmd_branch(task_id: str, short_desc: str | None = None):
+    task = require_task(task_id)
+    if task["checkpoints"]["task_started"]:
+        die(f"Task {task_id} already started on branch {task.get('branch')}")
+
+    # Build branch name
+    slug = short_desc or task["description"]
+    slug = slug.lower().replace(" ", "-")[:40].rstrip("-")
+    branch = f"feature/{task_id}-{slug}"
+
+    # Switch to develop and pull latest
+    r = run_capture(["git", "checkout", "develop"])
+    if r.returncode != 0:
+        record_failure("developer", task_id, "task_started", f"git checkout develop failed: {r.stderr.strip()}")
+        die(f"git checkout develop failed: {r.stderr.strip()}")
+
+    r = run_capture(["git", "pull", "--ff-only"])
+    if r.returncode != 0:
+        record_failure("developer", task_id, "task_started", f"git pull failed: {r.stderr.strip()}")
+        die(f"git pull failed: {r.stderr.strip()}")
+
+    # Create feature branch
+    r = run_capture(["git", "checkout", "-b", branch])
+    if r.returncode != 0:
+        record_failure("developer", task_id, "task_started", f"git checkout -b failed: {r.stderr.strip()}")
+        die(f"Failed to create branch {branch}: {r.stderr.strip()}")
+
+    task["status"] = "in-progress"
+    task["branch"] = branch
+    task["checkpoints"]["task_started"] = now_cst()
+    save_task(task)
+
+    append_event({
+        "ts": now_cst(),
+        "agent": "developer",
+        "task_id": task_id,
+        "event": "task_started",
+        "branch": branch,
+    })
+    ok(f"Task {task_id} started on branch {branch}")
+
+
+def cmd_pr(task_id: str, title: str | None = None):
+    task = require_task(task_id)
+    if not task["checkpoints"]["task_started"]:
+        die(f"Task {task_id} not started yet. Run: flow branch {task_id}")
+    if task["checkpoints"]["pr_opened"]:
+        die(f"Task {task_id} already has PR #{task.get('pr')}")
+
+    branch = task.get("branch", "")
+    pr_title = title or f"{task_id}: {task['description']}"
+
+    # Push branch
+    r = run_capture(["git", "push", "-u", "origin", branch])
+    if r.returncode != 0:
+        record_failure("developer", task_id, "pr_opened", f"git push failed: {r.stderr.strip()}")
+        die(f"git push failed: {r.stderr.strip()}")
+
+    # Create PR
+    r = run_capture([
+        "gh", "pr", "create",
+        "--base", "develop",
+        "--title", pr_title,
+        "--body", f"Task: {task_id}\n\n{task['description']}",
+    ])
+    if r.returncode != 0:
+        record_failure("developer", task_id, "pr_opened", f"gh pr create failed: {r.stderr.strip()}")
+        die(f"gh pr create failed: {r.stderr.strip()}")
+
+    pr_url = r.stdout.strip()
+
+    # Get PR number from URL
+    pr_number = int(pr_url.rstrip("/").split("/")[-1]) if "/" in pr_url else 0
+
+    # Get PR stats
+    stats = {"additions": 0, "deletions": 0}
+    r2 = run_capture(["gh", "pr", "view", str(pr_number), "--json", "additions,deletions"])
+    if r2.returncode == 0:
+        try:
+            stats = json.loads(r2.stdout)
+        except json.JSONDecodeError:
+            pass
+
+    task["pr"] = pr_number
+    task["checkpoints"]["pr_opened"] = now_cst()
+    save_task(task)
+
+    append_event({
+        "ts": now_cst(),
+        "agent": "developer",
+        "task_id": task_id,
+        "event": "pr_opened",
+        "pr": pr_number,
+        "lines_added": stats.get("additions", 0),
+        "lines_removed": stats.get("deletions", 0),
+    })
+    ok(f"Task {task_id} PR #{pr_number} opened (+{stats.get('additions', 0)}/-{stats.get('deletions', 0)})")
+
+
+def cmd_verdict(task_id: str, result: str):
+    task = require_task(task_id)
+
+    result = result.upper()
+    if result not in ("PASS", "FAIL"):
+        die(f"Verdict must be PASS or FAIL, got: {result}")
+
+    if result == "PASS":
+        task["checkpoints"]["review_pass"] = now_cst()
+        task["status"] = "review-passed"
+    else:
+        task["status"] = "review-failed"
+    save_task(task)
+
+    append_event({
+        "ts": now_cst(),
+        "agent": "reviewer",
+        "task_id": task_id,
+        "event": "verdict",
+        "result": result,
+        "pr": task.get("pr"),
+    })
+    ok(f"Task {task_id} review: {result}")
+
+
+def cmd_ci(task_id: str, result: str):
+    task = require_task(task_id)
+
+    result = result.lower()
+    if result not in ("green", "red"):
+        die(f"CI result must be green or red, got: {result}")
+
+    if result == "green":
+        task["checkpoints"]["ci_green"] = now_cst()
+    save_task(task)
+
+    append_event({
+        "ts": now_cst(),
+        "agent": "orchestrator",
+        "task_id": task_id,
+        "event": "ci_result",
+        "result": result,
+    })
+    ok(f"Task {task_id} CI: {result}")
+
+
+def cmd_merge(task_id: str):
+    task = require_task(task_id)
+
+    # --- Gate checks ---
+    gates = []
+    if not task.get("pr"):
+        gates.append("No PR linked")
+    if not task["checkpoints"].get("review_pass"):
+        gates.append("Review not passed")
+    if not task["checkpoints"].get("ci_green"):
+        gates.append("CI not green")
+
+    if gates:
+        record_failure("orchestrator", task_id, "merged", f"Gate check failed: {', '.join(gates)}")
+        print(f"🚫 Cannot merge {task_id}:", file=sys.stderr)
+        for g in gates:
+            print(f"   - {g}", file=sys.stderr)
+        sys.exit(1)
+
+    # --- Execute merge ---
+    pr = task["pr"]
+    print(f"🔀 Merging PR #{pr}...")
+
+    r = run(["gh", "pr", "merge", str(pr), "--merge", "--delete-branch"])
+    if r.returncode != 0:
+        record_failure("orchestrator", task_id, "merged", f"gh pr merge failed (exit {r.returncode})")
+        die(f"gh pr merge failed with code {r.returncode}")
+
+    # Get final PR stats
+    stats = {"additions": 0, "deletions": 0}
+    r2 = run_capture(["gh", "pr", "view", str(pr), "--json", "additions,deletions"])
+    if r2.returncode == 0:
+        try:
+            stats = json.loads(r2.stdout)
+        except json.JSONDecodeError:
+            pass
+
+    # Calculate duration
+    duration_s = 0
+    created = task.get("created_at", "")
+    if created:
+        try:
+            start = datetime.fromisoformat(created)
+            duration_s = int((datetime.now(CST) - start).total_seconds())
+        except (ValueError, TypeError):
+            pass
+
+    task["status"] = "done"
+    task["checkpoints"]["merged"] = now_cst()
+    save_task(task)
+
+    append_event({
+        "ts": now_cst(),
+        "agent": "orchestrator",
+        "task_id": task_id,
+        "event": "merged",
+        "pr": pr,
+        "lines_added": stats.get("additions", 0),
+        "lines_removed": stats.get("deletions", 0),
+    })
+    append_event({
+        "ts": now_cst(),
+        "agent": "orchestrator",
+        "task_id": task_id,
+        "event": "task_completed",
+        "duration_s": duration_s,
+        "pr": pr,
+    })
+    ok(f"Task {task_id} done (PR #{pr}, {duration_s}s)")
+
+
+def cmd_status(task_id: str | None = None):
+    if task_id:
+        task = load_task(task_id)
+        if not task:
+            die(f"Task {task_id} not found")
+        print(json.dumps(task, indent=2, ensure_ascii=False))
+    else:
+        if not TASKS_DIR.exists():
+            print("No tasks.")
+            return
+        for f in sorted(TASKS_DIR.glob("*.json")):
+            task = json.loads(f.read_text())
+            status = task.get("status", "?")
+            desc = task.get("description", "")[:50]
+            pr = task.get("pr") or "-"
+            checks = ""
+            for key in ["task_started", "pr_opened", "review_pass", "ci_green", "merged"]:
+                checks += "✅" if task["checkpoints"].get(key) else "⬜"
+            print(f"  {task['task_id']:12s} {status:16s} PR#{pr:<4} {checks}  {desc}")
+
+
+def cmd_check(task_id: str):
+    """Check metrics completeness — for CI gate."""
+    task = load_task(task_id)
+    if not task:
+        die(f"Task {task_id} not found — developer must run: flow branch {task_id}")
+
+    required = ["task_started", "pr_opened"]
+    missing = [k for k in required if not task["checkpoints"].get(k)]
+
+    if missing:
+        print(f"🚫 {task_id} missing: {', '.join(missing)}", file=sys.stderr)
+        sys.exit(1)
+    ok(f"{task_id} checkpoints OK")
+
+
+# --- Entrypoint ---
+
+def usage():
+    print(__doc__.strip())
+    sys.exit(1)
+
+
+def main():
+    args = sys.argv[1:]
+    if not args:
+        usage()
+
+    cmd = args[0]
+    try:
+        if cmd == "init" and len(args) >= 3:
+            cmd_init(args[1], " ".join(args[2:]))
+        elif cmd == "branch" and len(args) >= 2:
+            cmd_branch(args[1], " ".join(args[2:]) if len(args) > 2 else None)
+        elif cmd == "pr" and len(args) >= 2:
+            cmd_pr(args[1], " ".join(args[2:]) if len(args) > 2 else None)
+        elif cmd == "verdict" and len(args) == 3:
+            cmd_verdict(args[1], args[2])
+        elif cmd == "ci" and len(args) == 3:
+            cmd_ci(args[1], args[2])
+        elif cmd == "merge" and len(args) == 2:
+            cmd_merge(args[1])
+        elif cmd == "status":
+            cmd_status(args[1] if len(args) > 1 else None)
+        elif cmd == "check" and len(args) == 2:
+            cmd_check(args[1])
+        else:
+            usage()
+    except SystemExit:
+        raise
+    except Exception as e:
+        # Last resort: record unexpected failures
+        task_id = args[1] if len(args) > 1 else "unknown"
+        record_failure("system", task_id, f"{cmd}_unexpected", f"{type(e).__name__}: {e}")
+        print(f"💥 Unexpected error: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
