@@ -4,28 +4,17 @@ Read this before modifying code to avoid building on top of problematic foundati
 
 ---
 
-## 1. agent-context is a dead crate
+## 1. agent-context is a dead crate (Resolved 2026-03-04)
 
-**Severity**: High — Design and implementation are disconnected
+**Status**: Resolved
 
-agent-context defines a complete system prompt composition system (`ContextBuilder`, `PromptSection`, `SystemPromptComposer`), including identity, timezone, security, tools, and other sections.
-
-**But no crate depends on it.** Zero external references in `Cargo.toml`.
-
-The actual system prompt build is done through hardcoded string concatenation in the `build_system_prompt` function in `agent-orchestrator/src/turn_compat.rs`, completely bypassing agent-context's design.
-
-**Impact**:
-- ~500 lines of carefully designed code are unused
-- New developers seeing agent-context will assume system prompt goes through here, but it doesn't
-- Design intent (pluggable sections, token budget management) never landed
-
-**Fix direction**: Either make TurnExecutor actually use ContextBuilder, or delete agent-context and do it well in turn_compat. Pick one, cannot have both.
+`agent-orchestrator` now depends on `agent-context`, `TurnExecutor` receives an injected `ContextBuilder`, and system prompt composition is built through `ContextBuilder` + `PromptSection` implementations.
 
 ---
 
-## 2. agent-domain shadow trait
+## 2. agent-domain shadow trait (Resolved in PR #27)
 
-**Severity**: High — Architecture consistency issue
+**Status**: Resolved in PR #27
 
 agent-domain and agent-llm each define a set of traits with overlapping concepts:
 
@@ -80,29 +69,17 @@ Callers must know which components TurnExecutor needs internally to construct it
 
 ---
 
-## 5. system prompt hardcoded in turn_compat
+## 5. system prompt hardcoded in turn_compat (Resolved 2026-03-04)
 
-**Severity**: Medium — Directly related to Issue 1
+**Status**: Resolved
 
-The `build_system_prompt` function in `turn_compat.rs` builds system prompt through direct string concatenation, bypassing the entire composition system designed by agent-context.
-
-```
-turn_compat.rs::build_system_prompt  ←  Actually used
-agent-context::ContextBuilder        ←  Designed but not connected
-```
-
-**Impact**:
-- system prompt content and format are not configurable
-- Cannot dynamically compose different sections by user/scenario
-- Adding prompt content requires modifying Rust code, recompiling
-
-**Fix direction**: Solve together with Issue 1. If keeping agent-context, migrate turn_compat's logic there; if deleting agent-context, at least extract hardcoding into configurable templates.
+Hardcoded `turn_compat.rs::build_system_prompt` was removed. Prompt content now lives in concrete `PromptSection` implementations and is composed by `ContextBuilder`.
 
 ---
 
-## 6. AgentError dead code
+## 6. AgentError dead code (Resolved in PR #27)
 
-**Severity**: Low — Only internal to agent-domain
+**Status**: Resolved in PR #27
 
 `AgentError` is defined in `agent-domain/src/ports.rs`, exported through `lib.rs`, but no external crate references it. Only tested in `ports_tests.rs`.
 
@@ -110,4 +87,4 @@ agent-context::ContextBuilder        ←  Designed but not connected
 
 ---
 
-*Last updated: 2026-03-02*
+*Last updated: 2026-03-04*

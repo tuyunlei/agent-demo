@@ -18,6 +18,7 @@
 - Inject `dyn ToolRuntime` into `TurnExecutor`.
 - Inject `dyn MessageStore` into `TurnExecutor`.
 - Inject `dyn CompactionService` into `TurnExecutor`.
+- Inject `dyn ContextBuilder` into `TurnExecutor`.
 - Inject `dyn AuthPort` into `AuthService`.
 - Do not import or reference Infrastructure concrete types in orchestration code.
 
@@ -33,7 +34,7 @@
 - Construct with `TurnExecutor::new(...)` using trait objects and `TurnExecutorConfig`.
 - Use `resolve_session_id` when `TurnInput.session_id` is missing/blank.
 - Always persist user messages before LLM completion (`save_user_message`).
-- Build request context with `build_messages_with_history`, including `build_system_prompt(...)` and formatted timestamps.
+- Build request context with `build_messages_with_history`, including `ContextBuilder::build_system_prompt(...)` and formatted timestamps.
 - Build LLM requests via `request_llm_response`; keep request metadata (`session_id`) populated.
 - Treat `FinishReason::ToolCalls` as iterative tool workflow; treat `Stop/ContentFilter/Error` as terminal stop; treat `Length` as truncated output.
 - Persist assistant tool-call messages with `save_assistant_tool_call_message` before executing tools.

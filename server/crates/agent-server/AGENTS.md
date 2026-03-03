@@ -11,6 +11,7 @@
 - Keep this crate in Layer 1 (Channel / composition root).
 - Assemble Layer 4 adapters in `build_stores()` (`PostgresUserStore`, `PostgresMessageStore`, `PostgresEventStore`).
 - Assemble Layer 3 capabilities in `build_capabilities()` (`OpenAiProvider`, `DefaultToolRuntime`, `NoopCompactionService`).
+- Assemble context composition capability in `build_context_builder()` (`DefaultContextBuilder`).
 - Assemble Layer 2 orchestrator services in `run_server()` (`TurnExecutor`, `AuthService`).
 - Expose protocol handlers only through `serve_handlers()` (`ChatServiceHandler`, `SessionServiceHandler`, `AuthServiceHandler`).
 
@@ -25,7 +26,7 @@
 ## Key constraints
 - Do all DI in this crate; don’t instantiate infra/capability implementations inside channel handlers.
 - Keep handler creation centralized in `serve_handlers()`; don’t duplicate interceptor wiring.
-- Keep `TurnExecutor::new(...)` assembly in one place and pass chat runtime as `Arc<dyn ChatRuntime>`.
+- Keep `TurnExecutor::new(...)` assembly in one place (including `ContextBuilder`) and pass chat runtime as `Arc<dyn ChatRuntime>`.
 - Initialize admin bootstrap through `ensure_admin_user_from_env()` only; don’t add hidden bootstrap paths.
 - Resolve DB URL via `ServerConfig::resolve_database_url()`; prefer `DATABASE_URL`, otherwise compose from `PG_*`.
 - Keep URL credential safety by using `build_database_url()` + `percent_encode()`.

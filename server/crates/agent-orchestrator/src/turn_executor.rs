@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use agent_context::ContextBuilder;
 use agent_domain::{ChatMessage, MessageStore, StoreError};
 use agent_llm::LlmProvider;
 use agent_llm::types::{
@@ -10,9 +11,8 @@ use agent_tools::ToolRuntime;
 
 use crate::chat_runtime::ChatRuntime;
 use crate::turn_compat::{
-    build_system_prompt, chat_message_to_model_message, format_message_content,
-    llm_tool_call_to_tool_input, parse_timezone, tool_error_json, tool_output_to_chat_message,
-    tool_spec_to_llm_spec,
+    build_prompt_section_context, chat_message_to_model_message, format_message_content,
+    parse_timezone, tool_spec_to_llm_spec,
 };
 use crate::turn_types::{TurnError, TurnExecutorConfig, TurnFinishReason, TurnInput, TurnOutput};
 
@@ -21,6 +21,7 @@ pub struct TurnExecutor {
     tools: Arc<dyn ToolRuntime>,
     message_store: Arc<dyn MessageStore>,
     compaction: Arc<dyn CompactionService>,
+    context_builder: Arc<dyn ContextBuilder>,
     config: TurnExecutorConfig,
 }
 
@@ -30,6 +31,7 @@ impl TurnExecutor {
         tools: Arc<dyn ToolRuntime>,
         message_store: Arc<dyn MessageStore>,
         compaction: Arc<dyn CompactionService>,
+        context_builder: Arc<dyn ContextBuilder>,
         config: TurnExecutorConfig,
     ) -> Self {
         Self {
@@ -37,6 +39,7 @@ impl TurnExecutor {
             tools,
             message_store,
             compaction,
+            context_builder,
             config,
         }
     }
@@ -53,7 +56,7 @@ impl TurnExecutor {
         let timezone = parse_timezone(&self.config.timezone);
         let tool_specs = self.tools.list_specs();
         let mut messages = self
-            .build_messages_with_history(&session_id, timezone, &tool_specs)
+            .build_messages_with_history(&input.user_id, &session_id, timezone, &tool_specs)
             .await?;
 
         let mut iteration: u8 = 0;
@@ -97,6 +100,7 @@ impl TurnExecutor {
 
     async fn build_messages_with_history(
         &self,
+        user_id: &str,
         session_id: &str,
         timezone: chrono_tz::Tz,
         tool_specs: &[agent_tools::ToolSpec],
@@ -107,7 +111,12 @@ impl TurnExecutor {
             .await
             .map_err(store_err)?;
 
-        let system_prompt = build_system_prompt(tool_specs, timezone);
+        let prompt_ctx =
+            build_prompt_section_context(user_id, session_id, &self.config.timezone, tool_specs);
+        let system_prompt = self
+            .context_builder
+            .build_system_prompt(&prompt_ctx)
+            .map_err(|err| TurnError::Internal(format!("context build failed: {err}")))?;
         let mut messages = vec![ChatMessage {
             role: "system".to_string(),
             content: system_prompt,
@@ -194,46 +203,6 @@ impl TurnExecutor {
         }))
     }
 
-    async fn process_tool_call_iteration(
-        &self,
-        session_id: &str,
-        messages: &mut Vec<ChatMessage>,
-        response: &LlmResponse,
-        iteration: &mut u8,
-    ) -> Result<(), TurnError> {
-        if *iteration >= self.config.max_tool_iterations {
-            return Err(TurnError::ToolLoopExceeded {
-                max: self.config.max_tool_iterations,
-            });
-        }
-
-        self.save_assistant_tool_call_message(session_id, &response.tool_calls)
-            .await?;
-        messages.push(ChatMessage {
-            role: "assistant".to_string(),
-            content: response.content.clone(),
-            tool_calls: Some(
-                response
-                    .tool_calls
-                    .clone()
-                    .into_iter()
-                    .map(|call| agent_domain::ToolCall {
-                        call_id: call.call_id,
-                        name: call.name,
-                        arguments: call.arguments,
-                    })
-                    .collect(),
-            ),
-            tool_call_id: None,
-        });
-
-        self.execute_tool_calls(session_id, messages, response)
-            .await?;
-        *iteration = iteration.saturating_add(1);
-
-        Ok(())
-    }
-
     async fn resolve_session_id(
         &self,
         user_id: &str,
@@ -248,66 +217,6 @@ impl TurnExecutor {
                 .map_err(store_err),
         }
     }
-
-    async fn save_assistant_tool_call_message(
-        &self,
-        session_id: &str,
-        tool_calls: &[agent_llm::types::ToolCall],
-    ) -> Result<(), TurnError> {
-        let message = ChatMessage {
-            role: "assistant".to_string(),
-            content: String::new(),
-            tool_calls: Some(
-                tool_calls
-                    .iter()
-                    .cloned()
-                    .map(|call| agent_domain::ToolCall {
-                        call_id: call.call_id,
-                        name: call.name,
-                        arguments: call.arguments,
-                    })
-                    .collect(),
-            ),
-            tool_call_id: None,
-        };
-        self.message_store
-            .save_message_ext(session_id, &message)
-            .await
-            .map_err(store_err)?;
-        Ok(())
-    }
-
-    async fn execute_tool_calls(
-        &self,
-        session_id: &str,
-        messages: &mut Vec<ChatMessage>,
-        response: &LlmResponse,
-    ) -> Result<(), TurnError> {
-        let calls = response
-            .tool_calls
-            .iter()
-            .map(llm_tool_call_to_tool_input)
-            .collect::<Vec<_>>();
-        let results = self.tools.execute_calls(calls).await;
-
-        for result in results {
-            let message = match result.result {
-                Ok(output) => tool_output_to_chat_message(&result.request_id, &output),
-                Err(err) => tool_output_to_chat_message(
-                    &result.request_id,
-                    &agent_tools::ToolOutput {
-                        content_json: tool_error_json(&err),
-                    },
-                ),
-            };
-            self.message_store
-                .save_message_ext(session_id, &message)
-                .await
-                .map_err(store_err)?;
-            messages.push(message);
-        }
-        Ok(())
-    }
 }
 
 #[async_trait::async_trait]
@@ -320,6 +229,9 @@ impl ChatRuntime for TurnExecutor {
 fn store_err(error: StoreError) -> TurnError {
     TurnError::SessionError(format!("{error:?}"))
 }
+
+#[path = "turn_executor_tool_loop.rs"]
+mod turn_executor_tool_loop;
 
 #[cfg(test)]
 #[path = "turn_executor_tests.rs"]

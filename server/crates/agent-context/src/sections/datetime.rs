@@ -8,7 +8,16 @@ impl PromptSection for DateTimeSection {
     }
 
     fn build(&self, ctx: &PromptSectionContext) -> Result<String, ContextError> {
-        Ok(format!("Current UTC time: {}", ctx.now.to_rfc3339()))
+        let timezone = ctx
+            .timezone
+            .parse::<chrono_tz::Tz>()
+            .unwrap_or(chrono_tz::UTC);
+        let now = ctx
+            .now
+            .with_timezone(&timezone)
+            .format("%Y-%m-%d %H:%M")
+            .to_string();
+        Ok(format!("Current time: {now} ({timezone})"))
     }
 
     fn is_stable(&self) -> bool {

@@ -25,9 +25,16 @@ pub struct PromptSectionContext {
     pub user_id: String,
     pub agent_id: String,
     pub session_id: String,
-    pub tool_names: Vec<String>,
+    pub timezone: String,
+    pub tools: Vec<ToolPromptSpec>,
     pub now: DateTime<Utc>,
     pub runtime_info: RuntimeInfo,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ToolPromptSpec {
+    pub name: String,
+    pub description: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -62,7 +69,11 @@ mod tests {
             user_id: "u1".to_string(),
             agent_id: "a1".to_string(),
             session_id: "s1".to_string(),
-            tool_names: vec!["web_search".to_string()],
+            timezone: "UTC".to_string(),
+            tools: vec![ToolPromptSpec {
+                name: "web_search".to_string(),
+                description: "search the web".to_string(),
+            }],
             now: Utc::now(),
             runtime_info: RuntimeInfo {
                 model: "m1".to_string(),

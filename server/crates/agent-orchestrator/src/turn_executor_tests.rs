@@ -1,5 +1,9 @@
 use std::sync::{Arc, Mutex};
 
+use agent_context::{
+    ContextBuilder, ContextError, ContextInput, DefaultContextBuilder, ModelMessage,
+    PromptSectionContext,
+};
 use agent_domain::{ChatMessage, MessageStore, StoreError, StoredMessage};
 use agent_llm::mock::MockLlmProvider;
 use agent_llm::types::{FinishReason, LlmResponse, LlmUsage, ToolCall};
@@ -118,6 +122,20 @@ impl Tool for EchoTool {
     }
 }
 
+struct StaticContextBuilder {
+    system_prompt: String,
+}
+
+impl ContextBuilder for StaticContextBuilder {
+    fn build_system_prompt(&self, _ctx: &PromptSectionContext) -> Result<String, ContextError> {
+        Ok(self.system_prompt.clone())
+    }
+
+    fn build_messages(&self, _input: &ContextInput) -> Result<Vec<ModelMessage>, ContextError> {
+        Ok(Vec::new())
+    }
+}
+
 fn response_with(
     reason: FinishReason,
     content: &str,
@@ -147,12 +165,16 @@ async fn simple_text_reply() {
         "hello",
         vec![],
     )));
+    let llm_for_assert = llm.clone();
     let store = Arc::new(MockMessageStore::default());
     let runtime = TurnExecutor::new(
         llm,
         Arc::new(DefaultToolRuntime::new()),
         store,
         Arc::new(NoopCompactionService::new()),
+        Arc::new(StaticContextBuilder {
+            system_prompt: "system-from-context-builder".to_string(),
+        }),
         TurnExecutorConfig::default(),
     );
 
@@ -168,6 +190,10 @@ async fn simple_text_reply() {
     assert_eq!(out.session_id, "s1");
     assert_eq!(out.assistant_text, "hello");
     assert_eq!(out.finish_reason, TurnFinishReason::Stop);
+    assert_eq!(
+        llm_for_assert.calls()[0].messages[0].content,
+        "system-from-context-builder"
+    );
 }
 
 #[tokio::test]
@@ -177,6 +203,7 @@ async fn empty_message_rejected() {
         Arc::new(DefaultToolRuntime::new()),
         Arc::new(MockMessageStore::default()),
         Arc::new(NoopCompactionService::new()),
+        Arc::new(DefaultContextBuilder::with_default_sections()),
         TurnExecutorConfig::default(),
     );
 
@@ -216,6 +243,7 @@ async fn tool_call_round_trip() {
         Arc::new(tools),
         store.clone(),
         Arc::new(NoopCompactionService::new()),
+        Arc::new(DefaultContextBuilder::with_default_sections()),
         TurnExecutorConfig::default(),
     );
 
@@ -264,6 +292,7 @@ async fn tool_loop_exceeded() {
         Arc::new(tools),
         Arc::new(MockMessageStore::default()),
         Arc::new(NoopCompactionService::new()),
+        Arc::new(DefaultContextBuilder::with_default_sections()),
         TurnExecutorConfig {
             max_tool_iterations: 1,
             timezone: "Asia/Shanghai".to_string(),
@@ -294,6 +323,7 @@ async fn length_truncated() {
         Arc::new(DefaultToolRuntime::new()),
         Arc::new(MockMessageStore::default()),
         Arc::new(NoopCompactionService::new()),
+        Arc::new(DefaultContextBuilder::with_default_sections()),
         TurnExecutorConfig::default(),
     );
 
@@ -322,6 +352,7 @@ async fn finish_reason_error_and_content_filter_fallback_to_stop() {
             Arc::new(DefaultToolRuntime::new()),
             Arc::new(MockMessageStore::default()),
             Arc::new(NoopCompactionService::new()),
+            Arc::new(DefaultContextBuilder::with_default_sections()),
             TurnExecutorConfig::default(),
         );
 
@@ -347,6 +378,7 @@ async fn resolves_default_session_when_input_session_id_missing_or_blank() {
         Arc::new(DefaultToolRuntime::new()),
         Arc::new(MockMessageStore::default()),
         Arc::new(NoopCompactionService::new()),
+        Arc::new(DefaultContextBuilder::with_default_sections()),
         TurnExecutorConfig::default(),
     );
 
@@ -378,6 +410,7 @@ async fn store_errors_are_mapped_to_session_error() {
         Arc::new(DefaultToolRuntime::new()),
         Arc::new(FailingMessageStore),
         Arc::new(NoopCompactionService::new()),
+        Arc::new(DefaultContextBuilder::with_default_sections()),
         TurnExecutorConfig::default(),
     );
 

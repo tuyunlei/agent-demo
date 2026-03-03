@@ -7,11 +7,8 @@ impl PromptSection for IdentitySection {
         "identity"
     }
 
-    fn build(&self, ctx: &PromptSectionContext) -> Result<String, ContextError> {
-        Ok(format!(
-            "You are agent '{}'. Follow your role boundaries, stay helpful, and prioritize user intent.",
-            ctx.agent_id
-        ))
+    fn build(&self, _ctx: &PromptSectionContext) -> Result<String, ContextError> {
+        Ok("You are a helpful AI assistant.".to_string())
     }
 
     fn order(&self) -> u16 {

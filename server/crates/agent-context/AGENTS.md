@@ -19,6 +19,8 @@
 - Use `ContextOutput` as final build output (`system_prompt`, `messages`, `diagnostics`).
 - Use `ContextError` for all build failures and validation errors.
 - Use `ModelMessage`, `TokenBudget`, `HistoryPolicy`, and `ContextDiagnostics` to keep policies explicit.
+- Use `PromptSectionContext.tools` (`Vec<ToolPromptSpec>`) when sections need tool names + descriptions.
+- Use `PromptSectionContext.timezone` + `now` for locale-aware time rendering in prompt sections.
 
 ## How ContextBuilder works
 - Construct a `DefaultContextBuilder` with either explicit sections (`new`) or defaults (`with_default_sections`).

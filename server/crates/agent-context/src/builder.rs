@@ -4,7 +4,7 @@ use crate::{
     PromptSection,
     composer::SystemPromptComposer,
     error::ContextError,
-    section::{PromptSectionContext, RuntimeInfo},
+    section::{PromptSectionContext, RuntimeInfo, ToolPromptSpec},
     sections::{DateTimeSection, IdentitySection, RuntimeSection, SafetySection, ToolsSection},
 };
 
@@ -157,21 +157,19 @@ impl DefaultContextBuilder {
         user_id: impl Into<String>,
         agent_id: impl Into<String>,
         session_id: impl Into<String>,
-        tool_names: Vec<String>,
-        model: impl Into<String>,
-        os: impl Into<String>,
+        timezone: impl Into<String>,
+        tools: Vec<ToolPromptSpec>,
+        runtime_info: RuntimeInfo,
     ) -> PromptSectionContext {
         PromptSectionContext {
             tenant_id: tenant_id.into(),
             user_id: user_id.into(),
             agent_id: agent_id.into(),
             session_id: session_id.into(),
-            tool_names,
+            timezone: timezone.into(),
+            tools,
             now: Utc::now(),
-            runtime_info: RuntimeInfo {
-                model: model.into(),
-                os: os.into(),
-            },
+            runtime_info,
         }
     }
 }
@@ -203,9 +201,21 @@ mod tests {
             "user",
             "agent-xyz",
             "session-1",
-            vec!["search".to_string(), "calc".to_string()],
-            "claude",
-            "linux",
+            "UTC",
+            vec![
+                ToolPromptSpec {
+                    name: "search".to_string(),
+                    description: "search the web".to_string(),
+                },
+                ToolPromptSpec {
+                    name: "calc".to_string(),
+                    description: "run calculations".to_string(),
+                },
+            ],
+            RuntimeInfo {
+                model: "claude".to_string(),
+                os: "linux".to_string(),
+            },
         )
     }
 
@@ -229,10 +239,10 @@ mod tests {
 
         let prompt = builder.build_system_prompt(&ctx).unwrap();
 
-        assert!(prompt.contains("agent-xyz"));
-        assert!(prompt.contains("safety"));
+        assert!(prompt.contains("helpful AI assistant"));
+        assert!(prompt.contains("When the user asks about current events"));
         assert!(prompt.contains("search"));
-        assert!(prompt.contains("Current UTC time:"));
+        assert!(prompt.contains("Current time:"));
     }
 
     #[test]
@@ -276,7 +286,6 @@ mod tests {
 
         let prompt = builder.build_system_prompt(&ctx).unwrap();
 
-        assert!(prompt.contains("model=claude"));
-        assert!(prompt.contains("os=linux"));
+        assert!(prompt.contains("same language"));
     }
 }

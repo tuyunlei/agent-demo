@@ -1,3 +1,4 @@
+use agent_context::{PromptSectionContext, RuntimeInfo, ToolPromptSpec};
 use agent_domain::ChatMessage;
 use agent_llm::types::{ModelMessage, ToolCall as LlmToolCall};
 use agent_tools::{ToolError, ToolInput, ToolOutput};
@@ -82,19 +83,29 @@ fn format_timestamp(timestamp: DateTime<Utc>, timezone: Tz) -> String {
 }
 
 #[must_use]
-pub fn build_system_prompt(tool_specs: &[agent_tools::ToolSpec], timezone: Tz) -> String {
-    let now = format_timestamp(Utc::now(), timezone);
-    let tools = if tool_specs.is_empty() {
-        "- (none)".to_string()
-    } else {
-        tool_specs
+pub fn build_prompt_section_context(
+    user_id: &str,
+    session_id: &str,
+    timezone: &str,
+    tool_specs: &[agent_tools::ToolSpec],
+) -> PromptSectionContext {
+    PromptSectionContext {
+        tenant_id: "default-tenant".to_string(),
+        user_id: user_id.to_string(),
+        agent_id: "assistant".to_string(),
+        session_id: session_id.to_string(),
+        timezone: timezone.to_string(),
+        tools: tool_specs
             .iter()
-            .map(|tool| format!("- {}: {}", tool.name, tool.description))
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
-
-    format!(
-        "You are a helpful AI assistant.\n\nCurrent time: {now} ({timezone})\n\nYou have access to the following tools:\n{tools}\n\nWhen the user asks about current events, time, or facts you're unsure about, use the appropriate tool.\nBe concise and helpful. Respond in the same language the user uses."
-    )
+            .map(|tool| ToolPromptSpec {
+                name: tool.name.clone(),
+                description: tool.description.clone(),
+            })
+            .collect(),
+        now: Utc::now(),
+        runtime_info: RuntimeInfo {
+            model: "mock".to_string(),
+            os: std::env::consts::OS.to_string(),
+        },
+    }
 }

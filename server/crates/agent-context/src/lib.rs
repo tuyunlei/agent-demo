@@ -10,4 +10,4 @@ pub use builder::{
 };
 pub use composer::SystemPromptComposer;
 pub use error::ContextError;
-pub use section::{PromptSection, PromptSectionContext, RuntimeInfo};
+pub use section::{PromptSection, PromptSectionContext, RuntimeInfo, ToolPromptSpec};

@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 agent-domain = { path = "../agent-domain" }
+agent-context = { path = "../agent-context" }
 agent-llm = { path = "../agent-llm" }
 agent-tools = { path = "../agent-tools" }
 agent-memory = { path = "../agent-memory" }

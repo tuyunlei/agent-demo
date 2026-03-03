@@ -5,6 +5,7 @@ use agent_channel::{
     AuthServiceHandler, ChatServiceHandler, HealthServiceHandler, SessionServiceHandler,
     auth_interceptor,
 };
+use agent_context::{ContextBuilder, DefaultContextBuilder};
 use agent_llm::{LlmProvider, OpenAiProvider};
 use agent_memory::NoopCompactionService;
 use agent_orchestrator::{AuthService, ChatRuntime, TurnExecutor, TurnExecutorConfig};
@@ -77,11 +78,13 @@ pub async fn run_server(config: ServerConfig) -> Result<(), Box<dyn std::error::
     // Layer 3 + 2: Capabilities and orchestration
     let capabilities =
         build_capabilities(config.llm_api_key, config.llm_base_url, config.llm_model);
+    let context_builder = build_context_builder();
     let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(
         capabilities.llm,
         capabilities.tools,
         stores.message_store.clone(),
         capabilities.compaction,
+        context_builder,
         TurnExecutorConfig::default(),
     ));
     let auth_service = Arc::new(AuthService::new(stores.user_store, config.jwt_secret));
@@ -171,6 +174,10 @@ fn build_tool_runtime() -> Arc<dyn ToolRuntime> {
     runtime.register(Box::new(agent_tools::builtin::GetCurrentTimeTool));
     runtime.register(Box::new(agent_tools::builtin::WebSearchTool::from_env()));
     Arc::new(runtime)
+}
+
+fn build_context_builder() -> Arc<dyn ContextBuilder> {
+    Arc::new(DefaultContextBuilder::with_default_sections())
 }
 
 async fn ensure_admin_user_from_env(
@@ -291,11 +298,13 @@ impl ServerBuilder {
     ) -> Self {
         let tools = build_tool_runtime();
         let compaction = Arc::new(NoopCompactionService::new());
+        let context_builder = build_context_builder();
         let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(
             llm,
             tools,
             message_store.clone(),
             compaction,
+            context_builder,
             TurnExecutorConfig::default(),
         ));
         let auth_service = Arc::new(AuthService::new(user_store, jwt_secret.to_string()));
