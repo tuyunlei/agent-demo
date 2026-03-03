@@ -1,58 +1,78 @@
-# server ROADMAP
+# Server Roadmap
+
+## Progress
+
+```
+Phase 1: Walking Skeleton        ████████████ DONE  (PRs #1-#4)
+Phase 2: Refactoring & Quality   ████████████ DONE  (PRs #5-#22)
+Phase 3: Tech Debt Cleanup       ████████████ DONE  (PRs #23-#30)
+Phase 4: Core Features           ░░░░░░░░░░░░ ← HERE
+Phase 5: MVP Product             ░░░░░░░░░░░░
+Phase 6: Deploy & Polish         ░░░░░░░░░░░░
+```
+
+**Coverage**: 85.96% (CI threshold 85%, long-term target 90%)
+
+## Current Phase: Core Features
+
+### Remaining Tech Debt (non-blocking)
+See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) — 2 open issues (KI-03, KI-04). Fix opportunistically during feature work.
+
+### Feature TODO
+| Priority | Feature | Status | Notes |
+|----------|---------|--------|-------|
+| P0 | Memory / Compaction | Framework exists | CompactionService only has Noop impl |
+| P0 | Session management | Basic exists | Need create/restore/list |
+| P0 | User Auth | Design done | JWT + password, migration ready |
+| P1 | Tool expansion | Framework exists | Only web_search built-in |
+| P1 | Provider fallback | Design done | LLM provider fallback chain |
+| P2 | Skill system | Research done | Three-layer progressive discovery |
+
+### Blockers
+- `develop → main` merge requires 涂涂's confirmation
+
+## Deployment
+
+```
+Internet → :443 TLS → Caddy → localhost:50051/50052 h2c → server → postgres
+```
+
+- Preview: `preview-agent.xclz.org` → :50051
+- Production: `agent.xclz.org` → :50052
 
 ## Completed
 
 <details>
-<summary>Refactoring Phase R-01 ~ R-09 (PRs #5-14)</summary>
+<summary>Phase 1: Walking Skeleton (PRs #1-#4)</summary>
 
-- [x] **R-01: agent-domain refactoring + agent-types merge** (PR #5)
-- [x] **R-02: agent-context crate** (PR #6)
-- [x] **R-03: agent-tools crate** (PR #7)
-- [x] **R-04: agent-llm refactoring** (PR #8)
-- [x] **R-05: agent-memory crate** (PR #9)
-- [x] **R-06a: agent-orchestrator rename** (PR #10)
-- [x] **R-06b: TurnExecutor implementation** (PR #11)
-- [x] **R-07: agent-storage EventStore** (PR #12)
-- [x] **R-08: agent-channel + agent-server refactoring** (PR #13)
-- [x] **R-09: arch test update + coverage fix** (PR #14)
-- [x] **Cleanup obsolete files** (PR #15)
+- [x] Architecture design (11 design documents)
+- [x] 4-layer crate structure (13 crates)
+- [x] gRPC service skeleton
+- [x] PostgreSQL + sqlx setup
+- [x] Basic LLM integration (OpenAI-compatible)
+- [x] Docker Compose deployment (PR #18)
+- [x] Provider Capabilities (PR #19, ADR-009)
 </details>
 
 <details>
-<summary>Test Coverage T-01 ~ T-05 (PRs #16-17)</summary>
+<summary>Phase 2: Refactoring & Quality (PRs #5-#22)</summary>
 
-- [x] **T-01: agent-llm test completion** (PR #16)
-- [x] **T-02+T-03+T-04: web_search + ports + miscellaneous coverage** (PR #17)
-- [x] **T-05: CI coverage threshold increase** — 65% → 77% → 85%
+- [x] R-01 ~ R-09: Full code refactoring (PRs #5-#14)
+- [x] Cleanup stale files (PR #15)
+- [x] T-01 ~ T-05: Test coverage 65% → 85.96% (PRs #16-#17)
+- [x] L-01 ~ L-05: Lint hardening (PRs #20-#22)
+  - deny: cast_possible_truncation, cast_sign_loss, unwrap_used, too_many_lines, cognitive_complexity
+  - Thresholds: function ≤30 lines, complexity ≤10
 </details>
 
 <details>
-<summary>Other Completed Items</summary>
+<summary>Phase 3: Tech Debt Cleanup (PRs #23-#30)</summary>
 
-- [x] **Docker Compose deployment** (PR #18) — preview + production dual environments
-- [x] **Provider Capabilities** (PR #19) — stateful API, builtin tools, compaction layering, ADR-009
+- [x] Health check endpoint (PR #23)
+- [x] Remove dead AgentError + shadow ToolRuntime (PR #24)
+- [x] Extract ChatRuntime trait (PR #25)
+- [x] Unify shadow LLM types — KI-02 (PR #27, +54/-527)
+- [x] Flow CLI + role guides — INFRA-01 (PR #28)
+- [x] Flow merge gate validation — INFRA-01b (PR #29)
+- [x] Integrate ContextBuilder into TurnExecutor — KI-01+KI-05 (PR #30, +320/-201)
 </details>
-
----
-
-## Completed: Lint Strengthening (L-01~L-05, PRs #20-22)
-
-<details>
-<summary>Expand to view</summary>
-
-- [x] L-01: lint configuration skeleton
-- [x] L-02: cast audit (cast_possible_truncation, cast_sign_loss, cast_lossless)
-- [x] L-03: unwrap ban (deny unwrap_used)
-- [x] L-04: function size control (≤30 lines, complexity ≤10)
-- [x] L-05: must_use audit
-</details>
-
----
-
-## TODO
-
-See `tasks/QUEUE.md` for details.
-
-### Test Coverage Improvement (Target 90%)
-
-Current coverage: 85.96% (CI threshold 85%). Long-term target 90%.
