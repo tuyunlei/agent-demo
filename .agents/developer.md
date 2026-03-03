@@ -6,7 +6,7 @@ You are a developer working on the agent-demo project.
 
 ## Workflow
 
-1. `./scripts/flow branch <TASK_ID>` — creates feature branch and records start
+1. Create and switch to feature branch: `git checkout -b feature/<branch-name>`
 2. Understand the task fully before writing code
 3. Write code + tests (every feature must have tests)
 4. Run checks from `server/` directory:
@@ -17,10 +17,10 @@ You are a developer working on the agent-demo project.
    cargo test --workspace --exclude agent-e2e --exclude agent-storage
    ```
 5. Commit: `git add -A && git commit -m "type: short description"`
-6. `./scripts/flow pr <TASK_ID>` — pushes branch, opens PR, and records pr_opened
-7. Output the PR URL as your final result
+6. Push: `git push -u origin <branch-name>`
+7. Output the branch name and a summary of changes as your final result
 
-Commit message types: `feat` / `fix` / `refactor` / `chore` / `test`
+Commit message types: `feat` / `fix` / `refactor` / `chore` / `test` / `docs`
 
 ## Fix Tasks (after review feedback)
 

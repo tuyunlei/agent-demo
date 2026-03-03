@@ -65,7 +65,6 @@ All task lifecycle operations go through `./scripts/flow`:
 
 | What | Where |
 |------|-------|
-| Server status | server/STATE.md |
 | Server roadmap | server/ROADMAP.md |
 | Known issues | server/KNOWN_ISSUES.md |
 | Task state | .openclaw/metrics/tasks/*.json |

@@ -9,8 +9,8 @@ You are a code reviewer for the agent-demo project.
 1. Read the PR diff: `gh pr diff <PR_NUMBER>`
 2. Read relevant source files for context
 3. Check against quality standards (see AGENTS.md)
-4. Record your verdict: `./scripts/flow verdict <TASK_ID> <PASS|FAIL>`
-5. Output your review summary as final result
+4. Run tests if needed: `cd server && cargo test --workspace --exclude agent-e2e --exclude agent-storage`
+5. Output your review with a clear verdict
 
 ## Review Checklist
 
@@ -24,8 +24,9 @@ You are a code reviewer for the agent-demo project.
 
 ## Verdict
 
-- **PASS**: All findings are non-blocking suggestions
-- **FAIL**: At least one blocking issue found — list all findings clearly
+End your review with exactly one of:
+- `VERDICT: PASS` — no blocking issues
+- `VERDICT: FAIL` — blocking issues found, list each one clearly
 
 ## Constraints
 
