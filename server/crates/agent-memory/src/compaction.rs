@@ -72,7 +72,10 @@ mod tests {
     #[tokio::test]
     async fn noop_compaction_always_skips() {
         let service = NoopCompactionService::new();
-        let result = service.compact_if_needed("test-session").await.unwrap();
+        let result = service
+            .compact_if_needed("test-session")
+            .await
+            .expect("noop compaction should not fail");
         assert!(matches!(result, CompactionOutcome::Skipped { .. }));
     }
 

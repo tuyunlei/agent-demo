@@ -1,10 +1,6 @@
-use agent_domain as domain;
 use reqwest::StatusCode;
 
 use crate::error::LlmError;
-use crate::provider_compat::{
-    map_from_domain_request, map_to_domain_error, map_to_domain_response,
-};
 use crate::provider_wire::*;
 use crate::traits::LlmProvider;
 use crate::types::{
@@ -219,20 +215,6 @@ impl LlmProvider for OpenAiProvider {
             supports_json_mode: true,
             supports_stateful: false,
         }
-    }
-}
-
-#[async_trait::async_trait]
-impl domain::LlmProvider for OpenAiProvider {
-    async fn generate(
-        &self,
-        request: domain::LlmRequest,
-    ) -> Result<domain::LlmResponse, domain::LlmError> {
-        let req = map_from_domain_request(request, &self.default_model);
-        let resp = <Self as LlmProvider>::complete(self, req)
-            .await
-            .map_err(map_to_domain_error)?;
-        Ok(map_to_domain_response(resp))
     }
 }
 

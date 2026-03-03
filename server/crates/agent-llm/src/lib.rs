@@ -1,4 +1,3 @@
-mod provider_compat;
 mod provider_wire;
 
 pub mod error;

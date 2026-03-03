@@ -1,13 +1,9 @@
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
-use agent_domain as domain;
-
 use crate::error::LlmError;
 use crate::traits::LlmProvider;
-use crate::types::{
-    FinishReason, LlmRequest, LlmRequestConfig, LlmRequestMetadata, LlmResponse, LlmUsage,
-};
+use crate::types::{FinishReason, LlmRequest, LlmResponse, LlmUsage};
 
 #[derive(Clone)]
 pub struct MockLlmProvider {
@@ -99,90 +95,5 @@ impl LlmProvider for MockLlmProvider {
             .lock()
             .expect("response mutex should not be poisoned")
             .clone()
-    }
-}
-
-#[async_trait::async_trait]
-impl domain::LlmProvider for MockLlmProvider {
-    #[allow(clippy::too_many_lines)] // Test mock — splitting would reduce readability.
-    async fn generate(
-        &self,
-        request: domain::LlmRequest,
-    ) -> Result<domain::LlmResponse, domain::LlmError> {
-        let req = LlmRequest {
-            messages: request
-                .messages
-                .into_iter()
-                .map(|m| crate::types::ModelMessage {
-                    role: m.role,
-                    content: m.content,
-                    tool_calls: m.tool_calls.map(|calls| {
-                        calls
-                            .into_iter()
-                            .map(|c| crate::types::ToolCall {
-                                call_id: c.call_id,
-                                name: c.name,
-                                arguments: c.arguments,
-                            })
-                            .collect()
-                    }),
-                    tool_call_id: m.tool_call_id,
-                })
-                .collect(),
-            tool_specs: request
-                .tools
-                .into_iter()
-                .map(|t| crate::types::ToolSpec {
-                    name: t.name,
-                    description: t.description,
-                    parameters_schema: t.parameters,
-                    strict: false,
-                })
-                .collect(),
-            builtin_tools: vec![],
-            previous_response_id: None,
-            config: LlmRequestConfig {
-                model: request.model.unwrap_or_else(|| "mock".to_string()),
-                temperature: request.temperature,
-                top_p: None,
-                max_tokens: request.max_tokens,
-                timeout: None,
-                json_mode: false,
-            },
-            metadata: LlmRequestMetadata::default(),
-        };
-
-        let resp = <Self as LlmProvider>::complete(self, req)
-            .await
-            .map_err(|e| match e {
-                LlmError::RateLimit => domain::LlmError::RateLimited,
-                LlmError::Timeout => domain::LlmError::Timeout,
-                LlmError::InvalidRequest(m) => domain::LlmError::InvalidRequest(m),
-                _ => domain::LlmError::ProviderError(e.to_string()),
-            })?;
-
-        Ok(domain::LlmResponse {
-            content: resp.content,
-            model: resp.model,
-            usage: resp.usage.map(|u| domain::LlmUsage {
-                input_tokens: u.prompt_tokens,
-                output_tokens: u.completion_tokens,
-                total_tokens: u.total_tokens,
-            }),
-            tool_calls: resp
-                .tool_calls
-                .into_iter()
-                .map(|c| domain::ToolCall {
-                    call_id: c.call_id,
-                    name: c.name,
-                    arguments: c.arguments,
-                })
-                .collect(),
-            finish_reason: match resp.finish_reason {
-                FinishReason::ToolCalls => domain::FinishReason::ToolCalls,
-                FinishReason::Length => domain::FinishReason::Length,
-                _ => domain::FinishReason::Stop,
-            },
-        })
     }
 }

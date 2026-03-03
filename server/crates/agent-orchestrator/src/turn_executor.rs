@@ -10,9 +10,9 @@ use agent_tools::ToolRuntime;
 
 use crate::chat_runtime::ChatRuntime;
 use crate::turn_compat::{
-    build_system_prompt, chat_message_to_model_message, domain_tool_spec_to_llm_spec,
-    format_message_content, llm_tool_call_to_tool_input, parse_timezone, to_domain_call,
-    tool_error_json, tool_output_to_chat_message, tool_specs_to_domain_specs,
+    build_system_prompt, chat_message_to_model_message, format_message_content,
+    llm_tool_call_to_tool_input, parse_timezone, tool_error_json, tool_output_to_chat_message,
+    tool_spec_to_llm_spec,
 };
 use crate::turn_types::{TurnError, TurnExecutorConfig, TurnFinishReason, TurnInput, TurnOutput};
 
@@ -52,15 +52,14 @@ impl TurnExecutor {
 
         let timezone = parse_timezone(&self.config.timezone);
         let tool_specs = self.tools.list_specs();
-        let domain_specs = tool_specs_to_domain_specs(&tool_specs);
         let mut messages = self
-            .build_messages_with_history(&session_id, timezone, &domain_specs)
+            .build_messages_with_history(&session_id, timezone, &tool_specs)
             .await?;
 
         let mut iteration: u8 = 0;
         loop {
             let response = self
-                .request_llm_response(&session_id, &messages, &domain_specs)
+                .request_llm_response(&session_id, &messages, &tool_specs)
                 .await?;
 
             if let Some(output) = self
@@ -100,7 +99,7 @@ impl TurnExecutor {
         &self,
         session_id: &str,
         timezone: chrono_tz::Tz,
-        domain_specs: &[agent_domain::ToolSpec],
+        tool_specs: &[agent_tools::ToolSpec],
     ) -> Result<Vec<ChatMessage>, TurnError> {
         let history = self
             .message_store
@@ -108,7 +107,7 @@ impl TurnExecutor {
             .await
             .map_err(store_err)?;
 
-        let system_prompt = build_system_prompt(domain_specs, timezone);
+        let system_prompt = build_system_prompt(tool_specs, timezone);
         let mut messages = vec![ChatMessage {
             role: "system".to_string(),
             content: system_prompt,
@@ -130,16 +129,16 @@ impl TurnExecutor {
         &self,
         session_id: &str,
         messages: &[ChatMessage],
-        domain_specs: &[agent_domain::ToolSpec],
+        tool_specs: &[agent_tools::ToolSpec],
     ) -> Result<LlmResponse, TurnError> {
         let request = LlmRequest {
             messages: messages
                 .iter()
                 .map(chat_message_to_model_message)
                 .collect::<Vec<_>>(),
-            tool_specs: domain_specs
+            tool_specs: tool_specs
                 .iter()
-                .map(domain_tool_spec_to_llm_spec)
+                .map(tool_spec_to_llm_spec)
                 .collect::<Vec<_>>(),
             builtin_tools: vec![],
             previous_response_id: None,
@@ -218,7 +217,11 @@ impl TurnExecutor {
                     .tool_calls
                     .clone()
                     .into_iter()
-                    .map(to_domain_call)
+                    .map(|call| agent_domain::ToolCall {
+                        call_id: call.call_id,
+                        name: call.name,
+                        arguments: call.arguments,
+                    })
                     .collect(),
             ),
             tool_call_id: None,
@@ -254,7 +257,17 @@ impl TurnExecutor {
         let message = ChatMessage {
             role: "assistant".to_string(),
             content: String::new(),
-            tool_calls: Some(tool_calls.iter().cloned().map(to_domain_call).collect()),
+            tool_calls: Some(
+                tool_calls
+                    .iter()
+                    .cloned()
+                    .map(|call| agent_domain::ToolCall {
+                        call_id: call.call_id,
+                        name: call.name,
+                        arguments: call.arguments,
+                    })
+                    .collect(),
+            ),
             tool_call_id: None,
         };
         self.message_store

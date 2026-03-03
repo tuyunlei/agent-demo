@@ -23,33 +23,12 @@ pub enum AuthError {
     Internal(String),
 }
 
-#[async_trait::async_trait]
-pub trait LlmProvider: Send + Sync {
-    async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError>;
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LlmRequest {
-    pub messages: Vec<ChatMessage>,
-    pub model: Option<String>,
-    pub temperature: Option<f32>,
-    pub max_tokens: Option<u32>,
-    pub tools: Vec<ToolSpec>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
     pub tool_calls: Option<Vec<ToolCall>>,
     pub tool_call_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct ToolSpec {
-    pub name: String,
-    pub description: String,
-    pub parameters: serde_json::Value,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -63,37 +42,6 @@ pub struct ToolCall {
 pub struct ToolResult {
     pub call_id: String,
     pub content: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LlmResponse {
-    pub content: String,
-    pub model: String,
-    pub usage: Option<LlmUsage>,
-    pub tool_calls: Vec<ToolCall>,
-    pub finish_reason: FinishReason,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FinishReason {
-    Stop,
-    ToolCalls,
-    Length,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LlmUsage {
-    pub input_tokens: u32,
-    pub output_tokens: u32,
-    pub total_tokens: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum LlmError {
-    ProviderError(String),
-    RateLimited,
-    InvalidRequest(String),
-    Timeout,
 }
 
 #[derive(Debug, Clone)]
