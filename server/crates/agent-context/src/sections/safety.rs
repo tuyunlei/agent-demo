@@ -8,7 +8,7 @@ impl PromptSection for SafetySection {
     }
 
     fn build(&self, _ctx: &PromptSectionContext) -> Result<String, ContextError> {
-        Ok("Respect safety constraints: refuse harmful instructions, protect sensitive data, and ask for clarification when uncertain.".to_string())
+        Ok("When the user asks about current events, time, or facts you're unsure about, use the appropriate tool.".to_string())
     }
 
     fn order(&self) -> u16 {

@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 agent-proto = { path = "../agent-proto" }
 agent-orchestrator = { path = "../agent-orchestrator" }
+agent-context = { path = "../agent-context" }
 agent-channel = { path = "../agent-channel" }
 agent-storage = { path = "../agent-storage" }
 agent-llm = { path = "../agent-llm" }

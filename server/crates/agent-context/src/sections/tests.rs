@@ -1,7 +1,7 @@
 use chrono::Utc;
 
 use crate::{
-    PromptSection, PromptSectionContext, RuntimeInfo, SystemPromptComposer,
+    PromptSection, PromptSectionContext, RuntimeInfo, SystemPromptComposer, ToolPromptSpec,
     sections::{DateTimeSection, IdentitySection, RuntimeSection, SafetySection, ToolsSection},
 };
 
@@ -11,7 +11,17 @@ fn ctx() -> PromptSectionContext {
         user_id: "u".to_string(),
         agent_id: "agent-a".to_string(),
         session_id: "s".to_string(),
-        tool_names: vec!["read".to_string(), "write".to_string()],
+        timezone: "UTC".to_string(),
+        tools: vec![
+            ToolPromptSpec {
+                name: "read".to_string(),
+                description: "read from store".to_string(),
+            },
+            ToolPromptSpec {
+                name: "write".to_string(),
+                description: "write to store".to_string(),
+            },
+        ],
         now: Utc::now(),
         runtime_info: RuntimeInfo {
             model: "model-x".to_string(),
@@ -24,27 +34,28 @@ fn ctx() -> PromptSectionContext {
 fn identity_section_builds_non_empty() {
     let out = IdentitySection.build(&ctx()).expect("build should succeed");
     assert!(!out.is_empty());
-    assert!(out.contains("agent-a"));
+    assert!(out.contains("helpful AI assistant"));
 }
 
 #[test]
 fn safety_section_builds_non_empty() {
     let out = SafetySection.build(&ctx()).expect("build should succeed");
     assert!(!out.is_empty());
+    assert!(out.contains("current events"));
 }
 
 #[test]
 fn tools_section_builds_non_empty() {
     let out = ToolsSection.build(&ctx()).expect("build should succeed");
     assert!(!out.is_empty());
-    assert!(out.contains("read"));
+    assert!(out.contains("- read: read from store"));
 }
 
 #[test]
 fn runtime_section_builds_non_empty() {
     let out = RuntimeSection.build(&ctx()).expect("build should succeed");
     assert!(!out.is_empty());
-    assert!(out.contains("model-x"));
+    assert!(out.contains("same language"));
 }
 
 #[test]
@@ -80,7 +91,7 @@ fn composer_skips_disabled_section() {
         SystemPromptComposer::new(vec![Box::new(DisabledSection), Box::new(SafetySection)]);
     let out = composer.compose(&ctx()).expect("compose should succeed");
     assert!(!out.contains("should not appear"));
-    assert!(out.contains("Respect safety constraints"));
+    assert!(out.contains("current events"));
 }
 
 #[test]
@@ -92,9 +103,13 @@ fn builtin_orders_are_in_expected_sequence() {
     ]);
 
     let out = composer.compose(&ctx()).expect("compose should succeed");
-    let i_identity = out.find("You are agent").expect("identity present");
-    let i_tools = out.find("Available tools").expect("tools present");
-    let i_time = out.find("Current UTC time").expect("datetime present");
+    let i_identity = out
+        .find("You are a helpful AI assistant.")
+        .expect("identity present");
+    let i_tools = out
+        .find("You have access to the following tools")
+        .expect("tools present");
+    let i_time = out.find("Current time:").expect("datetime present");
 
     assert!(i_identity < i_tools);
     assert!(i_tools < i_time);

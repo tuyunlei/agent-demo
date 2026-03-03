@@ -38,7 +38,7 @@ mod tests {
     use chrono::Utc;
 
     use super::SystemPromptComposer;
-    use crate::{ContextError, PromptSection, PromptSectionContext, RuntimeInfo};
+    use crate::{ContextError, PromptSection, PromptSectionContext, RuntimeInfo, ToolPromptSpec};
 
     struct TestSection {
         name: &'static str,
@@ -71,7 +71,11 @@ mod tests {
             user_id: "u-1".to_string(),
             agent_id: "a-1".to_string(),
             session_id: "s-1".to_string(),
-            tool_names: vec!["search".to_string()],
+            timezone: "UTC".to_string(),
+            tools: vec![ToolPromptSpec {
+                name: "search".to_string(),
+                description: "search the web".to_string(),
+            }],
             now: Utc::now(),
             runtime_info: RuntimeInfo {
                 model: "gpt".to_string(),

@@ -8,11 +8,17 @@ impl PromptSection for ToolsSection {
     }
 
     fn build(&self, ctx: &PromptSectionContext) -> Result<String, ContextError> {
-        if ctx.tool_names.is_empty() {
-            return Ok("Available tools: (none)".to_string());
+        if ctx.tools.is_empty() {
+            return Ok("You have access to the following tools:\n- (none)".to_string());
         }
 
-        Ok(format!("Available tools: {}", ctx.tool_names.join(", ")))
+        let tools = ctx
+            .tools
+            .iter()
+            .map(|tool| format!("- {}: {}", tool.name, tool.description))
+            .collect::<Vec<_>>()
+            .join("\n");
+        Ok(format!("You have access to the following tools:\n{tools}"))
     }
 
     fn order(&self) -> u16 {
