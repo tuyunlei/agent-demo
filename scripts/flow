@@ -278,10 +278,14 @@ def cmd_ci(task_id: str, result: str):
 def cmd_merge(task_id: str):
     task = require_task(task_id)
 
-    # --- Gate checks ---
+    # --- Gate checks (all checkpoints + merge prerequisites) ---
     gates = []
+    if not task["checkpoints"].get("task_started"):
+        gates.append("Task not started (missing flow branch)")
     if not task.get("pr"):
-        gates.append("No PR linked")
+        gates.append("No PR linked (missing flow pr)")
+    if not task["checkpoints"].get("pr_opened"):
+        gates.append("PR not recorded (missing flow pr)")
     if not task["checkpoints"].get("review_pass"):
         gates.append("Review not passed")
     if not task["checkpoints"].get("ci_green"):
