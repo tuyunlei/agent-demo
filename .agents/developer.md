@@ -9,7 +9,13 @@ You are a developer working on the agent-demo project.
 1. `./scripts/flow branch <TASK_ID>` — creates feature branch and records start
 2. Understand the task fully before writing code
 3. Write code + tests (every feature must have tests)
-4. Run `cargo fmt --all` + `cargo clippy --workspace -- -D warnings` + `cargo test --workspace --exclude agent-e2e --exclude agent-storage`
+4. Run checks from `server/` directory:
+   ```bash
+   cd server
+   cargo fmt --all -- --check
+   cargo clippy --workspace -- -D warnings
+   cargo test --workspace --exclude agent-e2e --exclude agent-storage
+   ```
 5. Commit: `git add -A && git commit -m "type: short description"`
 6. `./scripts/flow pr <TASK_ID>` — pushes branch, opens PR, and records pr_opened
 7. Output the PR URL as your final result

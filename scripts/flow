@@ -56,14 +56,17 @@ def append_event(event: dict):
 
 def record_failure(agent: str, task_id: str, event: str, reason: str):
     """Record a failed operation — always leaves a trace."""
-    append_event({
-        "ts": now_cst(),
-        "agent": agent,
-        "task_id": task_id,
-        "event": event,
-        "result": "failed",
-        "reason": reason,
-    })
+    try:
+        append_event({
+            "ts": now_cst(),
+            "agent": agent,
+            "task_id": task_id,
+            "event": event,
+            "result": "failed",
+            "reason": reason,
+        })
+    except Exception as write_err:
+        print(f"⚠️ Could not write failure event: {write_err}", file=sys.stderr)
 
 
 def run(args: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -234,6 +237,7 @@ def cmd_verdict(task_id: str, result: str):
         task["checkpoints"]["review_pass"] = now_cst()
         task["status"] = "review-passed"
     else:
+        task["checkpoints"]["review_pass"] = None
         task["status"] = "review-failed"
     save_task(task)
 
@@ -257,6 +261,8 @@ def cmd_ci(task_id: str, result: str):
 
     if result == "green":
         task["checkpoints"]["ci_green"] = now_cst()
+    else:
+        task["checkpoints"]["ci_green"] = None
     save_task(task)
 
     append_event({
