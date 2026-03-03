@@ -1,5 +1,5 @@
-use agent_domain::{ChatMessage, ToolCall, ToolSpec as DomainToolSpec, ToolSpec};
-use agent_llm::types::{ModelMessage, ToolCall as LlmToolCall, ToolSpec as LlmToolSpec};
+use agent_domain::ChatMessage;
+use agent_llm::types::{ModelMessage, ToolCall as LlmToolCall};
 use agent_tools::{ToolError, ToolInput, ToolOutput};
 use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::Tz;
@@ -34,6 +34,16 @@ pub fn llm_tool_call_to_tool_input(call: &LlmToolCall) -> ToolInput {
 }
 
 #[must_use]
+pub fn tool_spec_to_llm_spec(spec: &agent_tools::ToolSpec) -> agent_llm::types::ToolSpec {
+    agent_llm::types::ToolSpec {
+        name: spec.name.clone(),
+        description: spec.description.clone(),
+        parameters_schema: spec.parameters_schema.clone(),
+        strict: spec.strict,
+    }
+}
+
+#[must_use]
 pub fn tool_output_to_chat_message(call_id: &str, output: &ToolOutput) -> ChatMessage {
     ChatMessage {
         role: "tool".to_string(),
@@ -41,37 +51,6 @@ pub fn tool_output_to_chat_message(call_id: &str, output: &ToolOutput) -> ChatMe
         tool_calls: None,
         tool_call_id: Some(call_id.to_string()),
     }
-}
-
-#[must_use]
-pub fn domain_tool_spec_to_llm_spec(spec: &DomainToolSpec) -> LlmToolSpec {
-    LlmToolSpec {
-        name: spec.name.clone(),
-        description: spec.description.clone(),
-        parameters_schema: spec.parameters.clone(),
-        strict: false,
-    }
-}
-
-#[must_use]
-pub fn to_domain_call(call: agent_llm::types::ToolCall) -> ToolCall {
-    ToolCall {
-        call_id: call.call_id,
-        name: call.name,
-        arguments: call.arguments,
-    }
-}
-
-#[must_use]
-pub fn tool_specs_to_domain_specs(specs: &[agent_tools::ToolSpec]) -> Vec<ToolSpec> {
-    specs
-        .iter()
-        .map(|spec| ToolSpec {
-            name: spec.name.clone(),
-            description: spec.description.clone(),
-            parameters: spec.parameters_schema.clone(),
-        })
-        .collect()
 }
 
 #[must_use]
@@ -103,7 +82,7 @@ fn format_timestamp(timestamp: DateTime<Utc>, timezone: Tz) -> String {
 }
 
 #[must_use]
-pub fn build_system_prompt(tool_specs: &[ToolSpec], timezone: Tz) -> String {
+pub fn build_system_prompt(tool_specs: &[agent_tools::ToolSpec], timezone: Tz) -> String {
     let now = format_timestamp(Utc::now(), timezone);
     let tools = if tool_specs.is_empty() {
         "- (none)".to_string()

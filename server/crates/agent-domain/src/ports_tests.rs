@@ -1,5 +1,5 @@
 use super::{
-    AppendResult, AuthError, CreateSessionParams, EventRange, EventStoreError, LlmError, NewEvent,
+    AppendResult, AuthError, CreateSessionParams, EventRange, EventStoreError, NewEvent,
     SessionListFilter,
 };
 
@@ -16,23 +16,6 @@ fn auth_error_variants() {
     );
     assert_eq!(internal, AuthError::Internal("db down".to_string()));
     assert!(format!("{internal:?}").contains("db down"));
-}
-
-#[test]
-fn llm_error_variants() {
-    let provider = LlmError::ProviderError("bad response".to_string());
-    let invalid = LlmError::InvalidRequest("missing messages".to_string());
-
-    assert_eq!(LlmError::RateLimited, LlmError::RateLimited);
-    assert_eq!(
-        provider,
-        LlmError::ProviderError("bad response".to_string())
-    );
-    assert_eq!(
-        invalid,
-        LlmError::InvalidRequest("missing messages".to_string())
-    );
-    assert!(format!("{:?}", LlmError::Timeout).contains("Timeout"));
 }
 
 #[test]
@@ -56,11 +39,14 @@ fn event_store_error_display_messages() {
 }
 
 #[test]
-fn event_range_and_data_structs_construct() {
+fn event_range_defaults() {
     let range = EventRange::default();
     assert_eq!(range.start_inclusive, None);
     assert_eq!(range.end_inclusive, None);
+}
 
+#[test]
+fn event_and_append_structs_construct() {
     let event = NewEvent {
         event_id: "evt-1".to_string(),
         event_type: "UserMessage".to_string(),
@@ -77,7 +63,10 @@ fn event_range_and_data_structs_construct() {
     };
     assert_eq!(append.last_sequence, 42);
     assert_eq!(append.session_event_count, 7);
+}
 
+#[test]
+fn session_params_and_filter_structs_construct() {
     let params = CreateSessionParams {
         tenant_id: "t1".to_string(),
         user_id: "u1".to_string(),
