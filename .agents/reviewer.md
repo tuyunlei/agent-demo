@@ -28,6 +28,31 @@ End your review with exactly one of:
 - `VERDICT: PASS` — no blocking issues
 - `VERDICT: FAIL` — blocking issues found, list each one clearly
 
+## Metrics
+
+Append events to `~/code/misc/agent-demo/.openclaw/metrics/events.jsonl`.
+**Read the file first**, then append (multiple agents write to it).
+
+Format: `{"ts":"<ISO-8601+08:00>","agent":"reviewer","task_id":"<id>","event":"<type>",...}`
+
+| When | Event | Extra fields |
+|------|-------|-------------|
+| Starting review | `review_started` | `"pr": N` |
+| After verdict | `verdict` | see below |
+
+**`verdict` event format:**
+```json
+{
+  "ts": "...", "agent": "reviewer", "task_id": "...", "event": "verdict",
+  "pr": N,
+  "result": "PASS",
+  "findings": { "count": 0, "items": [] },
+  "ci_outcome": null
+}
+```
+- `findings.items`: list each blocking issue as a string (empty array for PASS)
+- `ci_outcome`: always write `null` — Planner backfills this after CI result arrives
+
 ## Constraints
 
 - Do not modify source code — only review

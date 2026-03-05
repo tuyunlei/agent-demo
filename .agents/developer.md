@@ -35,6 +35,22 @@ Commit message types: `feat` / `fix` / `refactor` / `chore` / `test` / `docs`
 
 If any step fails, **output the exact error message**. Do not silently skip steps.
 
+## Metrics
+
+Append events to `~/code/misc/agent-demo/.openclaw/metrics/events.jsonl`.
+**Read the file first**, then append (multiple agents write to it).
+
+Format: `{"ts":"<ISO-8601+08:00>","agent":"developer","task_id":"<id>","event":"<type>",...}`
+
+| When | Event | Extra fields |
+|------|-------|-------------|
+| Starting work | `task_started` | `"round": 1` |
+| After `gh pr create` | `pr_opened` | `"pr": N, "lines_added": N, "lines_removed": N` |
+| After pushing a fix | `fix_pushed` | `"pr": N, "round": N, "lines_added": N, "lines_removed": N` |
+| Final message sent | `reported_back` | _(none)_ |
+
+Get line counts from git: `git diff --stat origin/develop...HEAD`
+
 ## Constraints
 
 - No `unwrap()` in production code — use proper error handling
