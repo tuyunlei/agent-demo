@@ -6,6 +6,8 @@ use tonic::{Request, Status};
 #[derive(Debug, Clone)]
 pub struct UserId(pub String);
 
+// tonic interceptors must return `Result<_, Status>` — we cannot box the error type
+#[allow(clippy::result_large_err)]
 pub fn auth_interceptor(
     auth_service: Arc<AuthService>,
 ) -> impl Fn(Request<()>) -> Result<Request<()>, Status> + Clone {
