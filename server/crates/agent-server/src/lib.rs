@@ -8,7 +8,9 @@ use agent_channel::{
 use agent_context::{ContextBuilder, DefaultContextBuilder};
 use agent_llm::{LlmProvider, OpenAiProvider};
 use agent_memory::NoopCompactionService;
-use agent_orchestrator::{AuthService, ChatRuntime, TurnExecutor, TurnExecutorConfig};
+use agent_orchestrator::{
+    AuthService, ChatRuntime, TurnExecutor, TurnExecutorConfig, TurnExecutorDeps,
+};
 use agent_proto::auth_service_server::AuthServiceServer;
 use agent_proto::chat_service_server::ChatServiceServer;
 use agent_proto::health_service_server::HealthServiceServer;
@@ -79,14 +81,14 @@ pub async fn run_server(config: ServerConfig) -> Result<(), Box<dyn std::error::
     let capabilities =
         build_capabilities(config.llm_api_key, config.llm_base_url, config.llm_model);
     let context_builder = build_context_builder();
-    let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(
-        capabilities.llm,
-        capabilities.tools,
-        stores.message_store.clone(),
-        capabilities.compaction,
+    let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(TurnExecutorDeps {
+        llm: capabilities.llm,
+        tools: capabilities.tools,
+        message_store: stores.message_store.clone(),
+        compaction: capabilities.compaction,
         context_builder,
-        TurnExecutorConfig::default(),
-    ));
+        config: TurnExecutorConfig::default(),
+    }));
     let auth_service = Arc::new(AuthService::new(stores.user_store, config.jwt_secret));
 
     // Layer 1: Channel handlers and server assembly
@@ -299,14 +301,14 @@ impl ServerBuilder {
         let tools = build_tool_runtime();
         let compaction = Arc::new(NoopCompactionService::new());
         let context_builder = build_context_builder();
-        let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(
+        let turn_executor: Arc<dyn ChatRuntime> = Arc::new(TurnExecutor::new(TurnExecutorDeps {
             llm,
             tools,
-            message_store.clone(),
+            message_store: message_store.clone(),
             compaction,
             context_builder,
-            TurnExecutorConfig::default(),
-        ));
+            config: TurnExecutorConfig::default(),
+        }));
         let auth_service = Arc::new(AuthService::new(user_store, jwt_secret.to_string()));
         let chat_handler = ChatServiceHandler::new(turn_executor);
         let session_handler = SessionServiceHandler::new(message_store);

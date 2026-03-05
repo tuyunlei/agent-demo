@@ -25,15 +25,26 @@ pub struct TurnExecutor {
     config: TurnExecutorConfig,
 }
 
+pub struct TurnExecutorDeps {
+    pub llm: Arc<dyn LlmProvider>,
+    pub tools: Arc<dyn ToolRuntime>,
+    pub message_store: Arc<dyn MessageStore>,
+    pub compaction: Arc<dyn CompactionService>,
+    pub context_builder: Arc<dyn ContextBuilder>,
+    pub config: TurnExecutorConfig,
+}
+
 impl TurnExecutor {
-    pub fn new(
-        llm: Arc<dyn LlmProvider>,
-        tools: Arc<dyn ToolRuntime>,
-        message_store: Arc<dyn MessageStore>,
-        compaction: Arc<dyn CompactionService>,
-        context_builder: Arc<dyn ContextBuilder>,
-        config: TurnExecutorConfig,
-    ) -> Self {
+    #[must_use]
+    pub fn new(deps: TurnExecutorDeps) -> Self {
+        let TurnExecutorDeps {
+            llm,
+            tools,
+            message_store,
+            compaction,
+            context_builder,
+            config,
+        } = deps;
         Self {
             llm,
             tools,
