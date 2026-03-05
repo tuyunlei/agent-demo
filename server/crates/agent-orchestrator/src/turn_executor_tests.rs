@@ -15,7 +15,9 @@ use agent_tools::{
 use async_trait::async_trait;
 use serde_json::json;
 
-use crate::{TurnError, TurnExecutor, TurnExecutorConfig, TurnFinishReason, TurnInput};
+use crate::{
+    TurnError, TurnExecutor, TurnExecutorConfig, TurnExecutorDeps, TurnFinishReason, TurnInput,
+};
 
 #[derive(Default)]
 struct MockMessageStore {
@@ -167,16 +169,16 @@ async fn simple_text_reply() {
     )));
     let llm_for_assert = llm.clone();
     let store = Arc::new(MockMessageStore::default());
-    let runtime = TurnExecutor::new(
+    let runtime = TurnExecutor::new(TurnExecutorDeps {
         llm,
-        Arc::new(DefaultToolRuntime::new()),
-        store,
-        Arc::new(NoopCompactionService::new()),
-        Arc::new(StaticContextBuilder {
+        tools: Arc::new(DefaultToolRuntime::new()),
+        message_store: store,
+        compaction: Arc::new(NoopCompactionService::new()),
+        context_builder: Arc::new(StaticContextBuilder {
             system_prompt: "system-from-context-builder".to_string(),
         }),
-        TurnExecutorConfig::default(),
-    );
+        config: TurnExecutorConfig::default(),
+    });
 
     let out = runtime
         .run_turn(TurnInput {
@@ -198,14 +200,14 @@ async fn simple_text_reply() {
 
 #[tokio::test]
 async fn empty_message_rejected() {
-    let runtime = TurnExecutor::new(
-        Arc::new(MockLlmProvider::with_text("unused")),
-        Arc::new(DefaultToolRuntime::new()),
-        Arc::new(MockMessageStore::default()),
-        Arc::new(NoopCompactionService::new()),
-        Arc::new(DefaultContextBuilder::with_default_sections()),
-        TurnExecutorConfig::default(),
-    );
+    let runtime = TurnExecutor::new(TurnExecutorDeps {
+        llm: Arc::new(MockLlmProvider::with_text("unused")),
+        tools: Arc::new(DefaultToolRuntime::new()),
+        message_store: Arc::new(MockMessageStore::default()),
+        compaction: Arc::new(NoopCompactionService::new()),
+        context_builder: Arc::new(DefaultContextBuilder::with_default_sections()),
+        config: TurnExecutorConfig::default(),
+    });
 
     let err = runtime
         .run_turn(TurnInput {
@@ -238,14 +240,14 @@ async fn tool_call_round_trip() {
     tools.register(Box::new(EchoTool));
 
     let store = Arc::new(MockMessageStore::default());
-    let runtime = TurnExecutor::new(
+    let runtime = TurnExecutor::new(TurnExecutorDeps {
         llm,
-        Arc::new(tools),
-        store.clone(),
-        Arc::new(NoopCompactionService::new()),
-        Arc::new(DefaultContextBuilder::with_default_sections()),
-        TurnExecutorConfig::default(),
-    );
+        tools: Arc::new(tools),
+        message_store: store.clone(),
+        compaction: Arc::new(NoopCompactionService::new()),
+        context_builder: Arc::new(DefaultContextBuilder::with_default_sections()),
+        config: TurnExecutorConfig::default(),
+    });
 
     let out = runtime
         .run_turn(TurnInput {
@@ -287,17 +289,17 @@ async fn tool_loop_exceeded() {
     let mut tools = DefaultToolRuntime::new();
     tools.register(Box::new(EchoTool));
 
-    let runtime = TurnExecutor::new(
+    let runtime = TurnExecutor::new(TurnExecutorDeps {
         llm,
-        Arc::new(tools),
-        Arc::new(MockMessageStore::default()),
-        Arc::new(NoopCompactionService::new()),
-        Arc::new(DefaultContextBuilder::with_default_sections()),
-        TurnExecutorConfig {
+        tools: Arc::new(tools),
+        message_store: Arc::new(MockMessageStore::default()),
+        compaction: Arc::new(NoopCompactionService::new()),
+        context_builder: Arc::new(DefaultContextBuilder::with_default_sections()),
+        config: TurnExecutorConfig {
             max_tool_iterations: 1,
             timezone: "Asia/Shanghai".to_string(),
         },
-    );
+    });
 
     let err = runtime
         .run_turn(TurnInput {
@@ -318,14 +320,14 @@ async fn length_truncated() {
         "partial",
         vec![],
     )));
-    let runtime = TurnExecutor::new(
+    let runtime = TurnExecutor::new(TurnExecutorDeps {
         llm,
-        Arc::new(DefaultToolRuntime::new()),
-        Arc::new(MockMessageStore::default()),
-        Arc::new(NoopCompactionService::new()),
-        Arc::new(DefaultContextBuilder::with_default_sections()),
-        TurnExecutorConfig::default(),
-    );
+        tools: Arc::new(DefaultToolRuntime::new()),
+        message_store: Arc::new(MockMessageStore::default()),
+        compaction: Arc::new(NoopCompactionService::new()),
+        context_builder: Arc::new(DefaultContextBuilder::with_default_sections()),
+        config: TurnExecutorConfig::default(),
+    });
 
     let out = runtime
         .run_turn(TurnInput {
@@ -343,18 +345,18 @@ async fn length_truncated() {
 #[tokio::test]
 async fn finish_reason_error_and_content_filter_fallback_to_stop() {
     for reason in [FinishReason::Error, FinishReason::ContentFilter] {
-        let runtime = TurnExecutor::new(
-            Arc::new(MockLlmProvider::new(response_with(
+        let runtime = TurnExecutor::new(TurnExecutorDeps {
+            llm: Arc::new(MockLlmProvider::new(response_with(
                 reason,
                 "fallback",
                 vec![],
             ))),
-            Arc::new(DefaultToolRuntime::new()),
-            Arc::new(MockMessageStore::default()),
-            Arc::new(NoopCompactionService::new()),
-            Arc::new(DefaultContextBuilder::with_default_sections()),
-            TurnExecutorConfig::default(),
-        );
+            tools: Arc::new(DefaultToolRuntime::new()),
+            message_store: Arc::new(MockMessageStore::default()),
+            compaction: Arc::new(NoopCompactionService::new()),
+            context_builder: Arc::new(DefaultContextBuilder::with_default_sections()),
+            config: TurnExecutorConfig::default(),
+        });
 
         let out = runtime
             .run_turn(TurnInput {
@@ -373,14 +375,14 @@ async fn finish_reason_error_and_content_filter_fallback_to_stop() {
 #[tokio::test]
 async fn resolves_default_session_when_input_session_id_missing_or_blank() {
     let llm = Arc::new(MockLlmProvider::with_text("ok"));
-    let runtime = TurnExecutor::new(
+    let runtime = TurnExecutor::new(TurnExecutorDeps {
         llm,
-        Arc::new(DefaultToolRuntime::new()),
-        Arc::new(MockMessageStore::default()),
-        Arc::new(NoopCompactionService::new()),
-        Arc::new(DefaultContextBuilder::with_default_sections()),
-        TurnExecutorConfig::default(),
-    );
+        tools: Arc::new(DefaultToolRuntime::new()),
+        message_store: Arc::new(MockMessageStore::default()),
+        compaction: Arc::new(NoopCompactionService::new()),
+        context_builder: Arc::new(DefaultContextBuilder::with_default_sections()),
+        config: TurnExecutorConfig::default(),
+    });
 
     let out_missing = runtime
         .run_turn(TurnInput {
@@ -405,14 +407,14 @@ async fn resolves_default_session_when_input_session_id_missing_or_blank() {
 
 #[tokio::test]
 async fn store_errors_are_mapped_to_session_error() {
-    let runtime = TurnExecutor::new(
-        Arc::new(MockLlmProvider::with_text("unused")),
-        Arc::new(DefaultToolRuntime::new()),
-        Arc::new(FailingMessageStore),
-        Arc::new(NoopCompactionService::new()),
-        Arc::new(DefaultContextBuilder::with_default_sections()),
-        TurnExecutorConfig::default(),
-    );
+    let runtime = TurnExecutor::new(TurnExecutorDeps {
+        llm: Arc::new(MockLlmProvider::with_text("unused")),
+        tools: Arc::new(DefaultToolRuntime::new()),
+        message_store: Arc::new(FailingMessageStore),
+        compaction: Arc::new(NoopCompactionService::new()),
+        context_builder: Arc::new(DefaultContextBuilder::with_default_sections()),
+        config: TurnExecutorConfig::default(),
+    });
 
     let err = runtime
         .run_turn(TurnInput {

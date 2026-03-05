@@ -52,20 +52,13 @@ Channel layer (outermost layer of hexagon) tests should not directly depend on c
 
 ---
 
-## 4. TurnExecutor constructor exposes too many internal dependencies
+## 4. TurnExecutor constructor exposes too many internal dependencies (Resolved 2026-03-06)
 
-**Severity**: Medium — Interface design issue
+**Status**: Resolved
 
-`TurnExecutor::new` accepts 5 `Arc<dyn Trait>` parameters: `LlmProvider`, `ToolRuntime`, `MessageStore`, `CompactionService`, `TurnExecutorConfig`.
-
-Callers must know which components TurnExecutor needs internally to construct it, this is implementation detail leakage.
-
-**Impact**:
-- Every time a new internal dependency is added, all places constructing TurnExecutor need to change
-- Composition Root (agent-server) takes on too much assembly knowledge
-- Tests need to construct all dependencies to test a behavior
-
-**Fix direction**: Consider Builder pattern or Context/Config struct to encapsulate dependencies. Or reconsider: does TurnExecutor have too many responsibilities that need to be split.
+`TurnExecutor::new` now takes a single `TurnExecutorDeps` struct bundling `llm`, `tools`,
+`message_store`, `compaction`, `context_builder`, and `config`. This removes internal dependency
+leakage from the constructor signature and simplifies call sites.
 
 ---
 
@@ -87,4 +80,4 @@ Hardcoded `turn_compat.rs::build_system_prompt` was removed. Prompt content now 
 
 ---
 
-*Last updated: 2026-03-04*
+*Last updated: 2026-03-06*
